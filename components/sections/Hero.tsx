@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef } from "react";
 
 const stats = [
@@ -60,59 +61,80 @@ export default function Hero() {
         </svg>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 max-w-3xl">
-        <div className="flex items-center gap-3 font-mono text-[0.7rem] tracking-[0.18em] uppercase text-gold mb-7
-                        opacity-0 animate-fade-up-d1"
-             style={{ animationFillMode: "forwards" }}>
-          <span className="block w-10 h-px bg-gold" />
-          Senior Software Engineer
+      {/* Content + Portrait row */}
+      <div className="relative z-10 flex items-end justify-between w-full">
+
+        {/* Left: text */}
+        <div className="max-w-[52%]">
+          <div className="flex items-center gap-3 font-mono text-[0.7rem] tracking-[0.18em] uppercase text-gold mb-7
+                          opacity-0 animate-fade-up-d1"
+               style={{ animationFillMode: "forwards" }}>
+            <span className="block w-10 h-px bg-gold" />
+            Senior Software Engineer
+          </div>
+
+          <h1 className="font-display font-black leading-[0.95] text-off-white mb-0
+                         opacity-0 animate-fade-up-d2"
+              style={{ fontSize: "clamp(3.8rem, 8vw, 7.5rem)", animationFillMode: "forwards" }}>
+            Aamir<br/>
+            <span className="text-gold">Bashir</span>
+          </h1>
+
+          <p className="font-body font-light mt-5 text-light-blue
+                        opacity-0 animate-fade-up-d3"
+             style={{ fontSize: "clamp(1.1rem, 2.2vw, 1.45rem)", lineHeight: 1.6, animationFillMode: "forwards" }}>
+            <strong className="text-gold2 font-medium">8+ Years</strong> building mobile &amp; full-stack applications ·
+            Android (Kotlin) · React · Node.js<br/>
+            India · Open to Remote (US / EU)
+          </p>
+
+          {/* Stats */}
+          <div className="flex gap-12 mt-10 opacity-0 animate-fade-up-d4"
+               style={{ animationFillMode: "forwards" }}>
+            {stats.map(({ label, prefix = "", suffix }, i) => (
+              <div key={label} className="flex flex-col gap-1">
+                <span
+                  ref={el => { statRefs.current[i] = el; }}
+                  className="font-display text-[2.4rem] font-bold text-gold leading-none"
+                >
+                  {prefix}0{suffix}
+                </span>
+                <span className="font-mono text-[0.62rem] tracking-[0.14em] uppercase text-mid-gray">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="flex gap-5 mt-10 flex-wrap opacity-0 animate-fade-up-d5"
+               style={{ animationFillMode: "forwards" }}>
+            <Link href="#contact"
+              className="btn-clip px-9 py-[0.85rem] bg-gold text-navy font-mono text-[0.7rem] tracking-[0.12em] uppercase font-semibold
+                         transition-all duration-200 hover:bg-gold2 hover:-translate-y-0.5">
+              Get In Touch
+            </Link>
+            <Link href="#experience"
+              className="px-9 py-[0.85rem] bg-transparent text-light-blue font-mono text-[0.7rem] tracking-[0.12em] uppercase
+                         border border-[rgba(201,168,76,0.4)] transition-all duration-200 hover:border-gold hover:text-gold hover:-translate-y-0.5">
+              View Experience
+            </Link>
+          </div>
         </div>
 
-        <h1 className="font-display font-black leading-[0.95] text-off-white mb-0
-                       opacity-0 animate-fade-up-d2"
-            style={{ fontSize: "clamp(3.8rem, 8vw, 7.5rem)", animationFillMode: "forwards" }}>
-          Aamir<br/>
-          <span className="text-gold">Bashir</span>
-        </h1>
-
-        <p className="font-body font-light mt-5 text-light-blue
-                      opacity-0 animate-fade-up-d3"
-           style={{ fontSize: "clamp(1.1rem, 2.2vw, 1.45rem)", lineHeight: 1.6, animationFillMode: "forwards" }}>
-          <strong className="text-gold2 font-medium">8+ Years</strong> building mobile &amp; full-stack applications ·
-          Android (Kotlin) · React · Node.js<br/>
-          India · Open to Remote (US / EU)
-        </p>
-
-        {/* Stats */}
-        <div className="flex gap-12 mt-10 opacity-0 animate-fade-up-d4"
-             style={{ animationFillMode: "forwards" }}>
-          {stats.map(({ label, prefix = "", suffix }, i) => (
-            <div key={label} className="flex flex-col gap-1">
-              <span
-                ref={el => { statRefs.current[i] = el; }}
-                className="font-display text-[2.4rem] font-bold text-gold leading-none"
-              >
-                {prefix}0{suffix}
-              </span>
-              <span className="font-mono text-[0.62rem] tracking-[0.14em] uppercase text-mid-gray">{label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <div className="flex gap-5 mt-10 flex-wrap opacity-0 animate-fade-up-d5"
-             style={{ animationFillMode: "forwards" }}>
-          <Link href="#contact"
-            className="btn-clip px-9 py-[0.85rem] bg-gold text-navy font-mono text-[0.7rem] tracking-[0.12em] uppercase font-semibold
-                       transition-all duration-200 hover:bg-gold2 hover:-translate-y-0.5">
-            Get In Touch
-          </Link>
-          <Link href="#experience"
-            className="px-9 py-[0.85rem] bg-transparent text-light-blue font-mono text-[0.7rem] tracking-[0.12em] uppercase
-                       border border-[rgba(201,168,76,0.4)] transition-all duration-200 hover:border-gold hover:text-gold hover:-translate-y-0.5">
-            View Experience
-          </Link>
+        {/* Right: portrait */}
+        <div className="relative opacity-0 animate-fade-up-d3 self-end"
+             style={{ animationFillMode: "forwards", width: "clamp(280px, 36vw, 520px)" }}>
+          {/* Gold accent gradient behind the figure */}
+          <div className="absolute inset-x-0 bottom-0 h-2/3 rounded-t-full opacity-20 blur-3xl"
+               style={{ background: "radial-gradient(ellipse at 50% 100%, #C9A84C 0%, transparent 70%)" }} />
+          <Image
+            src="/hero-portrait.png"
+            alt="Aamir Bashir"
+            width={2268}
+            height={4032}
+            priority
+            className="relative w-full h-auto object-contain drop-shadow-2xl"
+            style={{ maskImage: "linear-gradient(to top, transparent 0%, black 12%)" }}
+          />
         </div>
       </div>
 
