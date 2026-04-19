@@ -139,6 +139,7 @@ async function main() {
   const seedKeywords        = SEO_KEYWORD_POOLS[category].join(", ");
 
   console.log(`📝  ${slugs.length} existing posts. Category: ${category}. Calling Gemini...`);
+  console.log(`🔗  Endpoint: ${GEMINI_URL}`);
 
   const prompt = `
 You are writing an SEO-optimised blog post for Aamir Bashir, a senior software engineer.
