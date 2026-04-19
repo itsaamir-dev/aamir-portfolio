@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = join(__dirname, "..");
 const DATA_FILE = join(ROOT, "lib", "data.ts");
 const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent";
 
 // ── Author bio context ───────────────────────────────────────────────────────
 const BIO = `
@@ -70,7 +70,7 @@ async function callGemini(prompt) {
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Gemini API error ${res.status}: ${err}`);
+    throw new Error(`Gemini API error ${res.status} ${res.statusText}: ${err}`);
   }
 
   const data = await res.json();
