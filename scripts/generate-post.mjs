@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = join(__dirname, "..");
 const DATA_FILE = join(ROOT, "lib", "data.ts");
 const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent";
 
 // ── Author bio context ───────────────────────────────────────────────────────
 const BIO = `
