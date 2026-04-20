@@ -139,6 +139,127 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "nodejs-backend-api-performance-fullstack",
+    featured: false,
+    icon: "⚡",
+    cat: "fullstack", catLabel: "Full-Stack",
+    date: "Apr 20, 2026", readTime: "6 min read",
+    title: "Scaling Node.js Backend Performance: REST API Design at 100K RPS",
+    excerpt: "Master high-performance REST API design with Node.js. Learn caching, pagination, and optimization strategies I used to handle 100K RPS in production.",
+    tags: ["Node.js backend","REST API design","Full-stack development","API performance","Scaling"],
+    tocItems: [
+      {"id":"why-nodejs-matters","label":"Why Node.js Dominates Full-Stack Development"},
+      {"id":"rest-api-design-principles","label":"Core REST API Design Principles for Scale"},
+      {"id":"nodejs-backend-optimization","label":"Optimizing Your Node.js Backend for Production"},
+      {"id":"caching-pagination-strategy","label":"Caching & Pagination: The Hidden Performance Multipliers"},
+      {"id":"monitoring-debugging","label":"Real-Time Monitoring & Debugging in Production"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-nodejs-matters">Why Node.js Dominates Full-Stack Development</h2><p>Over the last 8 years, I've worked across Android, React, and backend ecosystems. But nothing has shaped my approach to <strong>full-stack development</strong> like mastering Node.js.</p><p>Here's why: Node.js lets you use JavaScript across your entire stack—from API to client. But more importantly, its non-blocking event loop makes it <em>exceptionally</em> suited for I/O-heavy operations like database queries, file uploads, and third-party API calls. At Raybit Technologies, I led a migration from a synchronous PHP backend to Node.js, and we cut API response times by 60% without changing hardware.</p><p>The catch? Performance doesn't come automatically. You need deliberate <strong>REST API design</strong> choices and a deep understanding of your Node.js backend's runtime behavior.</p><h2 id="rest-api-design-principles">Core REST API Design Principles for Scale</h2><p>Let me be candid: most REST APIs I've audited fail at scale not because of language, but because of poor design decisions made early. Here are the non-negotiables.</p><h3>1. Version Your API Endpoints</h3><p>Never ship <code>/api/users</code>. Ship <code>/api/v1/users</code>. I learned this the hard way at CodeBrew Labs when a breaking change to our user schema forced us to support two client versions simultaneously. Versioning costs you 10 minutes upfront and saves you weeks of fire-fighting later.</p><h3>2. Use Consistent Response Envelopes</h3><p>Every response should follow the same structure. Here's what I use:</p><div class="code-block" data-lang="JSON"><pre><code>{
+  "success": true,
+  "code": 200,
+  "data": {
+    "id": 1,
+    "name": "Aamir Bashir",
+    "email": "aamir@example.com"
+  },
+  "meta": {
+    "timestamp": "2025-01-15T10:30:00Z",
+    "requestId": "req-uuid-12345"
+  },
+  "errors": null
+}</code></pre></div><p>Why? When your frontend expects this shape on every endpoint, error handling becomes predictable. No surprises at 2 AM.</p><h3>3. Implement Proper Pagination</h3><p>Never return all records. Ever. Pagination is part of your <strong>REST API design</strong> contract. Use cursor-based pagination for infinite scrolls, offset-limit for traditional pagination:</p><div class="code-block" data-lang="JSON"><pre><code>GET /api/v1/users?limit=20&amp;offset=0
+
+{
+  "success": true,
+  "data": [...],
+  "meta": {
+    "total": 5000,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": true
+  }
+}</code></pre></div><p>This prevents memory bloat and keeps your <strong>API performance</strong> consistent regardless of dataset size.</p><h2 id="nodejs-backend-optimization">Optimizing Your Node.js Backend for Production</h2><p>A well-designed REST API on a poorly-tuned Node.js backend is like a Ferrari with square wheels. Let me share what actually moves the needle.</p><h3>Use Connection Pooling</h3><p>Every database connection is expensive. At Raybit, I was investigating mysterious slowdowns until I discovered our Node.js app was creating a new connection for each query. Connection pooling changed everything:</p><div class="code-block" data-lang="JavaScript"><pre><code>const mysql = require('mysql2/promise');
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelayMs: 0
+});
+
+module.exports = pool;
+</code></pre></div><p>The <code>connectionLimit</code> parameter is critical. Set it based on your workload—too high wastes memory, too low causes bottlenecks. I typically use 10–20 for moderate traffic, 50+ for high-traffic services.</p><h3>Leverage Async/Await Properly</h3><p>Node.js async/await is powerful, but blocking the event loop kills performance. Here's an anti-pattern I've seen countless times:</p><div class="code-block" data-lang="JavaScript"><pre><code>// ❌ BAD: Sequential queries block each other
+app.get('/api/v1/users/:id', async (req, res) =&gt; {
+  const user = await db.query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  const posts = await db.query('SELECT * FROM posts WHERE userId = ?', [user.id]);
+  const comments = await db.query('SELECT * FROM comments WHERE userId = ?', [user.id]);
+  
+  res.json({ user, posts, comments });
+});
+
+// ✅ GOOD: Parallel queries
+app.get('/api/v1/users/:id', async (req, res) =&gt; {
+  const [user] = await db.query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  
+  const [posts, comments] = await Promise.all([
+    db.query('SELECT * FROM posts WHERE userId = ?', [user.id]),
+    db.query('SELECT * FROM comments WHERE userId = ?', [user.id])
+  ]);
+  
+  res.json({ user, posts, comments });
+});
+</code></pre></div><p>The second approach executes database queries in parallel. If each query takes 50ms, sequential takes 150ms, parallel takes 50ms. At scale, this compounds dramatically.</p><h2 id="caching-pagination-strategy">Caching &amp; Pagination: The Hidden Performance Multipliers</h2><p>If you implement one thing from this post, make it caching. Here's why: at Raybit, we went from handling 10K RPS to 100K RPS <em>without</em> scaling hardware—just by caching intelligently.</p><h3>Redis for Application Caching</h3><p>I use Redis for three things:</p><ul><li><strong>Session storage</strong> — fast user authentication</li><li><strong>Rate limiting</strong> — prevent API abuse</li><li><strong>Query results</strong> — cache expensive database reads</li></ul><p>Here's a practical caching pattern I use in every Node.js backend:</p><div class="code-block" data-lang="JavaScript"><pre><code>const redis = require('redis');
+const client = redis.createClient();
+
+const getCachedUser = async (userId) =&gt; {
+  // Try cache first
+  const cached = await client.get(\`user:\${userId}\`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  
+  // Cache miss—hit database
+  const [user] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+  
+  // Store in cache for 1 hour
+  await client.setEx(\`user:\${userId}\`, 3600, JSON.stringify(user));
+  
+  return user;
+};
+</code></pre></div><p>This pattern reduces database load by 80–90% for read-heavy workloads. The trade-off is cache invalidation—when user data changes, delete the key immediately.</p><h3>HTTP Caching Headers</h3><p>Don't underestimate browser and CDN caching. Set proper headers for <strong>REST API design</strong>:</p><div class="code-block" data-lang="JavaScript"><pre><code>app.get('/api/v1/products/:id', (req, res) =&gt; {
+  // Cache for 5 minutes in browser, 1 hour in CDN
+  res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+  res.json(productData);
+});
+</code></pre></div><p><code>max-age</code> controls browser cache, <code>s-maxage</code> controls shared caches (CDNs). This alone can reduce your backend load by 50% for public endpoints.</p><h2 id="monitoring-debugging">Real-Time Monitoring &amp; Debugging in Production</h2><p>Performance optimization doesn't end at deployment. You need visibility into what's happening in production.</p><h3>Instrument Your Node.js Backend</h3><p>I use structured logging everywhere:</p><div class="code-block" data-lang="JavaScript"><pre><code>const logger = require('pino')();
+
+app.get('/api/v1/users/:id', async (req, res) =&gt; {
+  const startTime = Date.now();
+  const requestId = req.headers['x-request-id'];
+  
+  try {
+    logger.info({ requestId, userId: req.params.id }, 'Fetching user');
+    const user = await db.query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    
+    const duration = Date.now() - startTime;
+    logger.info({ requestId, duration }, 'User fetched successfully');
+    
+    res.json(user);
+  } catch (err) {
+    logger.error({ requestId, error: err.message }, 'User fetch failed');
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+</code></pre></div><p>Request IDs let you trace a single request across your entire system. Duration logs help identify slow queries. When something breaks at 3 AM, this data is invaluable.</p><h3>Monitor API Performance Metrics</h3><p>Track these metrics for every endpoint:</p><ul><li><strong>Response time (p50, p95, p99)</strong> — most users see p95, worst cases see p99</li><li><strong>Error rate</strong> — 5xx errors indicate backend problems</li><li><strong>Throughput</strong> — requests per second your backend handles</li><li><strong>Database query time</strong> — slow queries cascade to slow APIs</li></ul><p>I use Google Cloud Monitoring at Raybit, but Datadog, New Relic, or Prometheus work equally well. The key is <em>visibility</em>.</p><div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Set up alerts when p95 response time exceeds your SLA. At 500ms p95, you want to know immediately. React within minutes, not hours.</p></div><h2 id="key-takeaways">Key Takeaways</h2><ul><li><strong>Design REST APIs with versioning, consistent response shapes, and pagination</strong> — this foundation prevents breaking changes and keeps <strong>API performance</strong> predictable as you scale.</li><li><strong>Use connection pooling and parallel queries</strong> in your Node.js backend—sequential I/O is the silent killer of performance at scale.</li><li><strong>Implement Redis caching strategically</strong> for sessions, rate limiting, and expensive queries—this is how you go from 10K to 100K RPS without hardware scaling.</li><li><strong>Add structured logging and monitoring</strong> to your Node.js backend—you can't optimize what you can't measure, and you can't debug what you can't see.</li><li><strong>Full-stack development is about trade-offs</strong>—faster responses trade off against cache invalidation complexity; parallel queries trade off against connection pool limits. Know your constraints and design within them.</li></ul><div class="callout-warn"><p class="callout-label">⚠️ Common Mistake</p><p>Don't optimize prematurely. Measure first, optimize second. I've seen teams spend weeks tuning query performance when the real bottleneck was a missing database index or inefficient caching strategy.</p></div><p>Building production-grade <strong>full-stack development</strong> systems isn't magic—it's methodical design, deliberate trade-offs, and relentless monitoring. Start with solid <strong>REST API design</strong>, tune your <strong>Node.js backend</strong> with connection pooling and async patterns, layer on caching, and watch your <strong>API performance</strong> soar.</p><p>The systems I've shipped at Raybit, CodeBrew, and as a freelancer on Upwork all followed this playbook. It works.</p>`,
+  },
+
+  {
     slug: "clean-architecture-android",
     featured: true,
     icon: "📱",
