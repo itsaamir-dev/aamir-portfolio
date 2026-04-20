@@ -11,8 +11,7 @@ import { dirname, join } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = join(__dirname, "..");
 const DATA_FILE = join(ROOT, "lib", "data.ts");
-const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent";
+const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 
 // ── Author bio context ───────────────────────────────────────────────────────
 const BIO = `
@@ -54,30 +53,35 @@ function getExistingPosts(src) {
   return { slugs, titles };
 }
 
-// ── Call Gemini ──────────────────────────────────────────────────────────────
-async function callGemini(prompt) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY env var is not set.");
+// ── Call Claude API ──────────────────────────────────────────────────────────
+async function callClaude(prompt) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY env var is not set.");
 
-  const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+  const res = await fetch(CLAUDE_API_URL, {
     method:  "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type":            "application/json",
+      "x-api-key":               apiKey,
+      "anthropic-version":       "2023-06-01",
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.75, maxOutputTokens: 6000 },
+      model:      "claude-haiku-4-5-20251001",
+      max_tokens: 6000,
+      messages:   [{ role: "user", content: prompt }],
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Gemini API error ${res.status} ${res.statusText}: ${err}`);
+    throw new Error(`Claude API error ${res.status} ${res.statusText}: ${err}`);
   }
 
   const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  return data.content?.[0]?.text ?? "";
 }
 
-// ── Strip markdown code fences from Gemini JSON response ────────────────────
+// ── Strip markdown code fences from JSON response ────────────────────────────
 function parseResponse(raw) {
   const cleaned = raw.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim();
   return JSON.parse(cleaned);
@@ -139,7 +143,7 @@ async function main() {
   const seedKeywords        = SEO_KEYWORD_POOLS[category].join(", ");
 
   console.log(`📝  ${slugs.length} existing posts. Category: ${category}. Calling Gemini...`);
-  console.log(`🔗  Endpoint: ${GEMINI_URL}`);
+  console.log(`🤖  Model: claude-haiku-4-5-20251001`);
 
   const prompt = `
 You are writing an SEO-optimised blog post for Aamir Bashir, a senior software engineer.
@@ -189,7 +193,7 @@ Respond with ONLY valid JSON (no markdown fences), matching this exact schema:
 }
 `;
 
-  const raw = await callGemini(prompt);
+  const raw = await callClaude(prompt);
   console.log("✅  Gemini responded. Parsing...");
 
   let post;
