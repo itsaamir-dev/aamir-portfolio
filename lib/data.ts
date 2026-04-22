@@ -139,6 +139,258 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-state-management-jetpack-compose",
+    featured: false,
+    icon: "🎨",
+    cat: "android", catLabel: "Android",
+    date: "Apr 22, 2026", readTime: "7 min read",
+    title: "State Management in Jetpack Compose: Beyond the Basics",
+    excerpt: "Master advanced state management patterns in Jetpack Compose. Learn ViewModel integration, state hoisting, and real-world patterns from production apps.",
+    tags: ["Jetpack Compose","Android Development","State Management","Kotlin","Android Architecture"],
+    tocItems: [
+      {"id":"why-state-management-matters","label":"Why State Management Matters in Jetpack Compose"},
+      {"id":"state-hoisting-pattern","label":"The State Hoisting Pattern Explained"},
+      {"id":"viewmodel-integration","label":"ViewModel Integration with Compose"},
+      {"id":"real-world-patterns","label":"Real-World State Management Patterns"},
+      {"id":"common-pitfalls","label":"Common Pitfalls and How to Avoid Them"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-state-management-matters">Why State Management Matters in Jetpack Compose</h2>
+
+<p>When I first started working with <strong>Jetpack Compose</strong>, I made the same mistakes most developers do. I scattered state all over my composables, relied heavily on side effects, and wondered why my app felt sluggish and unpredictable. After shipping six production apps on the Play Store and managing a team of four engineers at Raybit, I've learned that <strong>state management is the backbone of maintainable Android development</strong>.</p>
+
+<p>The beauty of <strong>Jetpack Compose</strong> is that it forces you to think differently about UI state. Unlike the old View system where you'd manually update UI elements, Compose is declarative—your UI is a pure function of state. But this power comes with responsibility. Get your state architecture wrong, and you'll face recomposition nightmares, memory leaks, and bugs that are hell to debug.</p>
+
+<p>In this post, I'm sharing the exact state management patterns that helped me reduce bugs, improve team velocity, and build <strong>Android apps</strong> that scale. These aren't theoretical concepts—they're battle-tested approaches from real production code.</p>
+
+<h2 id="state-hoisting-pattern">The State Hoisting Pattern Explained</h2>
+
+<p>State hoisting is the foundation of proper <strong>Android architecture</strong> in Compose. The principle is simple: move state up to the lowest common ancestor that needs it. This creates a single source of truth and makes your composables reusable and testable.</p>
+
+<p>I learned this the hard way while building AudioBook AI, which has 50K+ users. Initially, I had state scattered across multiple nested composables. When I introduced a feature where users could bookmark chapters across multiple screens, the state sync became a nightmare. That's when I realized I needed to restructure using proper state hoisting.</p>
+
+<p>Here's the pattern:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// BAD: State locked in child composable
+@Composable
+fun BookshelfScreen() {
+    var selectedBook by remember { mutableStateOf&lt;Book?&gt;(null) }
+    // selectedBook is trapped here, child can't access it
+    BookItem(book = Book())
+}
+
+// GOOD: State hoisted to parent
+@Composable
+fun BookshelfScreen(viewModel: BookViewModel) {
+    val selectedBook by viewModel.selectedBook.collectAsState()
+    
+    BookList(
+        books = viewModel.books,
+        selectedBook = selectedBook,
+        onSelectBook = { viewModel.selectBook(it) }
+    )
+}
+
+@Composable
+fun BookList(
+    books: List&lt;Book&gt;,
+    selectedBook: Book?,
+    onSelectBook: (Book) -&gt; Unit
+) {
+    LazyColumn {
+        items(books) { book -&gt;
+            BookItem(
+                book = book,
+                isSelected = book.id == selectedBook?.id,
+                onClick = { onSelectBook(book) }
+            )
+        }
+    }
+}</code></pre></div>
+
+<p>Notice how in the good version, state flows down as parameters and callbacks flow up. This creates clear data flow—exactly what you want in <strong>Jetpack Compose</strong>. Your composables become stateless and testable. You can reuse <code>BookList</code> in different screens without worrying about state coupling.</p>
+
+<h2 id="viewmodel-integration">ViewModel Integration with Compose</h2>
+
+<p>Now, state hoisting gets more interesting when you introduce ViewModels. This is where <strong>Android architecture</strong> really shines. The ViewModel holds business logic and state that survives configuration changes, while Compose handles the presentation.</p>
+
+<p>At CodeBrew Labs, we built six production apps where the ViewModel + Compose combination was crucial. Here's the pattern we settled on after several iterations:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// ViewModel with proper state management
+class BookViewModel : ViewModel() {
+    private val _bookState = MutableStateFlow&lt;BookUiState&gt;(BookUiState.Loading)
+    val bookState: StateFlow&lt;BookUiState&gt; = _bookState.asStateFlow()
+    
+    private val _selectedBook = MutableStateFlow&lt;Book?&gt;(null)
+    val selectedBook: StateFlow&lt;Book?&gt; = _selectedBook.asStateFlow()
+    
+    fun loadBooks() {
+        viewModelScope.launch {
+            try {
+                _bookState.value = BookUiState.Loading
+                val books = repository.getBooks()
+                _bookState.value = BookUiState.Success(books)
+            } catch (e: Exception) {
+                _bookState.value = BookUiState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+    
+    fun selectBook(book: Book) {
+        _selectedBook.value = book
+    }
+}
+
+// Sealed class for type-safe UI state
+sealed class BookUiState {
+    object Loading : BookUiState()
+    data class Success(val books: List&lt;Book&gt;) : BookUiState()
+    data class Error(val message: String) : BookUiState()
+}
+
+// Composable consuming the ViewModel
+@Composable
+fun BookshelfScreen(
+    viewModel: BookViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.bookState.collectAsState()
+    val selectedBook by viewModel.selectedBook.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        viewModel.loadBooks()
+    }
+    
+    when (uiState) {
+        is BookUiState.Loading -&gt; LoadingScreen()
+        is BookUiState.Success -&gt; {
+            val books = (uiState as BookUiState.Success).books
+            BookList(
+                books = books,
+                selectedBook = selectedBook,
+                onSelectBook = { viewModel.selectBook(it) }
+            )
+        }
+        is BookUiState.Error -&gt; {
+            val message = (uiState as BookUiState.Error).message
+            ErrorScreen(message = message)
+        }
+    }
+}</code></pre></div>
+
+<p>This approach combines the best of both worlds. The ViewModel handles async operations, business logic, and configuration change survival using Kotlin Coroutines. Compose handles the declarative UI rendering. The <code>StateFlow</code> creates a reactive bridge between them.</p>
+
+<p>I used Hilt for dependency injection here, which we've found to be cleaner than Koin for most Android projects. Both work, but Hilt integrates better with the Android lifecycle.</p>
+
+<h2 id="real-world-patterns">Real-World State Management Patterns</h2>
+
+<h3>Pattern 1: Event-Driven State Updates</h3>
+
+<p>Sometimes you need to communicate one-off events (like showing a toast or navigation) separately from continuous state. I learned this building AI NoteTaker when users wanted to see a confirmation after saving notes.</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>sealed class BookEvent {
+    data class ShowMessage(val message: String) : BookEvent()
+    data class NavigateToDetail(val bookId: String) : BookEvent()
+}
+
+class BookViewModel : ViewModel() {
+    private val _events = MutableSharedFlow&lt;BookEvent&gt;()
+    val events = _events.asSharedFlow()
+    
+    fun saveBook(book: Book) {
+        viewModelScope.launch {
+            try {
+                repository.saveBook(book)
+                _events.emit(BookEvent.ShowMessage("Book saved!"))
+            } catch (e: Exception) {
+                _events.emit(BookEvent.ShowMessage("Error: \${e.message}"))
+            }
+        }
+    }
+}
+
+@Composable
+fun BookDetailScreen(viewModel: BookViewModel = hiltViewModel()) {
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event -&gt;
+            when (event) {
+                is BookEvent.ShowMessage -&gt; showToast(event.message)
+                is BookEvent.NavigateToDetail -&gt; navigate(event.bookId)
+            }
+        }
+    }
+}</code></pre></div>
+
+<h3>Pattern 2: Scoped State with remember</h3>
+
+<p>Not all state belongs in a ViewModel. Local UI state like whether a dropdown is open should use <code>remember</code>. This keeps your composables fast and avoids unnecessary ViewModel bloat.</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun FilterPanel() {
+    var isExpanded by remember { mutableStateOf(false) }
+    var selectedGenre by remember { mutableStateOf&lt;String?&gt;(null) }
+    
+    Column {
+        Button(onClick = { isExpanded = !isExpanded }) {
+            Text("Filters")
+        }
+        
+        if (isExpanded) {
+            GenreDropdown(
+                selected = selectedGenre,
+                onSelect = { selectedGenre = it }
+            )
+        }
+    }
+}</code></pre></div>
+
+<h3>Pattern 3: ViewModel with Multiple State Holders</h3>
+
+<p>For complex screens (like Nova Cabs ride booking), I structure the ViewModel with multiple \`StateFlow\` objects representing different domains.</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>class RideViewModel : ViewModel() {
+    // Location state
+    private val _pickupLocation = MutableStateFlow&lt;Location?&gt;(null)
+    val pickupLocation = _pickupLocation.asStateFlow()
+    
+    // Ride state
+    private val _availableRides = MutableStateFlow&lt;List&lt;Ride&gt;&gt;(emptyList())
+    val availableRides = _availableRides.asStateFlow()
+    
+    // Booking state
+    private val _bookingState = MutableStateFlow&lt;BookingState&gt;(BookingState.Idle)
+    val bookingState = _bookingState.asStateFlow()
+    
+    fun searchRides(pickup: Location, dropoff: Location) {
+        viewModelScope.launch {
+            _availableRides.value = repository.searchRides(pickup, dropoff)
+        }
+    }
+}</code></pre></div>
+
+<h2 id="common-pitfalls">Common Pitfalls and How to Avoid Them</h2>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Pitfall 1: Over-recomposition</p><p>Every time a StateFlow emits, <strong>all composables</strong> observing it recompose. If you have a single state object holding everything, innocent changes trigger expensive recompositions. <strong>Solution:</strong> Split state into smaller, focused flows. Use <code>remember { derivedStateOf { } }</code> for computed values.</p></div>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Pitfall 2: Forgetting viewModelScope.launch</p><p>Using regular <code>GlobalScope.launch</code> or <code>lifecycleScope</code> in a ViewModel is a memory leak waiting to happen. <strong>Always</strong> use <code>viewModelScope.launch</code> so coroutines cancel when the ViewModel is cleared.</p></div>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Pitfall 3: Mutable State Leaking Upstream</p><p>Never expose a <code>MutableStateFlow</code> or <code>MutableLiveData</code> to your UI layer. Always return the immutable version via <code>.asStateFlow()</code> or <code>.asLiveData()</code>. This prevents the UI from modifying state unexpectedly.</p></div>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>At our squad at Raybit, we enforced that <strong>only ViewModels modify state</strong>. Composables read state and send intents. This single rule cut our debugging time by 40% because the dataflow was always predictable.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>State hoisting is fundamental:</strong> Move state to the lowest common ancestor that needs it. This makes composables reusable, testable, and your <strong>Android architecture</strong> clean.</li>
+<li><strong>ViewModels are for business logic and persistence:</strong> Use them to hold state that survives configuration changes, manage coroutines, and handle async operations. Pair them with <code>StateFlow</code> for reactive <strong>Jetpack Compose</strong> integration.</li>
+<li><strong>Use sealed classes for UI state:</strong> Type-safe state management prevents bugs and makes your code self-documenting. No more boolean flags signaling different states.</li>
+<li><strong>Split state by domain:</strong> Don't cram everything into one mega-StateFlow. Multiple focused flows reduce unnecessary recompositions and keep your <strong>Kotlin</strong> code maintainable.</li>
+<li><strong>Separate events from state:</strong> Use <code>SharedFlow</code> for one-off events like navigation or notifications, keeping your <strong>Jetpack Compose</strong> UI predictable and your state clean.</li>
+</ul>
+
+<p><strong>State management isn't sexy, but it's what separates production-grade Android apps from hobby projects.</strong> Get this right, and everything else becomes easier. Your team moves faster, your crash rate drops, and you actually enjoy maintaining the code months later.</p>`,
+  },
+
+  {
     slug: "freelance-software-engineer-scaling-client-base",
     featured: false,
     icon: "📈",
