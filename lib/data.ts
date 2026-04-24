@@ -139,6 +139,226 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-dependency-injection-hilt-koin-production",
+    featured: false,
+    icon: "🔧",
+    cat: "android", catLabel: "Android",
+    date: "Apr 24, 2026", readTime: "6 min read",
+    title: "Mastering Dependency Injection in Android: Hilt vs Koin",
+    excerpt: "Learn production-grade dependency injection patterns for Android development. Compare Hilt and Koin with real code examples from apps handling 50K+ users.",
+    tags: ["Android Development","Kotlin","Dependency Injection","Hilt","Koin"],
+    tocItems: [
+      {"id":"why-di-matters","label":"Why Dependency Injection Matters in Android Development"},
+      {"id":"hilt-deep-dive","label":"Hilt: Google's Official Approach"},
+      {"id":"koin-practical","label":"Koin: The Pragmatic Alternative"},
+      {"id":"real-world-comparison","label":"Real-World Comparison from Production Apps"},
+      {"id":"migration-strategies","label":"Migration Strategies for Existing Projects"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-di-matters">Why Dependency Injection Matters in Android Development</h2>
+
+<p>When I started my career in Android development eight years ago, I didn't understand why dependency injection was such a big deal. I'd hardcode database instances, create singletons everywhere, and wonder why my unit tests were brittle and my apps crashed in production.</p>
+
+<p>That changed when I joined CodeBrew Labs and took over a codebase with 6 production apps on the Play Store. One of those apps had a 12% crash rate. The culprit? Tightly coupled dependencies that made testing impossible and created subtle lifecycle bugs that only appeared in real user scenarios.</p>
+
+<p>Today, <strong>dependency injection (DI) is non-negotiable</strong> for any serious Android project. It's the foundation of clean architecture in Android and makes the difference between code that works and code that scales. In this post, I'll share everything I've learned about implementing DI in production Android apps—both Hilt and Koin—based on real experience with apps serving 50K+ users.</p>
+
+<h2 id="hilt-deep-dive">Hilt: Google's Official Approach</h2>
+
+<p>Hilt is Google's opinionated dependency injection framework built on top of Dagger 2. When it was released, I was skeptical—Dagger had a steep learning curve and generated confusing compilation errors. But Hilt changed that. It's designed specifically for Android and removes 90% of the boilerplate.</p>
+
+<h3>Why I Chose Hilt for EmpSuite ERP</h3>
+
+<p>For EmpSuite, our enterprise resource planning platform, I needed a DI solution that could handle complex dependency graphs without sacrificing compile time. Hilt fit perfectly because:</p>
+
+<ul>
+<li>Built-in Android component integration (Activities, Fragments, Services, BroadcastReceivers)</li>
+<li>Automatic lifecycle management tied to Android components</li>
+<li>Excellent compile-time safety and error messages</li>
+<li>Official Google support and long-term stability</li>
+<li>Works seamlessly with modern Android architecture patterns</li>
+</ul>
+
+<p>Here's a practical example of how I set up Hilt in a production Android app:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// Step 1: Add @HiltAndroidApp to your Application class
+@HiltAndroidApp
+class MyApplication : Application()
+
+// Step 2: Create a module for database dependencies
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+    @Singleton
+    @Provides
+    fun provideAppDatabase(context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "app_database"
+        ).build()
+    }
+
+    @Singleton
+    @Provides
+    fun provideUserDao(database: AppDatabase): UserDao {
+        return database.userDao()
+    }
+}
+
+// Step 3: Create a repository module
+@Module
+@InstallIn(SingletonComponent::class)
+object RepositoryModule {
+    @Singleton
+    @Provides
+    fun provideUserRepository(
+        userDao: UserDao,
+        apiService: ApiService
+    ): UserRepository {
+        return UserRepository(userDao, apiService)
+    }
+}
+
+// Step 4: Inject in your Activity or ViewModel
+@HiltViewModel
+class UserViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
+    fun loadUsers() {
+        // userRepository is automatically injected
+    }
+}</code></pre></div>
+
+<p>This setup ensures that <code>UserRepository</code> is created once, lives for the entire app lifecycle, and is automatically provided whenever needed. No manual instantiation, no memory leaks.</p>
+
+<h3>When Hilt Feels Like Overkill</h3>
+
+<p>I'll be honest—Hilt has trade-offs. The annotation processing adds compile time. If you're working on a small side project or a simple feature module, the overhead might not be worth it. I've had projects where compile time jumped from 45 seconds to 75 seconds after integrating Hilt across a large codebase.</p>
+
+<h2 id="koin-practical">Koin: The Pragmatic Alternative</h2>
+
+<p>Koin is a service locator framework that uses a DSL to define dependencies. It's runtime-based, which means no annotation processing and significantly faster builds. I used Koin extensively in my freelance work on Upwork because clients often had tight deadlines and needed rapid iterations.</p>
+
+<h3>Setting Up Koin for Quick Prototyping</h3>
+
+<p>For AudioBook AI (which grew to 50K+ users), I started with Koin because I needed to move fast and didn't know the full dependency graph upfront. Here's how I structured it:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// Step 1: Define your modules
+val appModule = module {
+    // Singletons
+    single { AppDatabase.getDatabase(androidContext()) }
+    single { get&lt;AppDatabase&gt;().userDao() }
+    
+    // Repositories
+    single { UserRepository(get()) }
+    single { BookRepository(get()) }
+    
+    // ViewModels
+    viewModel { UserViewModel(get()) }
+    viewModel { BookViewModel(get()) }
+}
+
+val networkModule = module {
+    single { OkHttpClient.Builder().build() }
+    single { 
+        Retrofit.Builder()
+            .baseUrl("https://api.example.com")
+            .client(get())
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+    single { get&lt;Retrofit&gt;().create(ApiService::class.java) }
+}
+
+// Step 2: Start Koin in your Application class
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@MyApplication)
+            modules(appModule, networkModule)
+        }
+    }
+}
+
+// Step 3: Inject in your Activities/Fragments
+class UserActivity : AppCompatActivity() {
+    private val userViewModel: UserViewModel by viewModel()
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // userViewModel is ready to use
+    }
+}</code></pre></div>
+
+<p>The beauty of Koin is <em>simplicity and flexibility</em>. You can reorganize your dependency graph without recompiling. For iterative development, this is invaluable.</p>
+
+<h3>The Hidden Cost of Runtime Resolution</h3>
+
+<p>Here's where I'd caution you: Koin resolves dependencies at runtime. If you have a missing dependency, you'll discover it when that code path executes, not at compile time. In large teams, this can lead to subtle bugs slipping into production.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Watch Out</p><p>I once had a Koin dependency misconfiguration that only surfaced when a specific user flow triggered it in production. No unit test caught it because the test never instantiated that class. Hilt would have caught this at compile time.</p></div>
+
+<h2 id="real-world-comparison">Real-World Comparison from Production Apps</h2>
+
+<p>After leading a 4-engineer squad at Raybit Technologies, I've seen both frameworks in large production codebases. Here's my unfiltered comparison:</p>
+
+<h3>Hilt Advantages</h3>
+<ul>
+<li><strong>Compile-time safety:</strong> Missing dependencies cause build failures, not runtime crashes</li>
+<li><strong>Built-in Android integration:</strong> Automatic lifecycle binding for Activities, Fragments, Services</li>
+<li><strong>Scoping:</strong> Easy to define component-scoped dependencies (Activity-scoped, Fragment-scoped)</li>
+<li><strong>Team safety:</strong> Harder for junior developers to make mistakes</li>
+<li><strong>Long-term support:</strong> Google maintains it as part of Jetpack</li>
+</ul>
+
+<h3>Koin Advantages</h3>
+<ul>
+<li><strong>Build speed:</strong> No annotation processing, significantly faster compilation</li>
+<li><strong>Learning curve:</strong> DSL is easier to understand than Dagger/Hilt annotations</li>
+<li><strong>Flexibility:</strong> Runtime resolution allows dynamic dependency swapping</li>
+<li><strong>Small projects:</strong> Perfect for MVPs and prototype apps</li>
+<li><strong>Kotlin-first:</strong> Designed with Kotlin idioms in mind</li>
+</ul>
+
+<blockquote><p><em>"After 8 years of Android development, my rule is simple: use Hilt for production apps with multiple engineers. Use Koin for solo projects, MVPs, and rapid prototyping."</em></p></blockquote>
+
+<h2 id="migration-strategies">Migration Strategies for Existing Projects</h2>
+
+<p>If you're using legacy dependency injection (or no DI at all), migrating to a modern solution is challenging but worth it. I led a migration on one of CodeBrew's apps that reduced crash rate by 35% just by improving dependency lifecycle management.</p>
+
+<h3>Incremental Migration to Hilt</h3>
+
+<p>Don't rip and replace. Do this:</p>
+
+<ol>
+<li><strong>Start with one feature module:</strong> Add Hilt to a single, isolated feature first</li>
+<li><strong>Migrate data layer first:</strong> Move database and API clients to Hilt modules</li>
+<li><strong>Then repositories:</strong> Inject repositories into ViewModels</li>
+<li><strong>Finally, Activities/Fragments:</strong> Last step is wiring up the UI layer</li>
+</ol>
+
+<p>This approach lets you test each layer independently and catch issues before they affect the entire app.</p>
+
+<h3>Keeping Koin for Specific Modules</h3>
+
+<p>You can also run both frameworks in the same app. One of our Raybit projects used Hilt for the core app and Koin for a legacy module that wasn't worth rewriting. It worked, but adds complexity—I only recommend this if you have no choice.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>When migrating, write integration tests for your dependency graph. I use a simple test that verifies all major components can be instantiated. It catches 80% of DI issues before they reach QA.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Dependency Injection is foundational to Android architecture.</strong> It enables testing, scales with team size, and prevents lifecycle-related crashes. I wouldn't ship a production app without it.</li>
+<li><strong>Choose Hilt for production teams, Koin for solo/rapid development.</strong> Hilt's compile-time safety wins in large codebases. Koin's simplicity and build speed win for quick iterations and MVPs.</li>
+<li><strong>Migration is incremental, not overnight.</strong> Start with the data layer, move up the stack. Your existing code doesn't need to be perfect—DI frameworks integrate with legacy code.</li>
+<li><strong>Invest in test infrastructure.</strong> Good DI means better testability. The real win isn't just cleaner code—it's unit tests that actually catch bugs before production.</li>
+<li><strong>Both frameworks are mature and production-ready.</strong> Pick one and learn it deeply rather than switching between them. Mastery matters more than the choice.</li>
+</ul>`,
+  },
+
+  {
     slug: "android-state-management-jetpack-compose",
     featured: false,
     icon: "🎨",
