@@ -4,7 +4,7 @@ import Reveal from "@/components/RevealOnScroll";
 const links = [
   { icon: "✉",  label: "aamirbashir.ahangar@gmail.com", href: "mailto:aamirbashir.ahangar@gmail.com" },
   { icon: "📞", label: "+91-7006597966",                 href: "tel:+917006597966" },
-  { icon: "⌥",  label: "github.com/huzuhuzair",          href: "https://github.com/huzuhuzair" },
+  { icon: "⌥",  label: "github.com/itsaamir-dev",         href: "https://github.com/itsaamir-dev" },
   { icon: "in", label: "linkedin.com/in/itsaamirbashir", href: "https://linkedin.com/in/itsaamirbashir" },
 ];
 
