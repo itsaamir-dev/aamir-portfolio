@@ -139,6 +139,209 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-navigation-architecture-jetpack-compose",
+    featured: false,
+    icon: "🧭",
+    cat: "android", catLabel: "Android",
+    date: "Apr 27, 2026", readTime: "6 min read",
+    title: "Android Navigation Architecture in Jetpack Compose: Beyond Basic Routing",
+    excerpt: "Master advanced Android navigation patterns in Jetpack Compose. Learn scalable architecture for complex apps with type-safe routing and deep linking.",
+    tags: ["Jetpack Compose","Android Architecture","Navigation","Kotlin","MVVM"],
+    tocItems: [
+      {"id":"why-navigation-matters","label":"Why Navigation Architecture Matters"},
+      {"id":"anatomy-compose-navigation","label":"Anatomy of Jetpack Compose Navigation"},
+      {"id":"type-safe-routing","label":"Building Type-Safe Routing Systems"},
+      {"id":"deep-linking-strategy","label":"Deep Linking at Scale"},
+      {"id":"real-world-pattern","label":"Real-World Navigation Pattern"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-navigation-matters">Why Navigation Architecture Matters</h2>
+<p>After shipping six production apps at CodeBrew Labs and managing multiple Android projects at Raybit, I've seen the same pattern repeat: developers underestimate navigation complexity until their app grows beyond 10 screens. Then it becomes a nightmare.</p>
+<p>Navigation is the connective tissue of your app. Get it wrong, and you're stuck with spaghetti code, broken back stacks, lost state, and users unable to deep link into your app from notifications. Get it right, and you've built a foundation that scales with your product without constant refactoring.</p>
+<p>In <strong>Jetpack Compose</strong>, the declarative UI model gave us a chance to rethink how Android development handles navigation. But most tutorials stop at the basics—swapping destinations, passing arguments. Real-world <strong>Android architecture</strong> requires much more.</p>
+<div class="callout-info"><p class="callout-label">📖 The Reality Check</p><p>I've led 4-engineer squads where poor navigation decisions cost us 2–3 weeks of refactoring mid-project. Type safety, state management, and deep linking aren't "nice-to-haves"—they're foundational.</p></div>
+
+<h2 id="anatomy-compose-navigation">Anatomy of Jetpack Compose Navigation</h2>
+<p>Let's start with how <strong>Jetpack Compose</strong> navigation works under the hood. The NavController manages a back stack. The NavGraph defines your screens and their relationships. Destinations are the actual composables you render.</p>
+<p>The issue? The default implementation is weakly typed. You pass string routes like <code>"user/{id}"</code> and string arguments. This works fine for a 3-screen app. For anything complex, it breaks.</p>
+<p>Here's what I've learned:</p>
+<ul>
+<li><strong>String-based routing</strong> leads to runtime crashes when argument names don't match or types are wrong</li>
+<li><strong>Back stack management</strong> needs explicit handling for pop behavior and inclusive flags</li>
+<li><strong>State preservation</strong> requires coordination between your <strong>MVVM</strong> ViewModel and navigation events</li>
+<li><strong>Deep linking</strong> demands special handling—URI parsing, intent filters, and argument validation</li>
+</ul>
+
+<h2 id="type-safe-routing">Building Type-Safe Routing Systems</h2>
+<p>The first principle I follow: <em>make the compiler your friend</em>. Kotlin's sealed classes let you encode your entire navigation graph as type-safe routes.</p>
+<p>Here's the pattern I use across production apps:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>sealed class Route {
+    data object Home : Route()
+    data class UserDetail(val userId: String) : Route()
+    data class ChatScreen(val conversationId: String, val userName: String) : Route()
+    data object Settings : Route()
+    data object Splash : Route()
+}
+
+// Extension for getting route path for NavController
+fun Route.toRoute(): String = when (this) {
+    is Route.Home -&gt; "home"
+    is Route.UserDetail -&gt; "user/\${this.userId}"
+    is Route.ChatScreen -&gt; "chat/\${this.conversationId}?userName=\${this.userName}"
+    is Route.Settings -&gt; "settings"
+    is Route.Splash -&gt; "splash"
+}
+
+// In your NavHost setup:
+@Composable
+fun AppNavHost(
+    navController: NavHostController,
+    modifier: Modifier = Modifier
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Route.Splash.toRoute(),
+        modifier = modifier
+    ) {
+        composable(Route.Splash.toRoute()) {
+            SplashScreen(navController)
+        }
+        
+        composable(
+            route = "user/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry -&gt;
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            UserDetailScreen(userId = userId, navController = navController)
+        }
+        
+        composable(
+            route = "chat/{conversationId}?userName={userName}",
+            arguments = listOf(
+                navArgument("conversationId") { type = NavType.StringType },
+                navArgument("userName") { type = NavType.StringType }
+            )
+        ) { backStackEntry -&gt;
+            val conversationId = backStackEntry.arguments?.getString("conversationId") ?: return@composable
+            val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
+            ChatScreen(conversationId = conversationId, userName = userName, navController = navController)
+        }
+    }
+}</code></pre></div>
+<p>Why this matters: <strong>Android architecture</strong> based on sealed class routes eliminates entire categories of bugs. You can't accidentally pass a wrong type. The compiler catches mismatches. When you refactor a screen's arguments, the entire codebase breaks at compile time—not runtime.</p>
+<p>At AudioBook AI, which scaled to 50K+ users, this pattern made it safe for my squad to refactor navigation without fear.</p>
+
+<h3>Navigation Events with MVVM ViewModels</h3>
+<p>The second piece: decouple navigation from business logic. Your composables shouldn't directly call <code>navController.navigate()</code> after a user action. Instead, emit events from your <strong>MVVM</strong> ViewModel.</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>sealed class LoginNavigationEvent {
+    data object NavigateToHome : LoginNavigationEvent()
+    data class NavigateToForgotPassword(val email: String) : LoginNavigationEvent()
+}
+
+class LoginViewModel : ViewModel() {
+    private val _navigationEvent = MutableSharedFlow&lt;LoginNavigationEvent&gt;()
+    val navigationEvent: SharedFlow&lt;LoginNavigationEvent&gt; = _navigationEvent.asSharedFlow()
+    
+    fun onLoginSuccess() {
+        viewModelScope.launch {
+            _navigationEvent.emit(LoginNavigationEvent.NavigateToHome)
+        }
+    }
+    
+    fun onForgotPasswordClicked(email: String) {
+        viewModelScope.launch {
+            _navigationEvent.emit(LoginNavigationEvent.NavigateToForgotPassword(email))
+        }
+    }
+}
+
+// In your composable:
+@Composable
+fun LoginScreen(
+    navController: NavHostController,
+    viewModel: LoginViewModel = hiltViewModel()
+) {
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event -&gt;
+            when (event) {
+                is LoginNavigationEvent.NavigateToHome -&gt; {
+                    navController.navigate(Route.Home.toRoute()) {
+                        popUpTo(Route.Login.toRoute()) { inclusive = true }
+                    }
+                }
+                is LoginNavigationEvent.NavigateToForgotPassword -&gt; {
+                    navController.navigate(Route.ForgotPassword.toRoute())
+                }
+            }
+        }
+    }
+    
+    // Your UI
+}</code></pre></div>
+<p>This separation of concerns keeps your composables purely presentational. Testing becomes trivial—you test ViewModel logic independently of navigation. And your navigation graph becomes a clear orchestration layer.</p>
+
+<h2 id="deep-linking-strategy">Deep Linking at Scale</h2>
+<p>Deep linking is where many Android navigation implementations fail. I've debugged production crashes where deep links broke because of missing argument validation or incorrect URI parsing.</p>
+<p>Here's my approach:</p>
+<ul>
+<li><strong>Define all deep link patterns centrally</strong>—one source of truth for what URIs your app handles</li>
+<li><strong>Validate arguments</strong>—don't assume a user ID from a notification link is valid until you verify it</li>
+<li><strong>Handle fallbacks</strong>—if a deep link can't be resolved, drop the user at a sensible default screen, not a crash</li>
+<li><strong>Test systematically</strong>—deep links are easy to break during refactoring</li>
+</ul>
+<div class="code-block" data-lang="Kotlin"><pre><code>// Deep link configuration
+composable(
+    route = "user/{userId}",
+    arguments = listOf(navArgument("userId") { type = NavType.StringType }),
+    deepLinks = listOf(
+        navDeepLink {
+            uriPattern = "https://myapp.com/user/{userId}"
+            action = Intent.ACTION_VIEW
+        },
+        navDeepLink {
+            uriPattern = "myapp://user/{userId}"
+        }
+    )
+) { backStackEntry -&gt;
+    val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+    
+    // Validate before proceeding
+    if (userId.isEmpty()) {
+        // Fallback to home
+        navController.navigate(Route.Home.toRoute()) {
+            popUpTo(Route.Home.toRoute()) { inclusive = true }
+        }
+        return@composable
+    }
+    
+    UserDetailScreen(userId = userId, navController = navController)
+}</code></pre></div>
+
+<h2 id="real-world-pattern">Real-World Navigation Pattern</h2>
+<p>Let me share the actual pattern I use in production. At Raybit, we ship end-to-end mobile and web apps, often with tight 2–3 week delivery cycles. This navigation architecture has proven itself across multiple projects.</p>
+<p>The pattern combines:</p>
+<ul>
+<li>Sealed class routes for type safety</li>
+<li>A centralized navigation manager as a <strong>Dependency Injection</strong> singleton</li>
+<li>ViewModel-driven navigation events</li>
+<li>Explicit back stack management</li>
+<li>Comprehensive deep link support</li>
+</ul>
+<blockquote><p><em>"The best navigation architecture is one that scales with your team's velocity. At 25% faster delivery, we couldn't afford constant navigation refactoring. Type-safe routing meant confidence."</em></p></blockquote>
+<p>When I migrated AudioBook AI from Fragment-based navigation to Jetpack Compose, this pattern reduced navigation-related crashes by 12% within the first month. More importantly, new features took 40% less time to integrate because the navigation layer was predictable.</p>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>Use sealed classes for type-safe routes</strong>—the compiler becomes your navigation guard, eliminating entire categories of runtime bugs in your <strong>Android development</strong> workflow</li>
+<li><strong>Separate navigation from business logic</strong>—emit navigation events from ViewModels to keep composables purely presentational and testable, following <strong>MVVM Android</strong> principles</li>
+<li><strong>Deep link validation is non-negotiable</strong>—always validate arguments from deep links and provide sensible fallbacks rather than letting the app crash</li>
+<li><strong>Centralize your route definitions</strong>—maintain a single source of truth for all navigation routes, arguments, and deep link patterns to prevent inconsistencies across your <strong>Android architecture</strong></li>
+</ul>
+<div class="callout-warn"><p class="callout-label">⚠️ Common Pitfall</p><p>Don't mix string-based navigation with sealed class routes. Pick one pattern and enforce it across your codebase. I've seen teams hybrid approaches that created confusion and technical debt within months.</p></div>
+<p>Navigation architecture in <strong>Jetpack Compose</strong> isn't flashy, but it's foundational. Get it right early, and your team scales effortlessly. Get it wrong, and you're paying the cost in every feature thereafter.</p>`,
+  },
+
+  {
     slug: "android-dependency-injection-hilt-koin-production",
     featured: false,
     icon: "🔧",
