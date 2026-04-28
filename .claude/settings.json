@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip3 install *)",
+      "Bash(python3 -c ' *)",
+      "Bash(vercel inspect *)",
+      "Bash(vercel switch *)"
+    ]
+  }
+}
