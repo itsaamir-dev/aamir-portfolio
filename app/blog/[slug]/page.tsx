@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { blogPosts } from "@/lib/data";
 import BlogPostClient from "./BlogPostClient";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.itsaamir.dev";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://itsaamir.dev";
 
 export async function generateStaticParams() {
   return blogPosts.map(p => ({ slug: p.slug }));
