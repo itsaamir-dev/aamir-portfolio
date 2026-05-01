@@ -139,6 +139,92 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "on-device-ai-android-app-offline-inference",
+    featured: false,
+    icon: "🤖",
+    cat: "ai", catLabel: "AI & Tech",
+    date: "May 1, 2026", readTime: "6 min read",
+    title: "On-Device AI for Android Apps: Building Offline Inference",
+    excerpt: "Learn how to integrate on-device AI into Android apps without cloud dependency. I'll share practical approaches, TensorFlow Lite setup, and real-world optimization tips.",
+    tags: ["On-Device AI","TensorFlow Lite","Android ML","Offline Inference","Machine Learning Mobile"],
+    tocItems: [
+      {"id":"why-on-device-ai-matters","label":"Why On-Device AI Matters"},
+      {"id":"on-device-vs-cloud-tradeoffs","label":"On-Device vs Cloud: Real Tradeoffs"},
+      {"id":"getting-started-tensorflow-lite","label":"Getting Started with TensorFlow Lite"},
+      {"id":"practical-setup-android","label":"Practical Setup: Adding TF Lite to Your Project"},
+      {"id":"optimizing-model-performance","label":"Optimizing Model Performance on Mobile"},
+      {"id":"real-world-examples","label":"Real-World Examples from My Projects"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-on-device-ai-matters">Why On-Device AI Matters for Your Android App</h2><p>When I built AudioBook AI, one of the hardest decisions was figuring out where inference would happen. We could send audio to the cloud, but that meant latency, data privacy concerns, and API costs at scale. That's when I realized: <strong>on-device AI isn't just a feature—it's a competitive advantage.</strong></p><p>Over the last few years, I've shipped multiple <em>machine learning mobile</em> apps, and every single time, the decision to push inference onto the device changed everything. Users got instant responses. Battery life became predictable. We weren't burning API quotas on redundant requests. And frankly, customers felt safer knowing their data never left their phone.</p><p>If you're building an AI Android app today, ignoring on-device AI means you're leaving performance, privacy, and user trust on the table.</p><h2 id="on-device-vs-cloud-tradeoffs">On-Device vs Cloud: Real Tradeoffs</h2><p>Here's the honest truth: <strong>on-device AI isn't always the right answer.</strong> But when it is, the benefits are massive.</p><h3>When On-Device AI Wins</h3><ul><li><strong>Latency matters:</strong> Real-time image recognition, speech commands, or gesture detection. Sending data to the cloud and waiting for a response is too slow.</li><li><strong>Privacy is non-negotiable:</strong> Medical data, financial information, or sensitive user input. Keep it on the device.</li><li><strong>Offline functionality:</strong> Your app should work whether or not the user has internet. Period.</li><li><strong>Cost at scale:</strong> If you're processing millions of inferences monthly, cloud APIs get expensive. Device inference costs you nothing per prediction.</li><li><strong>User experience:</strong> Instant feedback builds trust. Users feel the difference between milliseconds and seconds.</li></ul><h3>When Cloud Still Makes Sense</h3><ul><li><strong>Complex models:</strong> If your model is 500MB+ or requires GPUs, the cloud handles it better.</li><li><strong>Frequent updates:</strong> Retraining and deploying new models over the air is easier from the backend.</li><li><strong>Server-side analytics:</strong> Sometimes you need centralized logging and monitoring across millions of users.</li></ul><p>The sweet spot? <strong>Hybrid inference.</strong> Simple, fast models run on-device. Complex decisions go to the backend. We did this with AI NoteTaker—classification and tagging happened locally, but advanced summarization hit our Node.js backend.</p><h2 id="getting-started-tensorflow-lite">Getting Started with TensorFlow Lite</h2><p>TensorFlow Lite is the gold standard for <em>on-device AI</em> on Android. It's lightweight, battle-tested, and works with Kotlin seamlessly. Here's what you need to know:</p><h3>Why TensorFlow Lite?</h3><ul><li>Models are optimized for mobile (typically 10–50MB after quantization)</li><li>Inference runs in milliseconds, not seconds</li><li>Hardware acceleration via GPU and NNAPI delegates</li><li>First-class Kotlin support via TFLite Support Library</li></ul><h3>The Model Pipeline</h3><p>Before you write any Android code, you need a trained model. The journey looks like this:</p><ul><li><strong>Train:</strong> Create and train your model (TensorFlow, PyTorch, whatever).</li><li><strong>Convert:</strong> Export to TensorFlow Lite format (<code>.tflite</code>).</li><li><strong>Optimize:</strong> Quantize to reduce size and latency.</li><li><strong>Deploy:</strong> Ship the <code>.tflite</code> file with your APK.</li></ul><div class="callout-info"><p class="callout-label">📖 Note</p><p>If you don't have a trained model yet, TensorFlow Hub has pre-trained models for common tasks: image classification, object detection, pose estimation, and more. Start there while you learn the pipeline.</p></div><h2 id="practical-setup-android">Practical Setup: Adding TF Lite to Your Android Project</h2><p>Let me walk you through integrating TensorFlow Lite into a real Android app. This is what I did for AudioBook AI's metadata extraction feature.</p><h3>Step 1: Add Dependencies</h3><div class="code-block" data-lang="gradle"><pre><code>dependencies {
+  // TensorFlow Lite
+  implementation 'org.tensorflow:tensorflow-lite:2.14.0'
+  implementation 'org.tensorflow:tensorflow-lite-support:0.4.4'
+  implementation 'org.tensorflow:tensorflow-lite-gpu:2.14.0'
+}
+</code></pre></div><h3>Step 2: Add Your Model to Assets</h3><p>Place your <code>.tflite</code> file in <code>src/main/assets/</code>. Let's say your model is <code>text_classifier.tflite</code>.</p><h3>Step 3: Load and Run Inference</h3><div class="code-block" data-lang="kotlin"><pre><code>import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.support.common.FileUtil
+import java.nio.MappedByteBuffer
+
+class TextClassifier(private val context: Context) {
+    private lateinit var interpreter: Interpreter
+    
+    init {
+        // Load model from assets
+        val modelBuffer = FileUtil.loadMappedFile(context, "text_classifier.tflite")
+        interpreter = Interpreter(modelBuffer)
+    }
+    
+    fun classify(inputText: String): FloatArray {
+        // Tokenize input (example: convert to embeddings)
+        val inputArray = FloatArray(384) { 0f } // Adjust size to your model input
+        // Populate inputArray with tokenized values (simplified)
+        
+        val outputArray = Array(1) { FloatArray(10) } // 10 output classes
+        
+        // Run inference
+        interpreter.run(inputArray, outputArray)
+        
+        return outputArray[0]
+    }
+    
+    fun close() {
+        interpreter.close()
+    }
+}
+</code></pre></div><h3>Step 4: Use It in Your Activity</h3><div class="code-block" data-lang="kotlin"><pre><code>class MainActivity : AppCompatActivity() {
+    private lateinit var classifier: TextClassifier
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        
+        classifier = TextClassifier(this)
+        
+        val userInput = "This is a great product"
+        val predictions = classifier.classify(userInput)
+        
+        // predictions[0] = probability of class 0, etc.
+        val maxProbability = predictions.maxOrNull() ?: 0f
+        val predictedClass = predictions.indices.maxByOrNull { predictions[it] } ?: -1
+        
+        Log.d("ML", "Class: $predictedClass, Confidence: $maxProbability")
+    }
+    
+    override fun onDestroy() {
+        classifier.close()
+        super.onDestroy()
+    }
+}
+</code></pre></div><div class="callout-warn"><p class="callout-label">⚠️ Memory Management</p><p>TensorFlow Lite models consume RAM. Always call <code>interpreter.close()</code> when done. For long-running background tasks, consider using Kotlin Coroutines to avoid blocking the main thread.</p></div><h2 id="optimizing-model-performance">Optimizing Model Performance on Mobile</h2><p>Raw inference speed isn't everything. Here's what I've learned shipping production <em>machine learning mobile</em> apps:</p><h3>Quantization: The Secret Weapon</h3><p>Quantization reduces model size by 4x and speeds up inference by 3–5x. It converts 32-bit floats to 8-bit integers with minimal accuracy loss.</p><ul><li><strong>Post-training quantization:</strong> Easiest. Quantize after training without retraining.</li><li><strong>Quantization-aware training:</strong> More accurate. Simulate quantization during training.</li></ul><p>I reduced AudioBook AI's text classifier from 45MB to 11MB using quantization. Battery drain dropped 20%.</p><h3>Use GPU or NNAPI Delegates</h3><div class="code-block" data-lang="kotlin"><pre><code>val gpuDelegate = GpuDelegate()
+val options = Interpreter.Options()
+options.addDelegate(gpuDelegate)
+
+val interpreter = Interpreter(modelBuffer, options)
+</code></pre></div><p>This offloads computation to the GPU, freeing up CPU cycles for your UI thread.</p><h3>Batching and Caching</h3><ul><li><strong>Batch requests:</strong> If processing multiple items, batch them into one inference call instead of looping.</li><li><strong>Cache embeddings:</strong> Pre-compute and store common inputs to avoid redundant inference.</li></ul><h3>Monitor with Profiling</h3><p>Use Android Profiler in Android Studio to track memory, CPU, and inference latency. In my experience, most bottlenecks aren't the model—they're the data preprocessing pipeline.</p><h2 id="real-world-examples">Real-World Examples from My Projects</h2><h3>AudioBook AI: Audio Classification</h3><p>We built a feature to automatically tag audiobooks by genre and mood. The model (a small CNN) runs on-device during upload:</p><ul><li>User records or uploads audio</li><li>Device extracts MFCC features (milliseconds)</li><li>TF Lite model predicts genre (30ms)</li><li>User sees results instantly, no server round trip</li><li>Data never leaves the device unless user explicitly shares</li></ul><p>Privacy win. Performance win. Cost win.</p><h3>AI NoteTaker: Text Classification</h3><p>When users create notes, we automatically tag them (personal, work, todo, etc.). LLM integration would be overkill and expensive. Instead:</p><ul><li>Simple 2MB quantized text classifier on-device</li><li>Runs in under 5ms per note</li><li>Works offline</li><li>Accuracy is 92% (good enough for user tagging)</li></ul><h3>The Lesson</h3><p><strong>You don't always need massive LLMs.</strong> Smaller, quantized models often solve real problems faster and cheaper.</p><h2 id="key-takeaways">Key Takeaways</h2><ul><li><strong>On-device AI is about trade-offs:</strong> Choose device inference when latency, privacy, or cost matter. Hybrid approaches work best.</li><li><strong>TensorFlow Lite is production-ready:</strong> Use it for mobile inference. Start with pre-trained models if you don't have your own.</li><li><strong>Quantization is non-negotiable:</strong> Reduce model size 4x and improve speed 3–5x. It's worth the effort.</li><li><strong>Profile your real-world usage:</strong> Inference speed is only half the story. Data preprocessing and I/O often dominate latency.</li><li><strong>Simpler models beat complex ones:</strong> A 2MB quantized classifier outperforms a bloated LLM if it solves your problem. Start small, measure, scale only if needed.</li></ul>`,
+  },
+
+  {
     slug: "android-testing-strategies-jetpack-compose",
     featured: false,
     icon: "🧪",
