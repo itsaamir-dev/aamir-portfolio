@@ -139,6 +139,247 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-memory-management-jetpack-compose",
+    featured: false,
+    icon: "🧠",
+    cat: "android", catLabel: "Android",
+    date: "May 8, 2026", readTime: "7 min read",
+    title: "Android Memory Management in Jetpack Compose: Avoiding Leaks",
+    excerpt: "Learn how to prevent memory leaks in Jetpack Compose apps. Practical strategies I've used to optimize performance across production Android apps.",
+    tags: ["Jetpack Compose","Android Development","Memory Management","Performance Optimization","Kotlin"],
+    tocItems: [
+      {"id":"why-memory-leaks-matter","label":"Why Memory Leaks Matter in Jetpack Compose"},
+      {"id":"common-memory-pitfalls","label":"Common Memory Pitfalls in Jetpack Compose"},
+      {"id":"composition-lifecycle","label":"Understanding Composition Lifecycle"},
+      {"id":"practical-patterns","label":"Practical Patterns to Prevent Leaks"},
+      {"id":"detecting-leaks","label":"Detecting Leaks Before Production"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-memory-leaks-matter">Why Memory Leaks Matter in Jetpack Compose</h2>
+<p>After shipping six production apps on the Play Store and working with thousands of Android developers, I can tell you that <strong>memory leaks are one of the most insidious performance killers</strong> in Android development. They don't crash your app—they slowly strangle it.</p>
+<p>When I was leading the Android team at CodeBrew Labs, we had a beautiful app with a 4.8-star rating that started degrading after 30 minutes of use. Users complained about lag, jank, and eventual crashes. The culprit? Memory leaks in our Jetpack Compose UI layer that accumulated over time.</p>
+<p><strong>Jetpack Compose</strong> makes UI development faster and more intuitive, but it also introduces new ways to leak memory if you're not careful. The declarative nature of Compose means you're recomposing constantly, and each recomposition is an opportunity to accidentally hold onto references that should be garbage collected.</p>
+<blockquote><p>"Memory leaks don't announce themselves. By the time users notice, your app has already lost their trust."</p></blockquote>
+
+<h2 id="common-memory-pitfalls">Common Memory Pitfalls in Jetpack Compose</h2>
+<p>In my experience, most memory issues in Compose stem from a handful of predictable patterns. Let me walk you through the ones I've debugged most often.</p>
+
+<h3>1. Holding Context References in Composables</h3>
+<p>This is the classic mistake. Composables are recomposed frequently, and if you're capturing a Context reference directly, you're keeping the entire Activity (or Fragment) in memory long after it should be destroyed.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ BAD: Context reference leaks the Activity
+@Composable
+fun MyScreen(context: Context) {
+    val apiKey = remember { context.getString(R.string.api_key) }
+    // ...
+}
+
+// ✅ GOOD: Use LocalContext or dependency injection
+@Composable
+fun MyScreen() {
+    val context = LocalContext.current
+    val apiKey = remember { context.getString(R.string.api_key) }
+    // Even better: inject via ViewModel or service locator
+}</code></pre></div>
+
+<h3>2. Lambdas Capturing Large Objects</h3>
+<p>When you pass a lambda callback to a child composable, that lambda captures variables from its scope. If those variables are large objects, they stay in memory for the lifetime of the lambda.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ BAD: Lambda captures the entire viewModel state
+@Composable
+fun UserList(viewModel: UserViewModel) {
+    val users = viewModel.users.collectAsState()
+    LazyColumn {
+        items(users.value) { user -&gt;
+            UserCard(
+                user = user,
+                onDelete = { viewModel.deleteUser(user) } // Captures viewModel
+            )
+        }
+    }
+}
+
+// ✅ GOOD: Extract only what you need
+@Composable
+fun UserList(viewModel: UserViewModel) {
+    val users = viewModel.users.collectAsState()
+    val onDelete: (String) -&gt; Unit = remember { { userId -&gt; viewModel.deleteUser(userId) } }
+    LazyColumn {
+        items(users.value) { user -&gt;
+            UserCard(
+                user = user,
+                onDelete = { onDelete(user.id) }
+            )
+        }
+    }
+}</code></pre></div>
+
+<h3>3. Forgetting to Clean Up in DisposableEffect</h3>
+<p>When you register listeners, observers, or callbacks in Compose, you <em>must</em> unregister them. DisposableEffect is your safety net, but forgetting the cleanup block is a common leak.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ BAD: Listener never unregistered
+@Composable
+fun LocationTracker() {
+    DisposableEffect(Unit) {
+        val listener = LocationListener { /* ... */ }
+        locationManager.requestLocationUpdates(listener)
+        onDispose { } // Empty cleanup!
+    }
+}
+
+// ✅ GOOD: Clean up in onDispose
+@Composable
+fun LocationTracker() {
+    DisposableEffect(Unit) {
+        val listener = LocationListener { /* ... */ }
+        locationManager.requestLocationUpdates(listener)
+        onDispose {
+            locationManager.removeUpdates(listener)
+        }
+    }
+}</code></pre></div>
+
+<h3>4. Infinite State Flows or Uncancelled Coroutines</h3>
+<p>If you collect a Flow or launch a coroutine without proper scope management, it can continue running after the composable leaves the composition tree.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ BAD: Coroutine might outlive the composable
+@Composable
+fun DataScreen(viewModel: DataViewModel) {
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            viewModel.fetchData() // Never cancels if composable is removed
+        }
+    }
+}
+
+// ✅ GOOD: Use proper scope and cancellation
+@Composable
+fun DataScreen(viewModel: DataViewModel) {
+    LaunchedEffect(Unit) {
+        viewModel.startPolling() // Returns Job, respects scope
+    }
+}</code></pre></div>
+
+<h2 id="composition-lifecycle">Understanding Composition Lifecycle</h2>
+<p>To prevent memory leaks in Jetpack Compose, you need to deeply understand when composables enter and leave the composition tree.</p>
+<p>A composable goes through three phases:</p>
+<ul>
+<li><strong>Composition:</strong> The composable is added to the tree. Initialization code runs here.</li>
+<li><strong>Recomposition:</strong> State changes, and the composable updates. Most of your code runs multiple times.</li>
+<li><strong>Disposal:</strong> The composable is removed from the tree. Cleanup code runs here.</li>
+</ul>
+<p>The key insight: <strong>Anything you set up during composition must be cleaned up during disposal</strong>. If you register a listener, start a coroutine, or hold a reference, you must reverse it.</p>
+<p>This is why <code>remember</code>, <code>DisposableEffect</code>, and <code>LaunchedEffect</code> are so important. They're not just conveniences—they're your leak prevention toolkit.</p>
+
+<h2 id="practical-patterns">Practical Patterns to Prevent Leaks</h2>
+
+<h3>Pattern 1: Use ViewModels with Proper Scope</h3>
+<p>ViewModels are lifecycle-aware and survive configuration changes. They're the right place to hold long-lived resources.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>class UserViewModel : ViewModel() {
+    private val _users = MutableStateFlow&lt;List&lt;User&gt;&gt;(emptyList())
+    val users: StateFlow&lt;List&lt;User&gt;&gt; = _users.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            fetchUsers() // Respects ViewModel lifecycle
+        }
+    }
+
+    private suspend fun fetchUsers() {
+        try {
+            val data = apiService.getUsers()
+            _users.value = data
+        } catch (e: Exception) {
+            // Handle error
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // All coroutines automatically cancelled here
+    }
+}</code></pre></div>
+
+<h3>Pattern 2: Leverage remember for Expensive Computations</h3>
+<p><code>remember</code> caches values across recompositions, preventing unnecessary recreations and reducing memory churn.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>@Composable
+fun ExpensiveList(items: List&lt;String&gt;) {
+    val sortedItems = remember(items) {
+        items.sorted() // Only recomputed when items changes
+    }
+    LazyColumn {
+        items(sortedItems) { item -&gt;
+            Text(item)
+        }
+    }
+}</code></pre></div>
+
+<h3>Pattern 3: Use LaunchedEffect for Side Effects</h3>
+<p><code>LaunchedEffect</code> respects the composition lifecycle and cancels automatically when the composable leaves the tree.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>@Composable
+fun AutoRefreshScreen(viewModel: ViewModel) {
+    LaunchedEffect(Unit) {
+        while (currentCoroutineContext().isActive) {
+            viewModel.refresh()
+            delay(10000) // Refresh every 10 seconds
+        }
+    }
+}</code></pre></div>
+
+<h3>Pattern 4: Prefer StateFlow Over LiveData</h3>
+<p>StateFlow is a Flow, and Flows integrate seamlessly with Compose's lifecycle awareness. LiveData works, but StateFlow is more idiomatic.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>// ✅ GOOD: StateFlow in ViewModel
+class MyViewModel : ViewModel() {
+    private val _state = MutableStateFlow&lt;UiState&gt;(UiState.Loading)
+    val state: StateFlow&lt;UiState&gt; = _state.asStateFlow()
+}
+
+// In Compose
+@Composable
+fun MyScreen(viewModel: MyViewModel) {
+    val state = viewModel.state.collectAsState()
+    // Compose handles subscription lifecycle
+}</code></pre></div>
+
+<h2 id="detecting-leaks">Detecting Leaks Before Production</h2>
+<p>Prevention is better than cure, but you still need to detect leaks before they ship.</p>
+
+<h3>Use LeakCanary in Development</h3>
+<p>LeakCanary is the gold standard for detecting memory leaks in Android. Add it to your debug build and run your app through common user journeys.</p>
+<div class="code-block" data-lang="kotlin"><pre><code>// In build.gradle
+dependencies {
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.13'
+}</code></pre></div>
+
+<h3>Monitor Memory with Android Profiler</h3>
+<p>The Android Profiler in Android Studio gives you real-time memory usage. <strong>Watch for steadily increasing memory</strong> that doesn't drop after garbage collection—that's usually a leak.</p>
+
+<h3>Write Tests for Lifecycle Cleanup</h3>
+<p>Unit tests can verify that your composables clean up properly. Test that DisposableEffect callbacks are invoked when expected.</p>
+
+<h3>Manual Testing Checklist</h3>
+<ul>
+<li>Navigate to a screen and back repeatedly. Memory should stabilize, not grow.</li>
+<li>Rotate the device. Listeners should reinitialize cleanly.</li>
+<li>Minimize and restore the app. State should survive, but listeners shouldn't duplicate.</li>
+<li>Run under memory constraints. Use Android Studio's simulator settings.</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>In my experience at CodeBrew Labs, rotating the device 5 times rapidly is the best manual test for memory leaks. Configuration changes stress your lifecycle code hard, and leaks become obvious.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>Memory leaks in Jetpack Compose kill user experience silently.</strong> They don't crash; they degrade performance until users abandon your app.</li>
+<li><strong>Use remember, DisposableEffect, and LaunchedEffect correctly.</strong> These are your primary tools for lifecycle-aware resource management in Compose.</li>
+<li><strong>Hold long-lived resources (like database queries, network clients, location listeners) in ViewModels,</strong> not in composables. ViewModels are lifecycle-aware and handle cleanup automatically.</li>
+<li><strong>Always clean up side effects.</strong> If you register a listener, start a coroutine, or capture a reference, unregister/cancel it in onDispose or rely on scoped builders like LaunchedEffect.</li>
+<li><strong>Test aggressively with LeakCanary and the Android Profiler.</strong> Memory leaks are easy to overlook in code review but obvious when you watch the profiler. Catch them before your users do.</li>
+</ul>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Common Mistake</p><p>The most frequent leak I've seen in production apps: developers passing the entire ViewModel or Context to child composables when they only need a small piece of data. This inflates the reference graph unnecessarily. Pass only the data you need, or use state hoisting to keep references local.</p></div>
+
+<p>Memory management in Jetpack Compose isn't complicated—it's just <em>different</em> from imperative Android development. Once you internalize the composition lifecycle and use the right tools (remember, DisposableEffect, LaunchedEffect, ViewModels), leaks become rare.</p>
+<p>I've debugged hundreds of memory issues across my apps and client projects. The ones that shipped to users were always preventable. Use these patterns, test with the profiler, and your users will enjoy smooth, responsive apps.</p>`,
+  },
+
+  {
     slug: "llm-integration-android-apps-practical-guide",
     featured: false,
     icon: "🤖",
