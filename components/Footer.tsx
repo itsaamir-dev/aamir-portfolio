@@ -7,9 +7,12 @@ export default function Footer() {
                         font-mono text-[0.6rem] tracking-[0.1em] text-mid-gray">
       <div>© 2025 <span className="text-gold">Aamir Bashir</span> · Senior Software Engineer</div>
       <div>Made with precision · India · Open to Remote <span className="text-gold">(US/EU)</span></div>
-      <div>
+      <div className="flex gap-4">
         <Link href="/blog" className="text-gold hover:text-gold2 transition-colors duration-200 no-underline">
           Blog →
+        </Link>
+        <Link href="/sitemap.xml" className="text-gold hover:text-gold2 transition-colors duration-200 no-underline">
+          Sitemap →
         </Link>
       </div>
     </footer>
