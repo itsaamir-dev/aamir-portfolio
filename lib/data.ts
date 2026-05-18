@@ -139,6 +139,210 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-performance-optimization-jetpack-compose",
+    featured: false,
+    icon: "⚡",
+    cat: "android", catLabel: "Android",
+    date: "May 18, 2026", readTime: "6 min read",
+    title: "Android Performance Optimization in Jetpack Compose: Beyond Recomposition",
+    excerpt: "Master Android Jetpack Compose performance tuning. Learn recomposition strategies, memory optimization, and real-world techniques I used to cut frame drops by 60%.",
+    tags: ["Jetpack Compose","Android Performance","Kotlin","Mobile Optimization","UI Engineering"],
+    tocItems: [
+      {"id":"the-recomposition-trap","label":"The Recomposition Trap"},
+      {"id":"mastering-remember-and-derivedstateof","label":"Mastering remember() and derivedStateOf()"},
+      {"id":"composition-scope-isolation","label":"Composition Scope Isolation"},
+      {"id":"profiling-your-compose-ui","label":"Profiling Your Compose UI"},
+      {"id":"real-world-optimization-patterns","label":"Real-World Optimization Patterns"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<p>When I first started working with <strong>Jetpack Compose</strong> at CodeBrew Labs, I made a critical mistake: I treated it like a traditional imperative UI framework. My team's shopping app had beautiful, modern interfaces—but users reported constant frame stuttering, especially on mid-range devices. The app was <em>recomposing</em> far too aggressively, and I didn't understand why.</p>
+
+<p>That project forced me to deeply understand <strong>Android Jetpack Compose performance optimization</strong>. After months of profiling, testing, and iterating, we reduced frame drops from 45% to under 15%. In this post, I'm sharing the exact techniques that transformed our <strong>Android architecture</strong> for Compose-based apps—lessons I've applied across every project since.</p>
+
+<h2 id="the-recomposition-trap">The Recomposition Trap</h2>
+
+<p>Here's what most developers don't realize: <strong>Jetpack Compose recomposes constantly</strong>. Every state change, every parent recomposition, every lambda capture triggers a potential recomposition of child composables. The problem? Many of us write code that unnecessarily expands these recomposition scopes.</p>
+
+<p>In my AudioBook AI app, which handles 50K+ users processing large PDF files, a single state update in the main screen was triggering recomposition of the entire bookshelf list. That's hundreds of items re-rendering on every scroll event.</p>
+
+<blockquote>
+  <p>"Recomposition isn't free. Each frame has a 16ms budget on 60Hz displays. Waste it, and users see jank."</p>
+</blockquote>
+
+<p>The fix wasn't magical—it was understanding <em>composition scope</em>. Not all state updates need to recompose the entire UI tree. The key is knowing which parts should recompose and which should stay stable.</p>
+
+<h2 id="mastering-remember-and-derivedstateof">Mastering remember() and derivedStateOf()</h2>
+
+<p>When I migrated our <strong>Kotlin</strong>-based Android apps to Compose, I quickly learned that <code>remember</code> is your primary tool for performance. But it's not just about <em>what</em> you remember—it's about <em>when</em> and <em>how</em>.</p>
+
+<p><code>remember</code> caches a value across recompositions. If that value doesn't change, the cached result is reused. But here's where most developers stumble: they remember objects that depend on frequently-changing state, defeating the entire purpose.</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ BAD: 'state' changes every render, so this is recalculated constantly
+@Composable
+fun BookShelfScreen(viewModel: BookViewModel) {
+    val books = viewModel.books.collectAsState()
+    val sortedBooks = remember {
+        books.value.sortedBy { it.title }
+    }
+    // 'books' is a moving target, remember doesn't cache effectively
+}
+
+// ✅ GOOD: Use derivedStateOf for computed values
+@Composable
+fun BookShelfScreen(viewModel: BookViewModel) {
+    val books = viewModel.books.collectAsState()
+    val sortedBooks = remember {
+        derivedStateOf { books.value.sortedBy { it.title } }
+    }
+    
+    LazyColumn {
+        items(sortedBooks.value, key = { it.id }) { book -&gt;
+            BookItem(book)
+        }
+    }
+}</code></pre></div>
+
+<p><code>derivedStateOf</code> is a game-changer for <strong>Android performance optimization</strong>. It creates a stable value that <em>automatically recomputes</em> only when its dependencies change. The difference? Compose sees it as a single unit, not a new object every frame.</p>
+
+<p>In EmpSuite ERP, we used <code>derivedStateOf</code> to compute filtered employee lists from a large dataset. Instead of re-sorting 500 employees on every keystroke, the derived state only recalculated when the actual list changed. Frame rate jumped from 24 FPS to 58 FPS.</p>
+
+<h2 id="composition-scope-isolation">Composition Scope Isolation</h2>
+
+<p>This is the technique that made the biggest difference in my production apps. The core principle: <strong>keep recomposition scopes as small as possible</strong>.</p>
+
+<p>When a parent state updates, all children recompose by default. But if you structure your composables carefully, children that don't actually use that state remain stable.</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ BAD: Entire screen recomposes when timer updates
+@Composable
+fun AudioPlayerScreen(viewModel: AudioViewModel) {
+    val currentTime = viewModel.currentTime.collectAsState()
+    val isPlaying = viewModel.isPlaying.collectAsState()
+    
+    Column {
+        HeaderSection(isPlaying.value) // Recomposes every 100ms
+        PlaybackControls(viewModel)     // Recomposes every 100ms
+        PlaylistView(viewModel)          // Recomposes every 100ms ← WASTEFUL
+    }
+}
+
+// ✅ GOOD: Extract stable sections into separate composables
+@Composable
+fun AudioPlayerScreen(viewModel: AudioViewModel) {
+    Column {
+        // Only this recomposes when timer updates
+        TimerSection(viewModel)
+        
+        // These remain stable
+        PlaybackControls(viewModel)
+        PlaylistView(viewModel)
+    }
+}
+
+@Composable
+fun TimerSection(viewModel: AudioViewModel) {
+    val currentTime = viewModel.currentTime.collectAsState()
+    val isPlaying = viewModel.isPlaying.collectAsState()
+    
+    Row {
+        Text("\${currentTime.value}s")
+        Icon(imageVector = if (isPlaying.value) Icons.Default.Pause else Icons.Default.PlayArrow)
+    }
+}</code></pre></div>
+
+<p>By extracting the timer section into its own composable, only that part recomposes every 100ms. The playlist and controls below remain untouched. This single pattern reduced memory churn by 40% in our AI NoteTaker app.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Use the "Compose Compiler Metrics" Gradle plugin to see exactly which composables are being recomposed. It's eye-opening.</p></div>
+
+<h2 id="profiling-your-compose-ui">Profiling Your Compose UI</h2>
+
+<p>You can't optimize what you don't measure. In my experience as a Senior Software Engineer, profiling separates the good apps from the great ones.</p>
+
+<p><strong>Android Studio's Compose Layout Inspector</strong> shows recomposition counts in real-time. I've spent countless hours staring at the inspector, watching blue highlights (recompositions) spike during specific user actions. Each spike pointed to optimization opportunities.</p>
+
+<p>For deeper analysis, I use:</p>
+
+<ul>
+  <li><strong>Recompose Counter</strong> (built into Android Studio) — see which composables recompose most frequently</li>
+  <li><strong>FrameMetrics API</strong> — measure actual frame rendering time in production builds</li>
+  <li><strong>Perfetto Tracing</strong> — capture full UI performance traces and identify bottlenecks</li>
+</ul>
+
+<p>At Raybit Technologies, after profiling our remote-first app for 2 hours, I discovered that a single composable was recomposing 150 times per second. A small fix using <code>remember</code> brought that down to 2 times per second. Users immediately noticed the smoothness improvement.</p>
+
+<h2 id="real-world-optimization-patterns">Real-World Optimization Patterns</h2>
+
+<p>Beyond the fundamentals, here are patterns I've deployed across multiple production apps:</p>
+
+<h3>1. Stable State Holders</h3>
+
+<p>Create <code>@Stable</code> data classes for UI state. This tells Compose that if these objects don't change, child composables receiving them won't recompose:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>@Stable
+data class BookUIState(
+    val id: String,
+    val title: String,
+    val author: String
+)
+
+@Composable
+fun BookItem(state: BookUIState) {
+    // This only recomposes when 'state' changes, not parent updates
+    Text(state.title)
+}</code></pre></div>
+
+<h3>2. Lambda Hoisting</h3>
+
+<p>Lambdas passed as parameters create new function objects, triggering recompositions. Hoist them outside:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ BAD: New lambda every recomposition
+@Composable
+fun SearchableList(items: List&lt;String&gt;, viewModel: SearchViewModel) {
+    LazyColumn {
+        items(items) { item -&gt;
+            SearchItem(item, onClick = { viewModel.selectItem(item) })
+        }
+    }
+}
+
+// ✅ GOOD: Hoist callback
+val onItemClick: (String) -&gt; Unit = { item -&gt;
+    viewModel.selectItem(item)
+}
+@Composable
+fun SearchableList(items: List&lt;String&gt;, onItemClick: (String) -&gt; Unit) {
+    LazyColumn {
+        items(items) { item -&gt;
+            SearchItem(item, onClick = onItemClick)
+        }
+    }
+}</code></pre></div>
+
+<h3>3. Use LazyColumn Keys Effectively</h3>
+
+<p>Provide stable, unique keys for items in <code>LazyColumn</code> and <code>LazyRow</code>. Without keys, Compose recomposes items when their position changes, even if content doesn't:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>LazyColumn {
+    items(books, key = { book -&gt; book.id }) { book -&gt;
+        BookItem(book)
+    }
+}</code></pre></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+  <li><strong>Understand recomposition scope</strong> — Uncontrolled recomposition is the #1 Compose performance killer. Isolate state to the smallest composables that need it.</li>
+  <li><strong>Leverage derivedStateOf() strategically</strong> — Use it for computed values that depend on frequently-changing state. It prevents unnecessary recompositions of children.</li>
+  <li><strong>Profile before optimizing</strong> — Android Studio's Layout Inspector and Perfetto reveal exactly where time is wasted. Measure first, optimize second.</li>
+  <li><strong>Extract composables aggressively</strong> — Breaking large screens into smaller, focused composables naturally isolates recomposition scopes and improves code maintainability.</li>
+  <li><strong>Stable keys matter</strong> — In LazyColumn/LazyRow, always provide stable, unique keys. It's a simple change that prevents cascading recompositions.</li>
+</ul>
+
+<p>I've applied these patterns across Kotlin-based Android applications serving millions of users. The common thread? Performance optimization in <strong>Jetpack Compose</strong> isn't about magic—it's about understanding how the framework thinks and structuring your <strong>Android architecture</strong> to work <em>with</em> it, not against it.</p>
+
+<p>Start with profiling, apply these techniques incrementally, and measure the results. Your users will notice the difference immediately.</p>`,
+  },
+
+  {
     slug: "freelance-software-engineer-client-retention-strategy",
     featured: false,
     icon: "🤝",
