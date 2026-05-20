@@ -139,6 +139,300 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-architecture-patterns-beyond-mvvm",
+    featured: false,
+    icon: "🏗️",
+    cat: "android", catLabel: "Android",
+    date: "May 20, 2026", readTime: "7 min read",
+    title: "Android Architecture Patterns: Building Beyond MVVM in 2025",
+    excerpt: "Master advanced Android architecture patterns beyond MVVM. Learn VIPER, MVI, and domain-driven design from 8+ years of production experience.",
+    tags: ["Android development","Architecture","MVVM","Kotlin","Clean Code"],
+    tocItems: [
+      {"id":"why-mvvm-falls-short","label":"Why MVVM Falls Short in Complex Apps"},
+      {"id":"viper-architecture","label":"VIPER Architecture for Large Teams"},
+      {"id":"mvi-pattern","label":"MVI: Unidirectional Data Flow in Android"},
+      {"id":"domain-driven-design","label":"Domain-Driven Design in Android Development"},
+      {"id":"choosing-pattern","label":"Choosing the Right Pattern for Your Project"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<p>I've shipped 25+ production Android apps over the past 8 years, and I can tell you with absolute certainty: <strong>MVVM alone won't cut it when your codebase grows beyond 50K lines of code.</strong></p>
+
+<p>Don't get me wrong—MVVM is solid for medium-sized projects. But when I was leading a squad of 4 engineers at Raybit, juggling multiple feature teams working on the same codebase, we hit a wall. Circular dependencies, tangled business logic, and endless merge conflicts became the norm. That's when I started exploring advanced <strong>Android architecture patterns</strong> that go beyond the standard ViewModel + Repository approach.</p>
+
+<p>In this post, I'm sharing what I've learned about designing scalable <strong>Android development</strong> systems—patterns I've actually used in production, not theoretical fluff.</p>
+
+<h2 id="why-mvvm-falls-short">Why MVVM Falls Short in Complex Apps</h2>
+
+<p>MVVM works beautifully when:</p>
+
+<ul>
+<li>Your team is small (1-3 engineers)</li>
+<li>Features don't share complex business logic</li>
+<li>State management is relatively straightforward</li>
+<li>You're building a greenfield project with clear requirements</li>
+</ul>
+
+<p>But here's where it breaks down:</p>
+
+<blockquote><p>"MVVM doesn't enforce boundaries between features. When 4 engineers are working on the same codebase, everyone's ViewModel ends up calling everyone else's Repository. Before you know it, you've got a distributed monolith disguised as clean architecture."</p></blockquote>
+
+<p>At CodeBrew, we had 6 production apps on the Play Store, and the largest one (4.5+ stars, 100K+ daily active users) suffered from this exact problem. Business logic was scattered across multiple ViewModels. Testing was nightmarish because everything depended on everything else. Adding a simple feature required touching 8-10 files across different layers.</p>
+
+<p>That's when I realized: <strong>MVVM is a presentation layer pattern, not an architecture pattern.</strong> It doesn't solve cross-cutting concerns like:</p>
+
+<ul>
+<li>How different features interact</li>
+<li>Where orchestration logic lives</li>
+<li>How to enforce strict dependency flows</li>
+<li>Scaling business logic across multiple screens</li>
+</ul>
+
+<h2 id="viper-architecture">VIPER Architecture for Large Teams</h2>
+
+<p>VIPER (View-Interactor-Presenter-Entity-Router) is overkill for startups, but it's incredibly powerful for teams building enterprise Android apps.</p>
+
+<p>Here's the structure:</p>
+
+<ul>
+<li><strong>View</strong> — Passive UI (Fragment or Composable)</li>
+<li><strong>Interactor</strong> — Fetches data, contains business rules</li>
+<li><strong>Presenter</strong> — Stateless logic that translates Interactor output to UI state</li>
+<li><strong>Entity</strong> — Domain models (pure data classes)</li>
+<li><strong>Router (Wireframe)</strong> — Navigation and screen transitions</li>
+</ul>
+
+<p>The key advantage? <strong>Each screen is a self-contained module.</strong> Dependencies flow strictly downward. Your Interactor never knows about your Presenter. Your Router is the only thing that knows how to navigate away. This eliminates the circular dependency nightmare I faced earlier.</p>
+
+<p>At Raybit, we implemented a hybrid VIPER + Clean Architecture approach for our EmpSuite ERP platform. Each feature module had its own VIPER structure with a clear Dependency Injection boundary using Hilt. The result? Our 4-person squad could work on completely separate features without stepping on each other's toes.</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// VIPER Structure for a Login Feature
+
+// Entity - Pure domain model
+data class User(
+    val id: String,
+    val email: String,
+    val token: String
+)
+
+// Interactor - Business rules
+class LoginInteractor(
+    private val authRepository: AuthRepository,
+    private val userPreferences: UserPreferences
+) {
+    suspend fun authenticate(email: String, password: String): Result&lt;User&gt; {
+        return try {
+            val response = authRepository.login(email, password)
+            userPreferences.saveToken(response.token)
+            Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
+
+// Presenter - Stateless transformation
+class LoginPresenter {
+    fun presentUser(user: User): LoginUIState {
+        return LoginUIState.Success(user.email)
+    }
+    
+    fun presentError(exception: Exception): LoginUIState {
+        return LoginUIState.Error(exception.message ?: "Unknown error")
+    }
+}
+
+// Router - Navigation logic
+class LoginRouter(private val navController: NavController) {
+    fun navigateToHome() {
+        navController.navigate("home") {
+            popUpTo("login") { inclusive = true }
+        }
+    }
+}
+
+// ViewModel - Orchestrates everything
+class LoginViewModel(
+    private val interactor: LoginInteractor,
+    private val presenter: LoginPresenter,
+    private val router: LoginRouter
+) : ViewModel() {
+    private val _uiState = MutableStateFlow&lt;LoginUIState&gt;(LoginUIState.Idle)
+    val uiState: StateFlow&lt;LoginUIState&gt; = _uiState.asStateFlow()
+
+    fun login(email: String, password: String) {
+        viewModelScope.launch {
+            _uiState.value = LoginUIState.Loading
+            val result = interactor.authenticate(email, password)
+            _uiState.value = result.fold(
+                onSuccess = { user ->
+                    presenter.presentUser(user).also { router.navigateToHome() }
+                },
+                onFailure = { error ->
+                    presenter.presentError(error)
+                }
+            )
+        }
+    }
+}</code></pre></div>
+
+<p>Notice how each layer has a single responsibility. The Interactor doesn't know about UI. The Presenter doesn't fetch data. The Router doesn't understand business logic. This separation makes testing trivial—you can unit test each component in isolation.</p>
+
+<h2 id="mvi-pattern">MVI: Unidirectional Data Flow in Android</h2>
+
+<p>MVI (Model-View-Intent) takes <strong>Android architecture</strong> in a completely different direction. Instead of the traditional layered approach, it embraces unidirectional data flow borrowed from Redux and The Elm Architecture.</p>
+
+<p>The flow is simple and rigid:</p>
+
+<p><em>User Action → Intent → Model → State → View</em></p>
+
+<p>Every state change flows through the same pipeline. No side channels. No back-edges. This predictability is powerful.</p>
+
+<p>I used MVI heavily when building AudioBook AI (50K+ users). Managing audio playback state across multiple screens was a nightmare with traditional MVVM. With MVI, every action—pause, skip, download, etc.—produced a predictable state mutation. Debugging became straightforward: just replay the intent sequence.</p>
+
+<ul>
+<li><strong>Model</strong> — The source of truth (immutable state)</li>
+<li><strong>Intent</strong> — User actions or system events</li>
+<li><strong>Reducer</strong> — Transforms (State, Intent) → NewState</li>
+<li><strong>Effect</strong> — Side effects triggered by state changes</li>
+</ul>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// MVI Pattern with Jetpack Compose
+
+// State - Immutable, single source of truth
+data class AudioPlayerState(
+    val isPlaying: Boolean = false,
+    val currentPosition: Long = 0L,
+    val duration: Long = 0L,
+    val bookTitle: String = "",
+    val error: String? = null
+)
+
+// Intent - User or system actions
+sealed class AudioPlayerIntent {
+    object PlayPressed : AudioPlayerIntent()
+    object PausePressed : AudioPlayerIntent()
+    data class SeekTo(val position: Long) : AudioPlayerIntent()
+    data class LoadBook(val bookId: String) : AudioPlayerIntent()
+}
+
+// Reducer - Pure function
+class AudioPlayerReducer {
+    fun reduce(state: AudioPlayerState, intent: AudioPlayerIntent): AudioPlayerState {
+        return when (intent) {
+            is AudioPlayerIntent.PlayPressed -&gt; state.copy(isPlaying = true)
+            is AudioPlayerIntent.PausePressed -&gt; state.copy(isPlaying = false)
+            is AudioPlayerIntent.SeekTo -&gt; state.copy(currentPosition = intent.position)
+            is AudioPlayerIntent.LoadBook -&gt; state.copy(bookTitle = intent.bookId)
+        }
+    }
+}
+
+// ViewModel using MVI
+class AudioPlayerViewModel(
+    private val reducer: AudioPlayerReducer,
+    private val audioRepository: AudioRepository
+) : ViewModel() {
+    private val _state = MutableStateFlow(AudioPlayerState())
+    val state: StateFlow&lt;AudioPlayerState&gt; = _state.asStateFlow()
+
+    fun processIntent(intent: AudioPlayerIntent) {
+        val currentState = _state.value
+        val newState = reducer.reduce(currentState, intent)
+        _state.value = newState
+        
+        // Handle side effects
+        when (intent) {
+            is AudioPlayerIntent.PlayPressed -&gt; {
+                viewModelScope.launch {
+                    audioRepository.play(currentState.bookTitle)
+                }
+            }
+            is AudioPlayerIntent.LoadBook -&gt; {
+                viewModelScope.launch {
+                    try {
+                        val book = audioRepository.getBook(intent.bookId)
+                        _state.value = newState.copy(duration = book.duration)
+                    } catch (e: Exception) {
+                        _state.value = newState.copy(error = e.message)
+                    }
+                }
+            }
+            else -&gt; {}
+        }
+    }
+}</code></pre></div>
+
+<p>The beauty of MVI is that state mutations are predictable and testable. You can record a sequence of intents and replay them to reproduce any bug. This is especially valuable in complex audio/video apps where timing issues are common.</p>
+
+<h2 id="domain-driven-design">Domain-Driven Design in Android Development</h2>
+
+<p>This isn't technically an "architecture pattern" in the traditional sense, but it's how I structure enterprise <strong>Android development</strong> projects at scale.</p>
+
+<p>Domain-Driven Design (DDD) starts with the business domain—not the technical stack. You organize your codebase around business concepts, not technical layers.</p>
+
+<p>For Nova Cabs (ride-hailing app), instead of organizing code like this:</p>
+
+<pre><code>app/
+  ├── presentation/
+  ├── data/
+  ├── domain/
+</code></pre>
+
+<p>We organized it like this:</p>
+
+<pre><code>app/
+  ├── booking/
+  │   ├── presentation/
+  │   ├── data/
+  │   ├── domain/
+  ├── driver/
+  │   ├── presentation/
+  │   ├── data/
+  │   ├── domain/
+  ├── payments/
+  │   ├── presentation/
+  │   ├── data/
+  │   ├── domain/
+</code></pre>
+
+<p>Each domain (Booking, Driver, Payments) is a self-contained feature module with its own presentation, data, and domain layers. Dependencies only flow from outer domains to core domains—never the reverse.</p>
+
+<p>This approach is powerful because:</p>
+
+<ul>
+<li>Teams own complete domains end-to-end</li>
+<li>Domain logic is naturally cohesive</li>
+<li>It's easy to extract a domain into a separate microservice later</li>
+<li>New engineers understand the structure immediately</li>
+</ul>
+
+<h2 id="choosing-pattern">Choosing the Right Pattern for Your Project</h2>
+
+<p>Here's my honest recommendation based on real-world experience:</p>
+
+<ul>
+<li><strong>Small startup (1-3 engineers)</strong> — MVVM + Repository pattern. Simple, proven, fast to ship.</li>
+<li><strong>Growing team (4-8 engineers)</strong> — VIPER or Domain-Driven Design. Enforce clear boundaries before technical debt becomes unmanageable.</li>
+<li><strong>Complex state management</strong> (audio, video, real-time) — MVI pattern. The unidirectional flow pays dividends when debugging.</li>
+<li><strong>Enterprise app (10+ engineers)</strong> — Combine DDD + VIPER + Jetpack Compose. Modular, scalable, team-friendly.</li>
+</ul>
+
+<p>The mistake I see most engineers make is <strong>adopting a complex pattern too early.</strong> VIPER on a 5K line codebase is overengineering. But MVVM on a 200K line enterprise app is underengineering. Match the pattern to your problem space.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Start with MVVM + Repository. When you hit pain points (circular dependencies, untestable code, merge conflicts), migrate gradually to a more sophisticated pattern. Don't rewrite everything at once.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>MVVM is a presentation pattern, not an architecture pattern.</strong> It doesn't solve cross-feature orchestration or large-scale code organization.</li>
+<li><strong>VIPER enforces strict separation of concerns</strong> and works beautifully for large teams building modular Android apps with Kotlin.</li>
+<li><strong>MVI's unidirectional data flow</strong> makes complex state management (audio, real-time, animations) predictable and testable.</li>
+<li><strong>Domain-Driven Design organizes code around business concepts,</strong> not technical layers—perfect for enterprise Android development at scale.</li>
+<li><strong>Match your architecture to your team size and problem complexity.</strong> Over-engineer early and you'll move slowly. Under-engineer and you'll drown in technical debt.</li>
+</ul>`,
+  },
+
+  {
     slug: "android-performance-optimization-jetpack-compose",
     featured: false,
     icon: "⚡",
