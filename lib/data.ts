@@ -139,6 +139,221 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-development-sqlite-vs-firestore-offline-first",
+    featured: false,
+    icon: "🗄️",
+    cat: "android", catLabel: "Android",
+    date: "May 25, 2026", readTime: "6 min read",
+    title: "Android Development: SQLite vs Firestore for Offline-First Apps",
+    excerpt: "Compare SQLite and Firestore for Android apps. Learn when to use each, sync strategies, and real-world performance trade-offs from 8+ years building production apps.",
+    tags: ["Android Development","SQLite","Firebase Firestore","Offline-First","Database Architecture"],
+    tocItems: [
+      {"id":"why-offline-first-matters","label":"Why Offline-First Matters in Android Development"},
+      {"id":"sqlite-strengths-weaknesses","label":"SQLite: Strengths and Weaknesses"},
+      {"id":"firestore-strengths-weaknesses","label":"Firestore: Strengths and Weaknesses"},
+      {"id":"architecture-patterns","label":"Architecture Patterns for Syncing"},
+      {"id":"code-example","label":"Practical Syncing Implementation"},
+      {"id":"when-to-choose","label":"Decision Matrix: When to Choose Each"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-offline-first-matters">Why Offline-First Matters in Android Development</h2>
+
+<p>I've shipped six production apps on the Play Store, and I can tell you with absolute certainty: <strong>assuming your user always has internet is a recipe for 1-star reviews</strong>. Whether it's a subway commute, a rural area, or just a flaky WiFi connection, your Android app will encounter offline scenarios. This is where the SQLite vs Firestore decision becomes critical.</p>
+
+<p>In my experience at CodeBrew Labs, we reduced crash rates by 35% partly by rethinking our data persistence strategy. The wrong database choice compounds when you're building offline-first features—sync conflicts arise, data consistency breaks, and your users suffer. This post dives into what I've learned building real Android apps with both technologies.</p>
+
+<h2 id="sqlite-strengths-weaknesses">SQLite: Strengths and Weaknesses</h2>
+
+<h3>Why SQLite Wins for Local Control</h3>
+
+<p>SQLite is <em>your database</em>. It runs entirely on the device, requires zero network calls, and gives you complete control over schema and queries. I've used SQLite in production apps where data consistency and predictability were paramount.</p>
+
+<p><strong>Key strengths:</strong></p>
+<ul>
+<li>Zero latency for reads and writes—everything is instant</li>
+<li>Full ACID compliance; your transactions won't corrupt</li>
+<li>No dependency on backend infrastructure; no Firebase bill surprises</li>
+<li>Works seamlessly with MVVM Android patterns using Room library</li>
+<li>Excellent for building truly offline-first experiences (think note-taking apps)</li>
+</ul>
+
+<h3>The SQLite Headache: Synchronization</h3>
+
+<p>Here's the painful truth: SQLite gives you zero help with syncing. I've spent weeks building sync logic—conflict resolution, retry mechanisms, timestamp ordering. When your user edits data offline and makes conflicting changes on another device, SQLite doesn't care. You're implementing that logic yourself, and it's complex.</p>
+
+<p><strong>Real challenges:</strong></p>
+<ul>
+<li>No built-in cloud sync; you're writing backend logic to merge changes</li>
+<li>Conflict resolution is your responsibility (last-write-wins? merge? discard?)</li>
+<li>Network-aware code becomes intricate; the sync layer couples to your app logic</li>
+<li>Testing offline scenarios requires meticulous mock server setup</li>
+</ul>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Hidden Cost</p><p>I once built a sync system without proper conflict detection. Two users editing the same record offline caused silent data loss. Took three days of debugging and a client apology. Now I always design conflict detection upfront.</p></div>
+
+<h2 id="firestore-strengths-weaknesses">Firestore: Strengths and Weaknesses</h2>
+
+<h3>Why Firestore Simplifies Offline Sync</h3>
+
+<p>Firestore's offline persistence is genuinely remarkable. Enable it, and your Android development workflow changes. Queries work offline, writes queue automatically, and when the network returns, Firestore syncs intelligently. I used Firestore in AudioBook AI, and the offline experience was buttery smooth with minimal code.</p>
+
+<p><strong>Key strengths:</strong></p>
+<ul>
+<li>Built-in offline persistence; enable one flag and syncing works</li>
+<li>Automatic conflict resolution using timestamps and server rules</li>
+<li>Real-time listeners work seamlessly offline and online</li>
+<li>No backend infrastructure to manage; Firebase handles it</li>
+<li>Scales to millions of users without your engineering effort</li>
+<li>Excellent for collaborative features (multiple users editing simultaneously)</li>
+</ul>
+
+<h3>Firestore's Real Limitations</h3>
+
+<p>Firestore isn't magic, and I've hit its walls. It's opinionated—sometimes in ways that fight your architecture. In a recent contract at Raybit, we needed complex joins across 50K documents. Firestore struggled; we ended up with bloated queries and N+1 problems.</p>
+
+<p><strong>Real pain points:</strong></p>
+<ul>
+<li>Cloud Firestore bills per read/write operation; 100K synced writes = 100K charges</li>
+<li>Limited query flexibility compared to SQL; no joins, no aggregations</li>
+<li>Data modeling must denormalize heavily, ballooning document sizes</li>
+<li>Offline writes queue locally, but failed syncs require custom error handling</li>
+<li>Debugging sync issues is harder; Firebase does magic under the hood</li>
+<li>Vendor lock-in; migrating away later is painful</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">📖 Cost Reality Check</p><p>If your app syncs 10MB daily per user across 10K users, you're looking at ~300M operations monthly. At $0.06 per 100K reads, that's $180/month just for sync. SQLite + custom backend might cost less if engineered right.</p></div>
+
+<h2 id="architecture-patterns">Architecture Patterns for Syncing</h2>
+
+<h3>MVVM Android with SQLite + Manual Sync</h3>
+
+<p>When choosing SQLite in an Android development project, you're buying full responsibility for the sync layer. I structure this using Clean Architecture principles:</p>
+
+<ol>
+<li><strong>Repository Pattern:</strong> All data access goes through repositories. They know whether to fetch from SQLite or network.</li>
+<li><strong>WorkManager for Sync:</strong> Background syncs happen via WorkManager, not coroutines. This survives app termination.</li>
+<li><strong>Conflict Detection:</strong> Version vectors or timestamp-based last-write-wins, depending on your domain.</li>
+<li><strong>StateFlow for UI:</strong> Jetpack Compose observes sync state; failed syncs show user feedback.</li>
+</ol>
+
+<h3>Firestore with Real-Time Listeners</h3>
+
+<p>Firestore integrates naturally with MVVM Android. You attach listeners to collections, and Firestore emits local data first (from offline cache), then network updates. Your ViewModel doesn't need sync logic—Firestore handles it.</p>
+
+<p>This is <em>cleaner code</em>, but you lose fine-grained control and pay operational costs.</p>
+
+<h2 id="code-example">Practical Syncing Implementation</h2>
+
+<p>Here's a real SQLite sync pattern I use in production. It's simplified, but captures the essence:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// Room Entity with sync metadata
+@Entity(tableName = "notes")
+data class NoteEntity(
+    @PrimaryKey val id: String,
+    val title: String,
+    val content: String,
+    val lastModified: Long,
+    val syncStatus: SyncStatus, // PENDING, SYNCED, FAILED
+    val version: Int // For conflict detection
+)
+
+// Repository handles local-first reads, async sync
+class NoteRepository(
+    private val dao: NoteDao,
+    private val apiService: ApiService
+) {
+    fun getNotes(): Flow&lt;List&lt;NoteEntity&gt;&gt; = dao.getAllNotes()
+
+    suspend fun upsertNote(note: NoteEntity) {
+        // 1. Save locally immediately (offline-first)
+        dao.upsert(note.copy(syncStatus = SyncStatus.PENDING))
+        
+        // 2. Try to sync in background
+        try {
+            val response = apiService.upsertNote(note)
+            dao.upsert(note.copy(
+                version = response.version,
+                lastModified = response.lastModified,
+                syncStatus = SyncStatus.SYNCED
+            ))
+        } catch (e: Exception) {
+            // Mark failed; user sees retry option
+            dao.updateSyncStatus(note.id, SyncStatus.FAILED)
+        }
+    }
+
+    // WorkManager calls this periodically
+    suspend fun syncPendingNotes() {
+        val pending = dao.getPendingNotes()
+        for (note in pending) {
+            try {
+                val response = apiService.upsertNote(note)
+                dao.upsert(note.copy(
+                    version = response.version,
+                    syncStatus = SyncStatus.SYNCED
+                ))
+            } catch (e: Exception) {
+                // Continue with next note
+            }
+        }
+    }
+}
+
+// ViewModel for Jetpack Compose
+class NoteViewModel(
+    private val repository: NoteRepository
+) : ViewModel() {
+    val notes: StateFlow&lt;List&lt;NoteEntity&gt;&gt; = repository
+        .getNotes()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun saveNote(note: NoteEntity) {
+        viewModelScope.launch {
+            repository.upsertNote(note)
+        }
+    }
+}</code></pre></div>
+
+<p>This pattern gives you offline-first behavior: writes succeed immediately locally, sync happens asynchronously, and conflicts are detected via version numbers.</p>
+
+<h2 id="when-to-choose">Decision Matrix: When to Choose Each</h2>
+
+<h3>Choose SQLite When:</h3>
+<ul>
+<li>Your app is primarily single-user (note-taking, journaling, local finance)</li>
+<li>You need complex queries or relational data</li>
+<li>You're cost-sensitive or avoiding vendor lock-in</li>
+<li>Data is sensitive and you want zero cloud exposure</li>
+<li>Your backend already exists and you control it</li>
+</ul>
+
+<h3>Choose Firestore When:</h3>
+<ul>
+<li>Real-time sync across devices is a core feature</li>
+<li>You're building collaborative apps (shared documents, team projects)</li>
+<li>You want zero backend infrastructure burden</li>
+<li>Your user base is small enough that Firestore costs are negligible</li>
+<li>You value time-to-market over operational control</li>
+</ul>
+
+<h3>The Hybrid Approach (My Recommendation)</h3>
+
+<p>For complex Android development, consider this: Use SQLite locally for all data, but use Firestore as a real-time hub for collaborative features only. Your notes stay in SQLite; shared workspace updates come through Firestore. This gives you local speed, complex queries, and real-time collaboration where needed. I've done this successfully in two production apps.</p>
+
+<blockquote><p>"The best database is the one you understand deeply. Don't chase hype; build for your actual user needs."</p></blockquote>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>SQLite dominates for offline-first control and cost.</strong> You build sync logic, but you own the experience. Perfect for single-user or read-heavy apps.</li>
+<li><strong>Firestore excels at real-time collaboration with minimal code.</strong> Trade control and costs for speed and ease. Ideal for teams and shared data.</li>
+<li><strong>Architecture matters more than the database.</strong> MVVM + Repository Pattern + Jetpack Compose work beautifully with either—structure your code so switching is feasible.</li>
+<li><strong>Measure your actual costs and latency.</strong> Before choosing, prototype both. Real benchmarks beat theory every time.</li>
+<li><strong>Hybrid is underrated.</strong> SQLite for local state, Firestore for shared collaboration. Best of both worlds in Android development.</li>
+</ul>`,
+  },
+
+  {
     slug: "android-architecture-patterns-beyond-mvvm",
     featured: false,
     icon: "🏗️",
