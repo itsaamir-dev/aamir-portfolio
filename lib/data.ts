@@ -139,6 +139,256 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "versioning-rest-apis-without-breaking-clients",
+    featured: false,
+    icon: "🔄",
+    cat: "fullstack", catLabel: "Full-Stack",
+    date: "May 29, 2026", readTime: "7 min read",
+    title: "REST API Design: Versioning Strategies Without Breaking Clients",
+    excerpt: "Master REST API design versioning techniques. Learn how to evolve your Node.js & Laravel backends without breaking existing clients. Practical patterns from production.",
+    tags: ["REST API Design","Node.js","Laravel","API Versioning","Full-Stack Development"],
+    tocItems: [
+      {"id":"the-versioning-problem","label":"The Versioning Problem"},
+      {"id":"url-path-versioning","label":"URL Path Versioning"},
+      {"id":"header-based-versioning","label":"Header-Based Versioning"},
+      {"id":"query-parameter-approach","label":"Query Parameter Approach"},
+      {"id":"semantic-versioning","label":"Semantic Versioning Strategy"},
+      {"id":"deprecation-lifecycle","label":"Building a Deprecation Lifecycle"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="the-versioning-problem">The Versioning Problem: Why REST API Design Matters</h2>
+<p>I learned the hard way that ignoring API versioning early costs you dearly later. Three years into building AudioBook AI, we had 50K+ users relying on our REST API. A seemingly minor database schema change broke 8% of mobile clients. We had to rush a hotfix, coordinate with client teams, and lose two days of planned features.</p>
+<p>That's when I realized: <strong>proper REST API design isn't just architectural elegance—it's a survival strategy.</strong> Whether you're running a Node.js backend, Laravel server, or full-stack system, versioning decisions made today determine how painlessly you'll evolve tomorrow.</p>
+<p>In this post, I'll walk you through the exact versioning patterns I've used across production systems, the trade-offs each brings, and when to use them. This isn't theoretical—it's what actually works at scale.</p>
+
+<h2 id="url-path-versioning">URL Path Versioning: The Most Explicit Approach</h2>
+<p>URL path versioning is the most straightforward REST API design pattern. Your endpoint literally tells clients which API version they're using:</p>
+<div class="code-block" data-lang="Node.js/Express"><pre><code>// REST API design: URL path versioning
+app.get('/api/v1/users/:id', (req, res) => {
+  // Legacy endpoint for v1 clients
+  res.json({
+    id: req.params.id,
+    name: 'John Doe',
+    email: 'john@example.com'
+  });
+});
+
+app.get('/api/v2/users/:id', (req, res) => {
+  // Enhanced v2 with additional fields
+  res.json({
+    id: req.params.id,
+    name: 'John Doe',
+    email: 'john@example.com',
+    createdAt: '2024-01-15T10:30:00Z',
+    lastLogin: '2024-01-20T14:45:00Z',
+    subscriptionTier: 'premium'
+  });
+});
+
+app.get('/api/v3/users/:id', (req, res) => {
+  // v3: Completely redesigned response structure
+  res.json({
+    user: {
+      id: req.params.id,
+      profile: {
+        fullName: 'John Doe',
+        contact: { email: 'john@example.com' }
+      },
+      metadata: {
+        createdAt: '2024-01-15T10:30:00Z',
+        subscriptionTier: 'premium'
+      }
+    }
+  });
+});</code></pre></div>
+<h3>Pros of URL Path Versioning</h3>
+<ul>
+<li><strong>Crystal clear</strong> — Every endpoint explicitly declares its version. No guessing.</li>
+<li><strong>Easy caching</strong> — CDNs and proxies naturally cache separate paths without tricks.</li>
+<li><strong>Debug-friendly</strong> — Logs immediately show which API version a request hit.</li>
+<li><strong>Zero surprises</strong> — Clients can't accidentally use the wrong version.</li>
+</ul>
+<h3>Cons of URL Path Versioning</h3>
+<ul>
+<li><strong>Code duplication</strong> — You maintain duplicate routes for each version.</li>
+<li><strong>Scaling friction</strong> — Supporting v1, v2, v3, v4 becomes unmaintainable quickly.</li>
+<li><strong>SEO noise</strong> — Each version is a separate URL path (minor concern for private APIs).</li>
+</ul>
+<p><em>When I used this:</em> AudioBook AI's early REST API design used v1/v2 paths. Great until we hit v4. Then we switched strategies.</p>
+
+<h2 id="header-based-versioning">Header-Based Versioning: The Elegant Alternative</h2>
+<p>Header-based versioning moves the version number out of the URL entirely. Clients specify the API version they want via an HTTP header:</p>
+<div class="code-block" data-lang="Node.js/Express"><pre><code>// REST API design: Header-based versioning
+app.get('/api/users/:id', (req, res) => {
+  const version = req.headers['api-version'] || '1';
+
+  if (version === '1') {
+    return res.json({
+      id: req.params.id,
+      name: 'John Doe',
+      email: 'john@example.com'
+    });
+  }
+
+  if (version === '2') {
+    return res.json({
+      id: req.params.id,
+      name: 'John Doe',
+      email: 'john@example.com',
+      createdAt: '2024-01-15T10:30:00Z',
+      lastLogin: '2024-01-20T14:45:00Z',
+      subscriptionTier: 'premium'
+    });
+  }
+
+  if (version === '3') {
+    return res.json({
+      user: {
+        id: req.params.id,
+        profile: {
+          fullName: 'John Doe',
+          contact: { email: 'john@example.com' }
+        },
+        metadata: {
+          createdAt: '2024-01-15T10:30:00Z',
+          subscriptionTier: 'premium'
+        }
+      }
+    });
+  }
+
+  res.status(400).json({ error: 'Unsupported API version' });
+});</code></pre></div>
+<h3>Pros of Header-Based Versioning</h3>
+<ul>
+<li><strong>Single URL namespace</strong> — All versions live at <code>/api/users/:id</code>.</li>
+<li><strong>Cleaner routing</strong> — Less code duplication across different version implementations.</li>
+<li><strong>RESTful purity</strong> — Purists argue this respects REST principles better.</li>
+<li><strong>Flexible migrations</strong> — Easy to move clients from v1 to v2 without URL changes.</li>
+</ul>
+<h3>Cons of Header-Based Versioning</h3>
+<ul>
+<li><strong>Invisible to proxies</strong> — CDNs and caches don't automatically differentiate versions.</li>
+<li><strong>Testing complexity</strong> — You need tools that support custom headers (curl, Postman, etc.).</li>
+<li><strong>Browser testing pain</strong> — Can't easily test in the browser's address bar.</li>
+<li><strong>Non-standard</strong> — No industry consensus on header names (API-Version, X-API-Version, Accept-Version?).</li>
+</ul>
+<p><em>When I used this:</em> At CodeBrew Labs, we standardized on <code>X-API-Version</code> for our Laravel REST API design. Worked well for mobile apps, but testing desktop clients was awkward.</p>
+
+<h2 id="query-parameter-approach">Query Parameter Approach: Flexible Hybrid</h2>
+<p>Query parameters sit between URL paths and headers—visible but optional:</p>
+<div class="code-block" data-lang="Laravel/PHP"><pre><code>// REST API design: Query parameter versioning
+Route::get('/api/users/{id}', function ($id) {
+    $version = request('api_version', '1');
+
+    $user = User::find($id);
+
+    if ($version === '1') {
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email
+        ]);
+    }
+
+    if ($version === '2') {
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'created_at' => $user->created_at->toIso8601String(),
+            'subscription_tier' => $user->subscription?->tier
+        ]);
+    }
+
+    return response()->json(['error' => 'Unsupported version'], 400);
+});</code></pre></div>
+<h3>Pros of Query Parameter Versioning</h3>
+<ul>
+<li><strong>Visible in URLs</strong> — Easy to debug and test in browsers: <code>/api/users/1?api_version=2</code>.</li>
+<li><strong>Optional defaults</strong> — Can default to v1 if clients don't specify.</li>
+<li><strong>Works with all CDNs</strong> — Query strings are cached intelligently.</li>
+<li><strong>Mobile-friendly</strong> — Easier to implement in REST clients than custom headers.</li>
+</ul>
+<h3>Cons of Query Parameter Versioning</h3>
+<ul>
+<li><strong>Caching gotchas</strong> — Different query params = different cache keys (can bloat cache).</li>
+<li><strong>Less explicit</strong> — Easy for clients to forget the parameter.</li>
+<li><strong>SEO implications</strong> — Search engines treat <code>/api/users?v=1</code> and <code>/api/users?v=2</code> as separate resources.</li>
+</ul>
+<p><em>When I used this:</em> Never production—but honestly, it could work for internal APIs where clients are controllable and testing is frequent.</p>
+
+<h2 id="semantic-versioning">Semantic Versioning Strategy: The Right Mental Model</h2>
+<p>Your REST API design versioning strategy should map to semantic versioning concepts: <code>MAJOR.MINOR.PATCH</code>.</p>
+<ul>
+<li><strong>MAJOR</strong> — Breaking changes (new required fields, removed endpoints, response structure changes). Increment when clients <em>must</em> upgrade.</li>
+<li><strong>MINOR</strong> — Backward-compatible additions (new optional fields, new endpoints). Clients don't break.</li>
+<li><strong>PATCH</strong> — Bug fixes and security updates. Transparent to clients.</li>
+</ul>
+<p>Here's how I apply this to API versioning:</p>
+<blockquote>
+<p><strong>Don't version your API for every PATCH or MINOR change.</strong> Only bump the version for MAJOR breaking changes. This keeps the versioning burden manageable and clients happy.</p>
+</blockquote>
+<p>Bad approach:</p>
+<ul>
+<li><code>/api/v1.0.0/users</code> — Too granular, unmaintainable.</li>
+<li><code>/api/v1/v2/v3</code> — Multiple version headers per request, confusing.</li>
+</ul>
+<p>Good approach:</p>
+<ul>
+<li><code>/api/v1/users</code> → v1.0, v1.1, v1.5 are all backward-compatible within v1.</li>
+<li><code>/api/v2/users</code> → New major breaking change, clients must migrate.</li>
+<li>Deprecate v1 after 12 months, force migration.</li>
+</ul>
+
+<h2 id="deprecation-lifecycle">Building a Deprecation Lifecycle: The Human Side</h2>
+<p>Versioning only works if you have a clear plan to sunset old versions. I've seen teams support v1, v2, v3, v4 simultaneously—nightmare territory.</p>
+<p>Here's the deprecation lifecycle I implement:</p>
+<h3>Phase 1: Announcement (Month 1)</h3>
+<p>Notify all clients via email, in-app notifications, and dashboard:</p>
+<blockquote>
+<p>"API v1 will be sunset on [DATE]. Please upgrade to v2 by [DATE—6 months away]. Here's a migration guide: [link]. Questions? Email api@company.com."</p>
+</blockquote>
+<h3>Phase 2: Deprecation Headers (Months 1–5)</h3>
+<p>Add deprecation headers to v1 responses:</p>
+<div class="code-block" data-lang="Node.js/Express"><pre><code>app.get('/api/v1/users/:id', (req, res) => {
+  res.set({
+    'Deprecation': 'true',
+    'Sunset': new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toUTCString(),
+    'Link': '&lt;https://docs.example.com/api/v2-migration&gt;; rel="successor-version"'
+  });
+
+  res.json({ id: req.params.id, name: 'John Doe' });
+});</code></pre></div>
+<p>Clients using good REST practices will see these headers and proactively migrate.</p>
+<h3>Phase 3: Rate Limiting (Month 6)</h3>
+<p>Reduce rate limits for v1 endpoints to incentivize migration:</p>
+<ul>
+<li>v2 clients: 1,000 req/hour</li>
+<li>v1 clients: 100 req/hour</li>
+</ul>
+<h3>Phase 4: Shutdown (Month 7)</h3>
+<p>Return 410 Gone status for v1 endpoints:</p>
+<div class="code-block" data-lang="Node.js/Express"><pre><code>app.get('/api/v1/*', (req, res) => {
+  res.status(410).json({
+    error: 'API v1 has been sunset. Please migrate to v2.',
+    migration_guide: 'https://docs.example.com/api/v2-migration'
+  });
+});</code></pre></div>
+<div class="callout-warn"><p class="callout-label">⚠️ Important</p><p>Never abruptly delete old API versions without warning. I've seen companies do this and it breaks production systems. Always give 6+ months notice, provide migration guides, and deprecate gracefully.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>URL path versioning</strong> is most explicit and works best at small scale (/api/v1, /api/v2). Use this as your default unless you have a specific reason not to.</li>
+<li><strong>Header-based versioning</strong> scales better for high-frequency API changes, but requires discipline across teams and careful client coordination.</li>
+<li><strong>Only version for MAJOR breaking changes.</strong> Minor additions and patches should be backward-compatible within the same major version. This dramatically reduces versioning burden.</li>
+<li><strong>Implement a clear deprecation lifecycle:</strong> announce 6+ months ahead, add deprecation headers, rate-limit old versions, then sunset. Never abruptly delete endpoints.</li>
+<li><strong>Document version differences clearly.</strong> Every version needs a migration guide. Clients won't upgrade without knowing what changed and why.</li>
+</ul>
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>My current full-stack development approach: I use URL path versioning for the first 2–3 major versions, then switch to header-based if we're actively maintaining 3+ versions. This gives the clarity of paths early, then flexibility at scale.</p></div>`,
+  },
+
+  {
     slug: "database-caching-strategy-node-rest-api",
     featured: false,
     icon: "⚡",
