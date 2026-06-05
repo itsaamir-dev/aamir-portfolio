@@ -139,6 +139,235 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-background-tasks-workmanager-vs-foreground-services",
+    featured: false,
+    icon: "⚙️",
+    cat: "android", catLabel: "Android",
+    date: "Jun 5, 2026", readTime: "7 min read",
+    title: "Android Background Tasks: WorkManager vs Foreground Services",
+    excerpt: "Master Android background execution. Learn when to use WorkManager, foreground services, and async patterns. Real production insights from 8+ years of Android development.",
+    tags: ["Android Development","Kotlin","Background Tasks","WorkManager","Android Architecture"],
+    tocItems: [
+      {"id":"the-background-task-dilemma","label":"The Background Task Dilemma"},
+      {"id":"workmanager-the-modern-approach","label":"WorkManager: The Modern Approach"},
+      {"id":"foreground-services-when-you-need-visibility","label":"Foreground Services: When You Need Visibility"},
+      {"id":"kotlin-coroutines-and-async-patterns","label":"Kotlin Coroutines & Async Patterns"},
+      {"id":"choosing-the-right-tool","label":"Choosing the Right Tool for Your Use Case"},
+      {"id":"real-world-implementation-example","label":"Real-World Implementation Example"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="the-background-task-dilemma">The Background Task Dilemma</h2>
+<p>When I was building <strong>Nova Cabs</strong>, we faced a critical challenge: the app needed to track driver location in real-time, sync ride data, and process payments—all without draining the battery or getting killed by the system. This is the core problem every Android developer faces when building production apps.</p>
+<p><strong>Android development</strong> has evolved dramatically over the past 8 years. What worked in Android 5 would get your app terminated in Android 12+. The operating system became increasingly aggressive about killing background processes, and Google's APIs shifted from permissive (do whatever you want) to prescriptive (here's the approved way).</p>
+<p>Today, you have three main patterns for handling <strong>Android background tasks</strong>:</p>
+<ul>
+<li><strong>WorkManager</strong> — The recommended solution for most use cases</li>
+<li><strong>Foreground Services</strong> — When users need to see ongoing activity</li>
+<li><strong>Kotlin Coroutines</strong> — For lightweight, in-process async work</li>
+</ul>
+<p>Getting this wrong is costly. I've seen apps crash on Android 12, lose user data, fail battery tests, and get rejected from the Play Store. I've also optimized apps that reduced crash rates by 35% through better background task management.</p>
+
+<h2 id="workmanager-the-modern-approach">WorkManager: The Modern Approach</h2>
+<p><strong>WorkManager</strong> is Google's official recommendation for background task scheduling. It's part of the Jetpack ecosystem and handles the complexity of different Android versions, device states, and system constraints for you.</p>
+<h3>Why WorkManager Won</h3>
+<p>When I migrated the <strong>AudioBook AI</strong> app (50K+ users) to use WorkManager instead of custom background schedulers, we saw immediate improvements:</p>
+<ul>
+<li>Tasks survived app crashes and device reboots</li>
+<li>The system optimized scheduling based on device state and battery</li>
+<li>No Play Store rejection issues</li>
+<li>Battery consumption dropped by ~12%</li>
+</ul>
+<p>WorkManager handles the tedious details: it chooses between JobScheduler (Android 5.1+), GcmNetworkManager (older devices), and AlarmManager based on your API level. You just write the task logic.</p>
+<h3>When to Use WorkManager</h3>
+<p>Use WorkManager for:</p>
+<ul>
+<li><strong>Guaranteed execution</strong> — Syncing data, uploading files, processing batches</li>
+<li><strong>Delayed tasks</strong> — "Remind me in 2 hours", cleanup jobs</li>
+<li><strong>Periodic work</strong> — Daily syncs, health checks, analytics</li>
+<li><strong>Chained tasks</strong> — Task A completes, then Task B runs</li>
+<li><strong>Tasks that survive app restart</strong> — The system will reschedule them</li>
+</ul>
+
+<h2 id="foreground-services-when-you-need-visibility">Foreground Services: When You Need Visibility</h2>
+<p>Foreground Services are different. They run <em>in the foreground</em> with a visible notification. The system won't kill them because the user explicitly sees they're running.</p>
+<h3>The Key Differences</h3>
+<p>WorkManager is <strong>best-effort</strong>. The system decides when to run your task based on battery, connectivity, and device state. Foreground Services are <strong>guaranteed to run immediately</strong>.</p>
+<p>This matters for:</p>
+<ul>
+<li><strong>Location tracking</strong> — Apps like maps, rideshare, fitness need real-time updates</li>
+<li><strong>Active downloads/uploads</strong> — Users expect progress visibility</li>
+<li><strong>Music playback</strong> — Media apps need continuous execution</li>
+<li><strong>VoIP calls</strong> — Phone apps can't have gaps</li>
+</ul>
+<h3>The Catch</h3>
+<p>Starting with Android 12, you must declare the foreground service type in your manifest. And users can now disable them. A foreground service also burns battery faster because it's always running.</p>
+<div class="callout-warn"><p class="callout-label">⚠️ Don't Abuse Foreground Services</p><p>I've seen developers use foreground services to bypass system restrictions and run background tasks indefinitely. Google will reject your app. Use them only when the user can actually see the ongoing work.</p></div>
+
+<h2 id="kotlin-coroutines-and-async-patterns">Kotlin Coroutines & Async Patterns</h2>
+<p>Neither WorkManager nor Foreground Services are appropriate for short-lived operations. This is where <strong>Kotlin Coroutines</strong> shine.</p>
+<p>Coroutines are lightweight, non-blocking, and perfect for API calls, database queries, and image processing—as long as the app stays open or the work completes quickly.</p>
+<p>In <strong>Jetpack Compose</strong> and modern Android development, coroutines integrated with lifecycles are the foundation. You launch them on appropriate scopes:</p>
+<ul>
+<li><code>viewModelScope</code> — Auto-cancelled when the ViewModel is cleared</li>
+<li><code>lifecycleScope</code> — Tied to Fragment/Activity lifecycle</li>
+<li><code>launchIn(Dispatchers.IO)</code> — For long-running operations</li>
+</ul>
+<p>Coroutines don't survive app termination. If the user closes the app, your coroutine stops. For work that must complete, use WorkManager.</p>
+
+<h2 id="choosing-the-right-tool">Choosing the Right Tool for Your Use Case</h2>
+<p>Here's my decision tree from years of production experience:</p>
+<p><strong>Is the work short-lived (&lt;10 seconds) and can be abandoned if the app closes?</strong></p>
+<ul>
+<li><em>Yes</em> → Use Kotlin Coroutines with lifecycleScope</li>
+<li><em>No</em> → Continue</li>
+</ul>
+<p><strong>Does the user need to see the task running (download, upload, location tracking)?</strong></p>
+<ul>
+<li><em>Yes</em> → Use Foreground Service</li>
+<li><em>No</em> → Continue</li>
+</ul>
+<p><strong>Must the task complete even if the app restarts or device reboots?</strong></p>
+<ul>
+<li><em>Yes</em> → Use WorkManager with appropriate constraints</li>
+<li><em>No</em> → Use Kotlin Coroutines (with lifecycle awareness)</li>
+</ul>
+
+<h2 id="real-world-implementation-example">Real-World Implementation Example</h2>
+<p>Let me show you a practical WorkManager setup from the <strong>AudioBook AI</strong> app. We needed to sync reading progress to the cloud every hour, but only on WiFi to save mobile data:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>// Define the Worker
+class SyncReadingProgressWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        return try {
+            val bookId = inputData.getString("book_id") ?: return Result.retry()
+            val repository = AudioBookRepository()
+            repository.syncProgress(bookId)
+            Result.success()
+        } catch (e: Exception) {
+            if (e is IOException) {
+                Result.retry() // Retry on network errors
+            } else {
+                Result.failure() // Don't retry on app logic errors
+            }
+        }
+    }
+}
+
+// Schedule the periodic work
+fun scheduleReadingProgressSync(context: Context) {
+    val syncRequest = PeriodicWorkRequestBuilder&lt;SyncReadingProgressWorker&gt;(
+        1, TimeUnit.HOURS,
+        15, TimeUnit.MINUTES // Flex interval
+    )
+    .setConstraints(
+        Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiresBatteryNotLow(true)
+            .build()
+    )
+    .addTag("reading_sync")
+    .build()
+
+    WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+        "reading_sync",
+        ExistingPeriodicWorkPolicy.KEEP,
+        syncRequest
+    )
+}
+
+// Cancel work when user logs out
+fun cancelReadingSync(context: Context) {
+    WorkManager.getInstance(context).cancelAllWorkByTag("reading_sync")
+}</code></pre></div>
+<p>This approach ensures:</p>
+<ul>
+<li>Syncing happens at least once per hour, but with a 15-minute flex window (the system batches it with other tasks)</li>
+<li>It only runs on WiFi, preserving cellular data</li>
+<li>Battery-low condition halts syncing</li>
+<li>Network errors trigger automatic retries</li>
+<li>App logic errors fail gracefully without infinite retries</li>
+</ul>
+<div class="callout-info"><p class="callout-label">📖 Architecture Note</p><p>In <strong>Clean Architecture</strong> and <strong>MVVM Android</strong> patterns, WorkManager workers act as entry points into your use cases. They should be thin—delegate actual logic to repositories and interactors, never put business logic directly in the worker.</p></div>
+
+<p>Now, here's a Foreground Service example for location tracking (like Nova Cabs):</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>class LocationTrackingService : Service() {
+    private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
+    private val scope = CoroutineScope(Dispatchers.Default + Job())
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val notification = buildNotification()
+        startForeground(LOCATION_NOTIFICATION_ID, notification)
+
+        scope.launch {
+            while (isActive) {
+                try {
+                    val location = getLastKnownLocation()
+                    uploadLocation(location)
+                    delay(10000) // Update every 10 seconds
+                } catch (e: Exception) {
+                    Log.e("LocationService", "Error tracking location", e)
+                }
+            }
+        }
+
+        return START_STICKY // Restart if system kills the service
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun buildNotification(): Notification {
+        return NotificationCompat.Builder(this, "location_channel")
+            .setContentTitle("Tracking Your Location")
+            .setContentText("Your ride is being tracked")
+            .setSmallIcon(R.drawable.ic_location)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .build()
+    }
+
+    private suspend fun uploadLocation(location: Location) {
+        // API call to backend
+    }
+
+    private fun getLastKnownLocation(): Location {
+        // Location retrieval logic
+    }
+}
+
+// Start it from an Activity or ViewModel
+fun startLocationTracking(context: Context) {
+    val intent = Intent(context, LocationTrackingService::class.java)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.startForegroundService(intent)
+    } else {
+        context.startService(intent)
+    }
+}</code></pre></div>
+<p>For this to work, you need manifest permissions and a notification channel:</p>
+<div class="code-block" data-lang="xml"><pre><code>&lt;!-- AndroidManifest.xml --&gt;
+&lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /&gt;
+&lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE" /&gt;
+&lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" /&gt;
+
+&lt;service
+    android:name=".LocationTrackingService"
+    android:foregroundServiceType="location"
+    android:exported="false" /&gt;</code></pre></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>WorkManager is your default</strong> — Use it for all guaranteed background work that doesn't need immediate execution. It's resilient, battery-efficient, and respects system constraints.</li>
+<li><strong>Foreground Services are for visible work</strong> — Only use them when users see an active notification and understand the task is running. They drain battery faster and have stricter OS permissions.</li>
+<li><strong>Kotlin Coroutines for short-lived async</strong> — They're lightweight, non-blocking, and perfect for API calls and database queries within the app lifecycle. They don't survive app termination.</li>
+<li><strong>Respect Android's evolution</strong> — Doze mode, Battery Saver, scoped storage, and runtime permissions exist for good reasons. Building around them, not against them, leads to apps users actually want to keep installed.</li>
+<li><strong>Test on real devices and OS versions</strong> — Emulators lie. Background task behavior varies wildly across Android 8, 10, 12, and 14. I always test on at least 3 real devices at different OS levels.</li>
+</ul>`,
+  },
+
+  {
     slug: "quantization-llm-android-offline-ai",
     featured: false,
     icon: "🤖",
