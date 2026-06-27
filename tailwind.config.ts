@@ -20,8 +20,8 @@ const config: Config = {
         accent: "#2A6496",
       },
       fontFamily: {
-        display: ["var(--font-playfair)", "Georgia", "serif"],
-        body:    ["var(--font-dm-sans)", "sans-serif"],
+        display: ["var(--font-space-grotesk)", "sans-serif"],
+        body:    ["var(--font-space-grotesk)", "sans-serif"],
         mono:    ["var(--font-jetbrains)", "monospace"],
       },
       keyframes: {

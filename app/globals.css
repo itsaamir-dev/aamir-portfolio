@@ -3,8 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-playfair: 'Playfair Display', Georgia, serif;
-  --font-dm-sans: 'DM Sans', sans-serif;
+  --font-space-grotesk: 'Space Grotesk', sans-serif;
   --font-jetbrains: 'JetBrains Mono', monospace;
 }
 
