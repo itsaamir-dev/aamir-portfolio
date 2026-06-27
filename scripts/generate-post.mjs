@@ -67,7 +67,7 @@ async function callClaude(prompt) {
     },
     body: JSON.stringify({
       model:      "claude-haiku-4-5-20251001",
-      max_tokens: 6000,
+      max_tokens: 8000,
       messages:   [{ role: "user", content: prompt }],
     }),
   });
@@ -83,7 +83,24 @@ async function callClaude(prompt) {
 
 // ── Strip markdown code fences from JSON response ────────────────────────────
 function parseResponse(raw) {
-  const cleaned = raw.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim();
+  // Strip markdown code fences — handle leading whitespace/newlines before the fence
+  let cleaned = raw
+    .replace(/^[\s\S]*?```(?:json)?[ \t]*\n?/, "")  // strip everything up to and including opening fence
+    .replace(/\n?[ \t]*```[\s\S]*$/, "")              // strip closing fence and anything after
+    .trim();
+
+  // Fallback: if no fence found, just trim the raw string
+  if (!cleaned || cleaned === raw.trim()) {
+    cleaned = raw.trim();
+  }
+
+  // Extract the outermost JSON object in case there's surrounding text
+  const start = cleaned.indexOf("{");
+  const end   = cleaned.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    cleaned = cleaned.slice(start, end + 1);
+  }
+
   return JSON.parse(cleaned);
 }
 
