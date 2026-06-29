@@ -139,6 +139,334 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-ui-testing-jetpack-compose",
+    featured: false,
+    icon: "🧪",
+    cat: "android", catLabel: "Android",
+    date: "Jun 29, 2026", readTime: "6 min read",
+    title: "Android UI Testing in Jetpack Compose: Real-World Strategies",
+    excerpt: "Master Android UI testing for Jetpack Compose with practical strategies. Learn assertion patterns, state verification, and navigation testing from production experience.",
+    tags: ["Jetpack Compose","Android Testing","UI Testing","Android Development","Quality Assurance"],
+    tocItems: [
+      {"id":"why-ui-testing-matters","label":"Why UI Testing Matters in Modern Android"},
+      {"id":"setting-up-compose-testing","label":"Setting Up Compose UI Testing"},
+      {"id":"testing-composables","label":"Testing Individual Composables"},
+      {"id":"state-and-navigation-testing","label":"Testing State and Navigation"},
+      {"id":"real-world-patterns","label":"Real-World Testing Patterns from Production"},
+      {"id":"common-pitfalls","label":"Common Pitfalls and How to Avoid Them"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-ui-testing-matters">Why UI Testing Matters in Modern Android</h2>
+<p>I've been building Android applications for over 8 years now, and I can tell you with certainty: <strong>UI testing is the difference between shipping with confidence and shipping with anxiety.</strong> When I led the migration to Kotlin at CodeBrew Labs, we didn't just focus on the backend refactor—we built a comprehensive testing suite that caught UI regressions before they hit production.</p>
+<p>The problem with <strong>Android development</strong> has always been fragmentation. Different devices, different screen sizes, different Android versions. Jetpack Compose changed the game by making UI more declarative and, crucially, <em>more testable</em>. But most engineers I work with still treat Compose testing as an afterthought.</p>
+<p>Here's what I've learned: <strong>if your UI isn't tested, you're not shipping a product—you're shipping a beta.</strong> In my current role at Raybit, our 25% faster delivery metric? A huge part of that came from automated UI testing catching bugs before QA even touched the app.</p>
+
+<h2 id="setting-up-compose-testing">Setting Up Compose UI Testing</h2>
+<p>Before you write a single test, you need the right foundation. In your <code>build.gradle.kts</code> (app level), you'll want to add the Compose testing dependencies:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>dependencies {
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.0")
+    
+    // For assertions
+    androidTestImplementation("androidx.compose.ui:ui-test-assertions:1.6.0")
+    
+    // Espresso for interoperability
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+}
+
+android {
+    defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+}</code></pre></div>
+<p>The key here is understanding the difference between <code>androidTest</code> (instrumented tests on device) and <code>test</code> (unit tests on JVM). For UI testing, you're always in the instrumented realm because you need the Android runtime.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Always use <code>debugImplementation</code> for the manifest—it's only needed during testing and keeps your app size lean in production builds.</p></div>
+
+<h2 id="testing-composables">Testing Individual Composables</h2>
+<p>Let me show you how I structure Compose tests in production. This is from a real authentication flow I built for AudioBook AI:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>@RunWith(AndroidJUnit4::class)
+class LoginScreenTest {
+    @get:Rule
+    val composeTestRule = createComposeRule()
+    
+    @Test
+    fun loginButton_ShowsErrorWhenEmailEmpty() {
+        // Arrange: Set up your Composable state
+        composeTestRule.setContent {
+            LoginScreen(
+                onLoginClick = {},
+                onForgotPasswordClick = {}
+            )
+        }
+        
+        // Act: Interact with the UI
+        composeTestRule.onNodeWithTag("email_field").performTextInput("")
+        composeTestRule.onNodeWithTag("login_button").performClick()
+        
+        // Assert: Verify the result
+        composeTestRule
+            .onNodeWithText("Email cannot be empty")
+            .assertIsDisplayed()
+    }
+    
+    @Test
+    fun passwordField_MasksInput() {
+        composeTestRule.setContent {
+            LoginScreen(
+                onLoginClick = {},
+                onForgotPasswordClick = {}
+            )
+        }
+        
+        composeTestRule.onNodeWithTag("password_field").performTextInput("MyPassword123")
+        
+        // Verify the field has password visual transformation
+        composeTestRule
+            .onNodeWithTag("password_field")
+            .assert(hasPasswordTransformation())
+    }
+}</code></pre></div>
+<p>Notice the pattern here: <strong>Arrange, Act, Assert.</strong> This is fundamental. I always structure my tests this way because it makes them readable six months later when you're debugging a regression.</p>
+<p>The <code>testTag</code> modifier is crucial for <strong>Android UI testing</strong>. It's your anchor point for finding elements in a Compose tree. I add it to every interactive component:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun LoginScreen(
+    onLoginClick: (email: String, password: String) -&gt; Unit,
+    onForgotPasswordClick: () -&gt; Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        TextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.testTag("email_field")
+        )
+        
+        TextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.testTag("password_field")
+        )
+        
+        Button(
+            onClick = { onLoginClick(email, password) },
+            modifier = Modifier.testTag("login_button")
+        ) {
+            Text("Login")
+        }
+    }
+}</code></pre></div>
+
+<h2 id="state-and-navigation-testing">Testing State and Navigation</h2>
+<p>This is where things get interesting. In real applications, your UI doesn't exist in isolation. It's connected to ViewModels, state management, and navigation flows. Testing these together is non-negotiable.</p>
+<p>Here's how I test state-driven UI changes, which is core to solid <strong>Android architecture</strong>:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>@RunWith(AndroidJUnit4::class)
+class BookListScreenTest {
+    @get:Rule
+    val composeTestRule = createComposeRule()
+    
+    private val viewModel = FakeBookViewModel()
+    
+    @Test
+    fun bookList_DisplaysLoadingInitially() {
+        composeTestRule.setContent {
+            BookListScreen(viewModel = viewModel)
+        }
+        
+        // Initially loading
+        composeTestRule
+            .onNodeWithTag("loading_indicator")
+            .assertIsDisplayed()
+    }
+    
+    @Test
+    fun bookList_ShowsBooksAfterLoading() {
+        // Simulate state change
+        viewModel.setState(
+            BookListState.Success(
+                books = listOf(
+                    Book(id = 1, title = "Kotlin Coroutines", author = "Marcin Moskała"),
+                    Book(id = 2, title = "Clean Code", author = "Robert Martin")
+                )
+            )
+        )
+        
+        composeTestRule.setContent {
+            BookListScreen(viewModel = viewModel)
+        }
+        
+        // Verify both books are displayed
+        composeTestRule.onNodeWithText("Kotlin Coroutines").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Clean Code").assertIsDisplayed()
+    }
+    
+    @Test
+    fun bookList_ShowsErrorMessage() {
+        viewModel.setState(
+            BookListState.Error(message = "Network error")
+        )
+        
+        composeTestRule.setContent {
+            BookListScreen(viewModel = viewModel)
+        }
+        
+        composeTestRule
+            .onNodeWithText("Network error")
+            .assertIsDisplayed()
+        
+        composeTestRule
+            .onNodeWithTag("retry_button")
+            .assertIsDisplayed()
+    }
+}
+
+// Fake implementation for testing
+class FakeBookViewModel : BookViewModel() {
+    private var currentState = BookListState.Loading
+    
+    fun setState(state: BookListState) {
+        currentState = state
+    }
+    
+    override val state: StateFlow&lt;BookListState&gt; = 
+        MutableStateFlow(currentState).asStateFlow()
+}</code></pre></div>
+<p>For navigation testing in Compose, I recommend using <strong>Jetpack Compose</strong>'s built-in testing capabilities with a fake NavHostController:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>@Test
+fun bookDetails_NavigationFlow() {
+    val navController = TestNavHostController(ApplicationProvider.getApplicationContext())
+    
+    composeTestRule.setContent {
+        navController.navigatorProvider.addNavigator(ComposeNavigator())
+        NavHost(
+            navController = navController,
+            startDestination = "bookList"
+        ) {
+            composable("bookList") {
+                BookListScreen(
+                    onBookClick = { bookId -&gt;
+                        navController.navigate("bookDetails/$bookId")
+                    }
+                )
+            }
+            composable("bookDetails/{bookId}") { backStackEntry -&gt;
+                val bookId = backStackEntry.arguments?.getString("bookId")
+                BookDetailsScreen(bookId = bookId ?: "")
+            }
+        }
+    }
+    
+    // Click a book
+    composeTestRule.onNodeWithTag("book_item_1").performClick()
+    
+    // Verify navigation occurred
+    assertEquals("bookDetails/1", navController.currentBackStackEntry?.destination?.route)
+}</code></pre></div>
+
+<h2 id="real-world-patterns">Real-World Testing Patterns from Production</h2>
+<p>Let me share what actually works in production. After shipping 6 apps on the Play Store and maintaining AudioBook AI with 50K+ users, I've learned what patterns stick:</p>
+
+<h3>1. Test Your Critical User Paths First</h3>
+<p>Don't test everything equally. Focus on your revenue-generating flows. For AudioBook AI, that's upload → convert → download. Every test I write for those flows prevents a refund.</p>
+
+<h3>2. Use Semantics for Accessibility AND Testability</h3>
+<p>In <strong>MVVM Android</strong> architecture, accessibility isn't just ethical—it's a testing superpower. Semantic properties make your tests more resilient to UI changes:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>Button(
+    onClick = { /* ... */ },
+    modifier = Modifier
+        .testTag("submit_button")
+        .semantics {
+            contentDescription = "Submit form"
+            customActions = listOf(
+                CustomSemanticsAction(label = "Long press to delete") { true }
+            )
+        }
+) {
+    Text("Submit")
+}</code></pre></div>
+
+<h3>3. Mock External Dependencies Aggressively</h3>
+<p>Never call a real API in a UI test. Ever. I use dependency injection (Hilt in most cases) to swap in fakes:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>@HiltAndroidTest
+class IntegrationTest {
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
+    
+    @get:Rule(order = 1)
+    val composeTestRule = createComposeRule()
+    
+    @BindValue
+    val bookRepository: BookRepository = FakeBookRepository()
+    
+    @Test
+    fun completeFlow_WithFakeRepository() {
+        // Your test here - uses fake repo automatically
+    }
+}</code></pre></div>
+
+<h2 id="common-pitfalls">Common Pitfalls and How to Avoid Them</h2>
+<p><strong>Pitfall 1: Testing Implementation Details Instead of Behavior</strong></p>
+<p>Bad: Testing that a specific internal state variable changed. Good: Testing that the user sees the expected result. Focus on what the user experiences, not internal mechanics.</p>
+
+<p><strong>Pitfall 2: Ignoring Test Timing Issues</strong></p>
+<p>Compose tests run fast, but your app logic might not. Use <code>waitUntil</code> instead of arbitrary delays:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>// Bad
+Thread.sleep(1000)
+composeTestRule.onNodeWithText("Loaded").assertIsDisplayed()
+
+// Good
+composeTestRule.waitUntil(timeoutMillis = 5000) {
+    composeTestRule
+        .onAllNodesWithText("Loaded")
+        .fetchSemanticsNodes().isNotEmpty()
+}</code></pre></div>
+
+<p><strong>Pitfall 3: Writing Tests That Are Hard to Maintain</strong></p>
+<p>Extract test helpers. After the Kotlin migration cut our crash rate by 35%, part of that success was making tests so readable that any engineer could maintain them:</p>
+<div class="code-block" data-lang="Kotlin"><pre><code>// Test helper functions
+fun ComposeContentTestRule.typeEmail(email: String) {
+    onNodeWithTag("email_field").performTextInput(email)
+}
+
+fun ComposeContentTestRule.clickLoginButton() {
+    onNodeWithTag("login_button").performClick()
+}
+
+fun ComposeContentTestRule.assertErrorShown(message: String) {
+    onNodeWithText(message).assertIsDisplayed()
+}
+
+// Now your test reads like documentation
+@Test
+fun invalidEmail_ShowsError() {
+    composeTestRule.setContent { LoginScreen(...) }
+    composeTestRule.typeEmail("invalid")
+    composeTestRule.clickLoginButton()
+    composeTestRule.assertErrorShown("Invalid email format")
+}</code></pre></div>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Reality Check</p><p>Your UI tests won't catch every bug. They catch the big ones—crashes, missing screens, broken flows. Combine them with screenshot tests and manual QA for comprehensive coverage.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>UI testing in Jetpack Compose is non-negotiable</strong> for confident Android development. It catches regressions before production and lets you refactor fearlessly.</li>
+<li><strong>Use testTag() liberally and semantics intentionally</strong>—they make tests resilient to layout changes while improving accessibility simultaneously.</li>
+<li><strong>Test behavior, not implementation.</strong> Focus on what users see and experience. Mock external dependencies aggressively to keep tests fast and isolated.</li>
+<li><strong>Extract test helpers and maintain them like production code.</strong> This is how you scale testing across teams without it becoming a bottleneck.</li>
+<li><strong>Start with critical user paths.</strong> Not every screen deserves comprehensive testing—focus on revenue flows and user-facing regressions first.</li>
+</ul>`,
+  },
+
+  {
     slug: "ai-android-app-voice-commands-offline",
     featured: false,
     icon: "🎤",
