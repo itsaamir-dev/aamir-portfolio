@@ -18,6 +18,7 @@ export async function generateMetadata(
   const url       = `${SITE_URL}/blog/${post.slug}`;
   const ogImage   = `${SITE_URL}/og-blog.png`;
   const metaTitle = `${post.title} | Aamir Bashir`;
+  const isoDate   = new Date(post.date).toISOString().split("T")[0];
 
   return {
     title:       metaTitle,
@@ -32,7 +33,7 @@ export async function generateMetadata(
       title:         post.title,
       description:   post.excerpt,
       siteName:      "Aamir Bashir — Software Engineer",
-      publishedTime: post.date,
+      publishedTime: isoDate,
       authors:       ["Aamir Bashir"],
       tags:          post.tags,
       images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
@@ -70,8 +71,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
     keywords:        post.tags.join(", "),
     url:             `${SITE_URL}/blog/${post.slug}`,
     image:           `${SITE_URL}/og-blog.png`,
-    datePublished:   post.date,
-    dateModified:    post.date,
+    datePublished:   isoDate,
+    dateModified:    isoDate,
     inLanguage:      "en-US",
     author: {
       "@type": "Person",
