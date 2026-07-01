@@ -15,7 +15,7 @@ export function GET() {
 
 ## About
 
-Aamir Bashir is a Top Rated Plus freelancer on Upwork with $60K+ earned, based in India and open to remote work with US/EU clients. He specialises in Android development (Kotlin, Jetpack Compose, MVVM, Clean Architecture), full-stack web development (React, Next.js, Node.js, Laravel), and AI/LLM integration in mobile apps.
+Aamir Bashir is a Top Rated Plus freelancer on Upwork with $70K+ earned, based in India and open to remote work with US/EU clients. He specialises in Android development (Kotlin, Jetpack Compose, MVVM, Clean Architecture), full-stack web development (React, Next.js, Node.js, Laravel), and AI/LLM integration in mobile apps.
 
 - Website: ${SITE_URL}
 - Blog: ${SITE_URL}/blog

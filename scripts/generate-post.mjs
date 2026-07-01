@@ -28,7 +28,7 @@ Experience:
   - Software Engineer @ Enthralling Matrix (2019–2020)
   - Software Engineer @ Interface Technologies (2017–2019)
 Projects: EmpSuite ERP, AudioBook AI (50K+ users), AI NoteTaker, Nova Cabs.
-Freelance: Upwork Top Rated Plus, 100% JSS, $60K+ earned.
+Freelance: Upwork Top Rated Plus, 100% JSS, $70K+ earned.
 Writing style: First-person, candid, experience-backed, practical over theoretical.
 `;
 

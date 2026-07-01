@@ -1048,7 +1048,7 @@ class MediaViewModel(
 <li><strong>Every Request Gets a Number:</strong> Client asks for a feature? Estimate hours, calculate cost, get written approval. This removes emotion and keeps relationships healthy.</li>
 <li><strong>Contracts Build Trust, Not Walls:</strong> A clear contract actually makes clients happier because expectations are set. I've had clients request me again specifically because I was professional about scope and terms.</li>
 </ul>
-<p>As a freelance software engineer who's earned $60K+ on Upwork with a 100% Job Success Score, I can tell you: <strong>contracts aren't about being difficult — they're about being reliable</strong>. The clients who respect your contract terms are the ones who become repeating clients, refer you to others, and pay on time.</p>
+<p>As a freelance software engineer who's earned $70K+ on Upwork with a 100% Job Success Score, I can tell you: <strong>contracts aren't about being difficult — they're about being reliable</strong>. The clients who respect your contract terms are the ones who become repeating clients, refer you to others, and pay on time.</p>
 <p>Start using them from day one. Your future self will thank you.</p>`,
   },
 
@@ -1059,7 +1059,7 @@ class MediaViewModel(
     cat: "freelance", catLabel: "Freelancing",
     date: "Jun 17, 2026", readTime: "6 min read",
     title: "Building a Profitable Freelance Practice as an Upwork Android Developer",
-    excerpt: "Learn how to scale from hourly projects to retainer clients as a freelance software engineer. Real strategies that earned me $60K+ on Upwork.",
+    excerpt: "Learn how to scale from hourly projects to retainer clients as a freelance software engineer. Real strategies that earned me $70K+ on Upwork.",
     tags: ["Upwork","Freelancing","Android Development","Remote Developer","Business Growth"],
     tocItems: [
       {"id":"why-hourly-kills-profit","label":"Why Hourly Projects Kill Your Profit Margins"},
@@ -1132,7 +1132,7 @@ class MediaViewModel(
 <li><strong>Tier 3 ($25–$40/hour):</strong> Juniors, interns, students, or purely code-monkey work. I rarely take these now.</li>
 </ul>
 
-<p>By being selective, I spent more time in Tier 1, which has lower friction and better clients. That's how I crossed $60K+ in freelance earnings.</p>
+<p>By being selective, I spent more time in Tier 1, which has lower friction and better clients. That's how I crossed $70K+ in freelance earnings.</p>
 
 <div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Don't advertise your hourly rate on Upwork. Let clients see your profile, past work, and testimonials. Then, in proposals, I quote fixed-price or retainer-based. This removes the "race to the bottom" pricing pressure immediately.</p></div>
 
@@ -3548,7 +3548,7 @@ fun SearchableList(items: List&lt;String&gt;, onItemClick: (String) -&gt; Unit) 
     cat: "freelance", catLabel: "Freelancing",
     date: "May 15, 2026", readTime: "6 min read",
     title: "Retaining High-Value Clients as a Freelance Software Engineer",
-    excerpt: "Master client retention strategies that turned my Upwork profile into a $60K+ revenue stream. Learn how a remote developer India builds long-term partnerships.",
+    excerpt: "Master client retention strategies that turned my Upwork profile into a $70K+ revenue stream. Learn how a remote developer India builds long-term partnerships.",
     tags: ["freelance software engineer","Upwork Android developer","remote developer India","client retention","tech freelancing"],
     tocItems: [
       {"id":"the-retention-challenge","label":"The Retention Challenge"},
@@ -3561,7 +3561,7 @@ fun SearchableList(items: List&lt;String&gt;, onItemClick: (String) -&gt; Unit) 
     ],
     content: `<p>When I hit <strong>Top Rated Plus status on Upwork</strong>, I realized something that changed my freelancing trajectory: acquiring new clients is expensive—retaining them is goldmines. I've spent the last 8+ years as a senior software engineer, and the last 3 of those as a <strong>freelance software engineer</strong> with a 100% Job Success Score. What I learned is that your first project with a client is just the beginning. The real revenue comes from the second, third, and tenth project.</p>
 
-<p>In this post, I'm breaking down the exact strategies I used to transform one-off contracts into long-term partnerships—strategies that turned my Upwork Android developer profile and remote developer India presence into a consistent $60K+ annual revenue stream.</p>
+<p>In this post, I'm breaking down the exact strategies I used to transform one-off contracts into long-term partnerships—strategies that turned my Upwork Android developer profile and remote developer India presence into a consistent $70K+ annual revenue stream.</p>
 
 <h2 id="the-retention-challenge">The Retention Challenge</h2>
 
@@ -5707,7 +5707,7 @@ fun FilterPanel() {
     cat: "Freelancing", catLabel: "Freelancing",
     date: "Apr 20, 2026", readTime: "7 min read",
     title: "How to Scale Your Freelance Software Engineer Business",
-    excerpt: "Learn how a freelance software engineer scaled from single projects to $60K+ annually. Systems, client selection, and pricing strategies that work.",
+    excerpt: "Learn how a freelance software engineer scaled from single projects to $70K+ annually. Systems, client selection, and pricing strategies that work.",
     tags: ["Freelance Software Engineer","Upwork Strategy","Remote Developer","Tech Freelancing","Scaling Business"],
     tocItems: [
       {"id":"the-bottleneck","label":"The Bottleneck: Why Most Freelancers Plateau"},
@@ -5722,7 +5722,7 @@ fun FilterPanel() {
 
 <p>By my second year, I hit a wall. <em>Doubling hours meant maybe a 20% income increase.</em> That's when I realized: the problem wasn't my coding skills. It was my business model.</p>
 
-<p>Over the last 5+ years as a <strong>remote developer in India</strong> working with US and EU clients, I've built systems that let me earn $60K+ annually while working 30–35 billable hours per week. This isn't luck. It's deliberate positioning.</p>
+<p>Over the last 5+ years as a <strong>remote developer in India</strong> working with US and EU clients, I've built systems that let me earn $70K+ annually while working 30–35 billable hours per week. This isn't luck. It's deliberate positioning.</p>
 
 <p>In this post, I'm sharing the exact framework I used to scale my freelance software engineer business—the mindset shifts, the client filters, and the operational changes that actually move the needle.</p>
 
@@ -6197,7 +6197,7 @@ suspend fun loadUserProfile(): UserProfile {
       { id: "client-management", label: "Client Management" },
       { id: "protecting-jss",    label: "Protecting Your JSS" },
     ],
-    content: `<p>I hit Top Rated Plus on Upwork in 2023, with a 100% Job Success Score across $60K+ in billed contracts. I did it without paid promotions, without gaming the system, and without burning myself out on race-to-the-bottom pricing.</p>
+    content: `<p>I hit Top Rated Plus on Upwork in 2023, with a 100% Job Success Score across $70K+ in billed contracts. I did it without paid promotions, without gaming the system, and without burning myself out on race-to-the-bottom pricing.</p>
 <p>This is the exact playbook — proposals, client management, pricing, and JSS protection — that I'd give to a friend starting out today.</p>
 <div class="callout-info"><p class="callout-label">📖 Who This Is For</p><p>Software engineers and developers who want to build a sustainable, high-rate freelance practice on Upwork — not a side hustle, a real business.</p></div>
 <h2 id="foundation">The Foundation: Positioning Before Proposals</h2>

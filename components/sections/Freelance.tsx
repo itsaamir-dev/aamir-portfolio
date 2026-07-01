@@ -2,7 +2,7 @@ import Reveal from "@/components/RevealOnScroll";
 import Link from "next/link";
 
 const stats = [
-  { num: "$60K+", label: "Total Earned" },
+  { num: "$70K+", label: "Total Earned" },
   { num: "100%",  label: "Job Success" },
   { num: "50+",   label: "Projects" },
   { num: "⭐ Top", label: "Rated Plus" },

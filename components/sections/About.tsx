@@ -3,7 +3,7 @@ import Reveal from "@/components/RevealOnScroll";
 const badges = ["Android Expert", "Full-Stack", "API Design", "Team Lead", "Top Rated Plus", "Remote-Ready"];
 
 const metrics = [
-  { label: "Total Earnings",    val: "$60K+" },
+  { label: "Total Earnings",    val: "$70K+" },
   { label: "Job Success Score", val: "100%" },
   { label: "Projects Delivered",val: "50+" },
   { label: "Years Experience",  val: "8+" },
