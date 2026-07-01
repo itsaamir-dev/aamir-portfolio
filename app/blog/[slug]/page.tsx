@@ -15,7 +15,7 @@ export async function generateMetadata(
   const post = blogPosts.find(p => p.slug === params.slug);
   if (!post) return {};
 
-  const url       = `${SITE_URL}/blog/${post.slug}`;
+  const postUrl   = `${SITE_URL}/blog/${post.slug}`;
   const ogImage   = `${SITE_URL}/og-blog.png`;
   const metaTitle = `${post.title} | Aamir Bashir`;
   const isoDate   = new Date(post.date).toISOString().split("T")[0];
@@ -25,11 +25,11 @@ export async function generateMetadata(
     description: post.excerpt,
     keywords:    post.tags,
     authors:     [{ name: "Aamir Bashir", url: SITE_URL }],
-    alternates:  { canonical: url },
+    alternates:  { canonical: postUrl },
 
     openGraph: {
       type:          "article",
-      url,
+      url:           postUrl,
       title:         post.title,
       description:   post.excerpt,
       siteName:      "Aamir Bashir — Software Engineer",
@@ -63,43 +63,47 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   const next     = allPosts[idx - 1] ?? null;
   const related  = allPosts.filter(p => p.slug !== post.slug && p.cat === post.cat).slice(0, 3);
 
+  const postUrl = `${SITE_URL}/blog/${post.slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline:        post.title,
-    description:     post.excerpt,
-    keywords:        post.tags.join(", "),
-    url:             `${SITE_URL}/blog/${post.slug}`,
-    image:           `${SITE_URL}/og-blog.png`,
-    datePublished:   isoDate,
-    dateModified:    isoDate,
-    inLanguage:      "en-US",
-    author: {
-      "@type": "Person",
-      name:   "Aamir Bashir",
-      url:    SITE_URL,
-      sameAs: [
-        "https://www.linkedin.com/in/aamirbashir",
-        "https://www.upwork.com/freelancers/aamirbashir",
-      ],
-    },
-    publisher: {
-      "@type": "Person",
-      name:    "Aamir Bashir",
-      url:     SITE_URL,
-    },
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id":   `${SITE_URL}/blog/${post.slug}`,
-    },
-    breadcrumb: {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home",       item: SITE_URL },
-        { "@type": "ListItem", position: 2, name: "Blog",       item: `${SITE_URL}/blog` },
-        { "@type": "ListItem", position: 3, name: post.title,   item: `${SITE_URL}/blog/${post.slug}` },
-      ],
-    },
+    "@graph": [
+      {
+        "@type": "BlogPosting",
+        "@id":           `${postUrl}#article`,
+        headline:        post.title,
+        description:     post.excerpt,
+        keywords:        post.tags.join(", "),
+        url:             postUrl,
+        image:           `${SITE_URL}/og-blog.png`,
+        datePublished:   isoDate,
+        dateModified:    isoDate,
+        inLanguage:      "en-US",
+        author: {
+          "@type": "Person",
+          name:   "Aamir Bashir",
+          url:    SITE_URL,
+          sameAs: [
+            "https://www.linkedin.com/in/aamirbashir",
+            "https://www.upwork.com/freelancers/aamirbashir",
+          ],
+        },
+        publisher: {
+          "@type": "Person",
+          name:    "Aamir Bashir",
+          url:     SITE_URL,
+        },
+        mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id":   `${postUrl}#breadcrumb`,
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home",     item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Blog",     item: `${SITE_URL}/blog` },
+          { "@type": "ListItem", position: 3, name: post.title, item: postUrl },
+        ],
+      },
+    ],
   };
 
   return (
