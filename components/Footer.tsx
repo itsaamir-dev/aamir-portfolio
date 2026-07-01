@@ -8,6 +8,9 @@ export default function Footer() {
       <div>© 2025 <span className="text-gold">Aamir Bashir</span> · Senior Software Engineer</div>
       <div>Made with precision · India · Open to Remote <span className="text-gold">(US/EU)</span></div>
       <div className="flex gap-4">
+        <Link href="/" className="text-gold hover:text-gold2 transition-colors duration-200 no-underline">
+          Home →
+        </Link>
         <Link href="/blog" className="text-gold hover:text-gold2 transition-colors duration-200 no-underline">
           Blog →
         </Link>
