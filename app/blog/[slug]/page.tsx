@@ -64,6 +64,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   const related  = allPosts.filter(p => p.slug !== post.slug && p.cat === post.cat).slice(0, 3);
 
   const postUrl = `${SITE_URL}/blog/${post.slug}`;
+  const isoDate = new Date(post.date).toISOString().split("T")[0];
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
