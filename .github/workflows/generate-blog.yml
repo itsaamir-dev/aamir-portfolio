@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # Full history so we can push cleanly
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -30,11 +30,24 @@ jobs:
         run: node scripts/generate-post.mjs
 
       - name: Commit and push new post
+        id: commit
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add lib/data.ts
-          # Only commit if data.ts actually changed (guards against duplicate generation)
-          git diff --staged --quiet && echo "No changes to commit." && exit 0
-          git commit -m "chore: auto-generate blog post [skip ci]"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "chore: auto-generate blog post"
+            git push
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Vercel production
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npm install -g vercel@latest --silent
+          vercel --prod --token=$VERCEL_TOKEN --yes
