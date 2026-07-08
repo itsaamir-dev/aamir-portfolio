@@ -139,6 +139,211 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "code-review-practices-senior-software-engineer",
+    featured: false,
+    icon: "🔍",
+    cat: "career", catLabel: "Career",
+    date: "Jul 8, 2026", readTime: "7 min read",
+    title: "Code Review Mastery: How Senior Developers Shape Team Growth",
+    excerpt: "Master code review as a senior developer. Learn proven strategies to elevate team quality, catch critical bugs early, and build a culture of technical excellence.",
+    tags: ["Code Review","Senior Developer Tips","Team Leadership","Software Engineer Career","Technical Culture"],
+    tocItems: [
+      {"id":"why-code-reviews-matter","label":"Why Code Reviews Matter for Your Senior Developer Growth"},
+      {"id":"review-strategy","label":"Building Your Code Review Strategy"},
+      {"id":"practical-checklist","label":"My Practical Code Review Checklist"},
+      {"id":"common-mistakes","label":"Mistakes I Made (And You Should Avoid)"},
+      {"id":"tooling-automation","label":"Tooling and Automation That Scales"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-code-reviews-matter">Why Code Reviews Matter for Your Senior Developer Growth</h2>
+
+<p>When I became a senior software engineer at CodeBrew Labs, I thought my job was to write better code faster. I was wrong. Within weeks, I realized that <strong>the real leverage of seniority lies in multiplying the output and quality of your entire team through effective code review practices</strong>.</p>
+
+<p>Code reviews are where senior developers prove their worth. They're not gatekeeping—they're teaching. At CodeBrew, I led code reviews on six production Android apps with 4.5+ star ratings. That consistency didn't come from me writing perfect code in isolation. It came from systematically reviewing every pull request with the mindset of a mentor, not a gate.</p>
+
+<p>Here's what most junior and mid-level engineers miss: <em>code review is not about catching syntax errors.</em> Linters do that. Static analysis tools do that. Code review is about catching architectural decisions that will cost you 6 months of refactoring later. It's about spotting performance bottlenecks before they hit production. It's about ensuring your codebase remains maintainable as it scales.</p>
+
+<p>As a senior software engineer, you have eight things no one else on your team has: perspective. You've shipped enough to recognize patterns. You've debugged enough to spot subtle bugs. You've refactored enough to see when something will become a nightmare in three months. Your code reviews should reflect that.</p>
+
+<h2 id="review-strategy">Building Your Code Review Strategy</h2>
+
+<p>I've reviewed hundreds of pull requests across Kotlin, Flutter, React, and Node.js codebases. The first thing I learned was that <strong>a senior developer's code review strategy must scale</strong>. You can't review every line manually and still ship your own work.</p>
+
+<h3>Layer 1: Automate What Can Be Automated</h3>
+
+<p>Before any human looks at a PR, your CI/CD pipeline should reject obviously bad code. I standardized this across teams:</p>
+
+<ul>
+<li><strong>Linting & Formatting:</strong> Use Ktlint for Kotlin, Prettier for JavaScript. Non-negotiable.</li>
+<li><strong>Static Analysis:</strong> SonarQube, Detekt, ESLint with strict rules. Let machines catch low-hanging fruit.</li>
+<li><strong>Type Safety:</strong> Strict TypeScript, Kotlin (never Java), enforced nullable annotations.</li>
+<li><strong>Test Coverage:</strong> Minimum thresholds. I use 70%+ for critical paths.</li>
+<li><strong>Security Scanning:</strong> Dependency checks (OWASP), API secret detection.</li>
+</ul>
+
+<p>This means when a PR lands on my desk, 80% of mechanical issues are already filtered out. I can focus on what actually matters.</p>
+
+<h3>Layer 2: Risk-Based Review Depth</h3>
+
+<p>Not all code changes are equal. A junior engineer adding a new UI button needs different scrutiny than a database migration or payment logic change.</p>
+
+<p>I categorize PRs into three buckets:</p>
+
+<ul>
+<li><strong>Low Risk (UI tweaks, documentation, dependencies bumps):</strong> Skim for obvious mistakes. 5 minutes.</li>
+<li><strong>Medium Risk (new features, refactoring, API changes):</strong> Deep dive. Check architecture, test coverage, backwards compatibility. 15-30 minutes.</li>
+<li><strong>High Risk (database changes, payment/auth logic, performance-critical code):</strong> Treat like onboarding a new hire. Understand every decision. 45+ minutes, pair session if needed.</li>
+</ul>
+
+<p>This isn't laziness—it's acknowledging that your time is finite. You need to be ruthless about where you spend it.</p>
+
+<h3>Layer 3: Mentor-First Communication</h3>
+
+<p>The difference between a senior developer and a jerk is how they deliver feedback. I've seen brilliant engineers alienate junior developers with harsh comments. That's the opposite of growth.</p>
+
+<p>When reviewing code, I ask myself:</p>
+
+<ul>
+<li>Is this a blocker or a suggestion?</li>
+<li>Is this a teaching moment?</li>
+<li>Could I explain why this is better in one comment, or does it need a discussion?</li>
+<li>Am I enforcing a rule or enforcing my ego?</li>
+</ul>
+
+<blockquote><p>The best code review comment explains not just what to change, but why it matters and what principle it violates or upholds.</p></blockquote>
+
+<p>Example bad comment: "This is inefficient."</p>
+
+<p>Example good comment: "This loops through the entire list on every state change. For 10K items, that's O(n) on every update. Let's use a Set for O(1) lookups. Here's how…"</p>
+
+<h2 id="practical-checklist">My Practical Code Review Checklist</h2>
+
+<p>Over eight years, I've built a mental checklist I run on every significant PR. Here's a simplified version you can use:</p>
+
+<h3>Architecture & Design</h3>
+
+<ul>
+<li>Does this follow our established patterns (MVVM, Clean Architecture, whatever we chose)?</li>
+<li>Is responsibility clearly separated (single responsibility)?</li>
+<li>Would a junior developer understand this in 6 months?</li>
+<li>Does this create unnecessary coupling or circular dependencies?</li>
+</ul>
+
+<h3>Performance & Scalability</h3>
+
+<ul>
+<li>Any N+1 query problems or unnecessary database hits?</li>
+<li>Memory leaks in Android (lifecycle listeners, static references)?</li>
+<li>Blocking operations on main/UI thread?</li>
+<li>Is caching appropriate? Are we over-caching?</li>
+<li>Will this scale to 10x our current data volume?</li>
+</ul>
+
+<h3>Testing & Reliability</h3>
+
+<ul>
+<li>Are happy paths tested? Edge cases?</li>
+<li>Any manual testing that should be automated?</li>
+<li>Error handling—what happens when things fail?</li>
+<li>Are third-party API calls mocked or stubbed in tests?</li>
+</ul>
+
+<h3>Security & Data</h3>
+
+<ul>
+<li>Any hardcoded credentials or API keys?</li>
+<li>User data handled securely (encrypted, hashed, not logged)?</li>
+<li>API inputs validated and sanitized?</li>
+<li>Third-party library vulnerabilities?</li>
+</ul>
+
+<h3>Maintainability</h3>
+
+<ul>
+<li>Is the code readable? Would someone new understand it?</li>
+<li>Are there magic numbers or strings (should be constants)?</li>
+<li>Is documentation clear for non-obvious logic?</li>
+<li>Does it follow language idioms? (Kotlin vs Java, async/await vs Promises, etc.)</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>I print this checklist and pin it above my desk. It saves mental energy—I'm not inventing what to check each time.</p></div>
+
+<h2 id="common-mistakes">Mistakes I Made (And You Should Avoid)</h2>
+
+<h3>Mistake 1: Being Too Nitpicky Too Soon</h3>
+
+<p>Early in my career at Interface Technologies, I caught <em>everything</em>. Variable naming, whitespace, semicolon placement. The junior developers I reviewed for started avoiding me.</p>
+
+<p>The lesson: <strong>Automate the small stuff</strong>. Spend your human judgment on things that matter. Your tone should match the severity. A variable name suggestion isn't a blocker.</p>
+
+<h3>Mistake 2: Reviewing When Tired or Rushed</h3>
+
+<p>Bad code review happens when you're exhausted. You miss the real issues and nitpick random lines. I now block my calendar for reviews—dedicated, focused time. I skip reviews if I'm running on fumes.</p>
+
+<h3>Mistake 3: Never Saying "I Don't Know"</h3>
+
+<p>If I don't understand something, I ask. Often, it reveals that the author didn't fully think it through either. Sometimes I learn something new. Both outcomes are wins.</p>
+
+<h3>Mistake 4: Treating Reviews as Performance Checks</h3>
+
+<p>Your team should feel safe in code review, not terrified. If they're hiding their approach or being defensive, your culture is wrong. I make it clear: reviews are for catching problems <em>before</em> production, not for judging people.</p>
+
+<h2 id="tooling-automation">Tooling and Automation That Scales</h2>
+
+<p>As a senior software engineer managing a 4-engineer squad at Raybit, I learned that the right tools are force multipliers. Here's my stack:</p>
+
+<h3>For Android/Kotlin</h3>
+
+<div class="code-block" data-lang="gradle"><pre><code>// build.gradle.kts
+plugins {
+    id("org.jlleitschuh.gradle.ktlint") version "11.6.0"
+    id("io.gitlab.arturbosch.detekt") version "1.23.1"
+}
+
+detekt {
+    config = files("detekt-config.yml")
+    buildUponDefaultConfig = true
+}
+
+tasks.named("check").configure {
+    dependsOn("detekt", "ktlintCheck")
+}</code></pre></div>
+
+<h3>For Node.js/React</h3>
+
+<div class="code-block" data-lang="bash"><pre><code>// .husky/pre-commit
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+npx lint-staged --allow-empty</code></pre></div>
+
+<h3>GitHub/GitLab Setup</h3>
+
+<ul>
+<li><strong>Branch Protection Rules:</strong> Require at least one approval, all checks passing, no self-approvals.</li>
+<li><strong>Code Owners:</strong> Automatically request reviews from senior engineers on critical paths.</li>
+<li><strong>Automated Comments:</strong> GitHub Actions to flag common issues (missing tests, large file changes).</li>
+<li><strong>SonarQube Integration:</strong> Automatic quality gates—PRs fail if coverage drops below threshold.</li>
+</ul>
+
+<p>With this setup, your team spends 70% less time on trivial feedback and 100% more time on real problems.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Watch Out</p><p>Don't automate your way out of responsibility. Tools catch obvious mistakes, but senior judgment still matters. You still need to review architecture, logic, and assumptions.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Code reviews are your leverage as a senior developer.</strong> They multiply your impact across the entire team. Invest in them as much as you invest in your own code.</li>
+<li><strong>Automate mechanical checks (linting, testing, security scans).</strong> Save your human judgment for architecture, performance, and mentorship. This is how you scale.</li>
+<li><strong>Tailor review depth to risk level.</strong> UI changes need 5 minutes; payment logic needs 45. Be ruthless about where you spend your time.</li>
+<li><strong>Review like a mentor, not a gatekeeper.</strong> Explain why, offer solutions, ask questions. Your tone shapes your team's technical culture.</li>
+<li><strong>Never review when tired or rushed.</strong> A bad review is worse than no review. Schedule focused review time and protect it.</li>
+</ul>
+
+<p>Code review mastery is what separates good senior engineers from great ones. It's how you ship faster <em>without</em> sacrificing quality. It's how you build teams that don't fall apart when you're on vacation. And it's how you grow the next generation of senior software engineers who will eventually review your code.</p>`,
+  },
+
+  {
     slug: "async-request-handling-node-js-laravel-rest-api",
     featured: false,
     icon: "⚡",
