@@ -139,6 +139,288 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-custom-composables-reusable-ui-components",
+    featured: false,
+    icon: "🎨",
+    cat: "android", catLabel: "Android",
+    date: "Jul 10, 2026", readTime: "7 min read",
+    title: "Building Reusable Custom Composables in Jetpack Compose",
+    excerpt: "Master Jetpack Compose by creating reusable custom composables. Learn practical patterns, state management, and composition strategies used in production apps.",
+    tags: ["Jetpack Compose","Android Development","Kotlin","UI Components","Android Architecture"],
+    tocItems: [
+      {"id":"why-custom-composables-matter","label":"Why Custom Composables Matter"},
+      {"id":"composition-vs-inheritance","label":"Composition Over Inheritance in Jetpack Compose"},
+      {"id":"designing-composable-apis","label":"Designing Clean Composable APIs"},
+      {"id":"state-management-patterns","label":"State Management Patterns for Reusable Components"},
+      {"id":"real-world-example","label":"Real-World Custom Composable: Form Card Component"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-custom-composables-matter">Why Custom Composables Matter in Jetpack Compose</h2>
+
+<p>When I first started working with <strong>Jetpack Compose</strong> at CodeBrew Labs, I made the same mistake most developers do: I treated composables like traditional XML layouts and tried to inline everything directly into screens. The result? UI code that was difficult to test, impossible to reuse, and a nightmare to maintain across multiple screens.</p>
+
+<p>After shipping six production apps and leading teams through large-scale <strong>Android development</strong> projects, I learned that <em>custom composables are the backbone of scalable Compose applications</em>. They're not just about reducing code duplication—they're about creating a design system, enforcing consistency, and building an abstraction layer that lets you evolve your UI without touching screen-level code.</p>
+
+<p>In this post, I'll share exactly how I structure custom composables to make them truly reusable, maintainable, and production-ready.</p>
+
+<h2 id="composition-vs-inheritance">Composition Over Inheritance in Jetpack Compose</h2>
+
+<p>The first principle I adopted when building custom <strong>Jetpack Compose</strong> components is that <strong>composition is king</strong>. Unlike traditional Android views, Compose doesn't work well with inheritance-based patterns. Instead, you build complex UIs by composing smaller, single-purpose composables together.</p>
+
+<h3>The Function-Based Component Model</h3>
+
+<p>Every composable is a function. This might sound obvious, but it fundamentally changes how you approach component design. You're not extending base classes or overriding methods—you're writing pure functions that transform data into UI.</p>
+
+<p>This has profound implications:</p>
+
+<ul>
+<li><strong>No hidden state</strong>: All state is explicitly passed as parameters</li>
+<li><strong>Testability</strong>: You can test composables like regular functions</li>
+<li><strong>Reusability</strong>: Parameters make components flexible across contexts</li>
+<li><strong>Preview-friendly</strong>: Easy to create preview functions with different states</li>
+</ul>
+
+<p>I learned this the hard way when migrating a legacy app from Views to Compose. A component that seemed "simple" in the old codebase turned out to be a tangled web of inheritance and internal state. When I rewrote it as a pure composable, it became half the code and twice as flexible.</p>
+
+<h2 id="designing-composable-apis">Designing Clean Composable APIs</h2>
+
+<p>Not all custom composables are created equal. I've seen reusable components that worked perfectly in isolation but became nightmares when teams tried to use them across multiple projects. The difference always came down to <em>API design</em>.</p>
+
+<h3>Core Principles for Composable APIs</h3>
+
+<p><strong>1. Progressive Disclosure</strong></p>
+
+<p>Start with sensible defaults. A well-designed custom composable should work beautifully with minimal parameters. Advanced use cases can customize further.</p>
+
+<p><strong>2. Named Parameters Over Positional</strong></p>
+
+<p>Always use named parameters. It makes call sites self-documenting and prevents parameter ordering mistakes as you evolve the API.</p>
+
+<p><strong>3. Trailing Lambda Convention</strong></p>
+
+<p>If your composable accepts a lambda (especially for content), make it the last parameter. Kotlin's trailing lambda syntax makes the code cleaner and more readable.</p>
+
+<p><strong>4. Slot-Based Content API</strong></p>
+
+<p>Instead of forcing consumers to pass specific content types, use named lambda parameters ("slots") for flexibility. This is how Compose's built-in components work—<code>TopAppBar</code> has slots for title, navigationIcon, actions, etc.</p>
+
+<h3>Example: A Well-Designed vs. Poorly-Designed Component</h3>
+
+<p><em>Poor API</em>:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// ❌ Hard to use, inflexible
+@Composable
+fun MyCard(title: String, subtitle: String, onClick: () -> Unit) {
+    // What if I don't need subtitle? What if I need custom actions?
+}
+</code></pre></div>
+
+<p><em>Better API</em>:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// ✅ Flexible, composable, reusable
+@Composable
+fun MyCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    header: @Composable () -> Unit = {},
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke() },
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surface,
+        elevation = CardDefaults.cardElevation()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (header != {}) {
+                header()
+                Spacer(Modifier.height(8.dp))
+            }
+            content()
+        }
+    }
+}
+</code></pre></div>
+
+<h2 id="state-management-patterns">State Management Patterns for Reusable Components</h2>
+
+<p>One of the trickiest aspects of building reusable custom composables is managing state properly. I've discovered three patterns that work well in production, and choosing the right one depends on your use case.</p>
+
+<h3>Pattern 1: Stateless (Presentation) Composables</h3>
+
+<p>These are pure functions with no internal state. Everything is passed in as parameters. They're the easiest to test and reuse, and I default to this pattern whenever possible.</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun UserProfileCard(
+    user: User,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) Color.Blue else Color.White)
+            .clickable { onSelect() }
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(user.name, style = MaterialTheme.typography.headlineSmall)
+            Text(user.email, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+</code></pre></div>
+
+<h3>Pattern 2: Hoisted State (Controlled Composables)</h3>
+
+<p>When a composable needs to manage some internal state but you still want it reusable, hoist the state upward. The parent controls state; the composable reads and reports changes.</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun ExpandableCard(
+    title: String,
+    isExpanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onExpandedChange(!isExpanded) }
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(title, style = MaterialTheme.typography.headlineSmall)
+                Icon(
+                    if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null
+                )
+            }
+            if (isExpanded) {
+                Spacer(Modifier.height(8.dp))
+                content()
+            }
+        }
+    }
+}
+</code></pre></div>
+
+<h3>Pattern 3: Fully Stateful (Uncontrolled) Composables</h3>
+
+<p>Sometimes you want a composable that completely manages its own state. This is acceptable for components that are truly self-contained and don't need external synchronization. However, I use this sparingly because it's harder to test and reuse.</p>
+
+<p>In my experience, <strong>hoisted state is the sweet spot</strong>—it gives you flexibility without losing control.</p>
+
+<h2 id="real-world-example">Real-World Custom Composable: Form Card Component</h2>
+
+<p>Let me walk you through a composable I built for EmpSuite ERP that demonstrates all these principles. It's a reusable form card that we used across dozens of screens.</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun FormCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    isLoading: Boolean = false,
+    error: String? = null,
+    onRetry: (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp)),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 4.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header
+            Text(
+                title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            // Content area
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isLoading -&gt; {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                    error != null -&gt; {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.errorContainer,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                error,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            if (onRetry != null) {
+                                Button(onClick = onRetry) {
+                                    Text("Retry")
+                                }
+                            }
+                        }
+                    }
+                    else -&gt; {
+                        content()
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre></div>
+
+<p>Notice how this composable:</p>
+
+<ul>
+<li><strong>Uses hoisted state</strong>: isLoading and error are passed in, not managed internally</li>
+<li><strong>Handles edge cases</strong>: loading, error, and normal states out of the box</li>
+<li><strong>Provides slots</strong>: The content parameter lets consumers put anything inside</li>
+<li><strong>Has sensible defaults</strong>: Optional parameters with practical defaults</li>
+<li><strong>Uses named parameters</strong>: Every parameter is self-documenting</li>
+</ul>
+
+<p>I shipped this component across multiple projects at Raybit Technologies, and teams reused it without modification because the API was flexible enough to handle different requirements.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Testing Custom Composables</p><p>One huge benefit of designing reusable custom composables this way is testability. Stateless and hoisted-state composables can be tested with Compose's testing framework (<code>createComposeRule</code>). I typically write tests that verify different state combinations render correctly without needing mocks or complex setup.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Composition over inheritance</strong>: Build complex <strong>Jetpack Compose</strong> UIs by combining small, focused composables instead of extending base classes.</li>
+<li><strong>Hoist state upward</strong>: Keep custom composables flexible by allowing parents to control state; this is the sweet spot between testability and reusability in <strong>Android architecture</strong>.</li>
+<li><strong>Design APIs thoughtfully</strong>: Use named parameters, trailing lambdas, and slot-based content APIs to create intuitive, self-documenting composables that teams actually want to reuse.</li>
+<li><strong>Start stateless</strong>: Default to stateless presentational composables; add state management only when necessary, and prefer hoisted state in most cases.</li>
+<li><strong>Progressive disclosure</strong>: Make your custom composables work beautifully with sensible defaults; advanced customization should be opt-in, not mandatory.</li>
+</ul>
+
+<p>Building reusable custom composables is one of the most valuable skills in modern <strong>Android development</strong>. It's the difference between shipping features fast and maintaining a codebase that scales. I've seen teams go from struggling with code duplication to shipping with confidence once they got these patterns right.</p>`,
+  },
+
+  {
     slug: "code-review-practices-senior-software-engineer",
     featured: false,
     icon: "🔍",
