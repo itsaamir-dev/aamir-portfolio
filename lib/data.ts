@@ -139,6 +139,302 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-viewmodel-composition-over-inheritance",
+    featured: false,
+    icon: "🏗️",
+    cat: "android", catLabel: "Android",
+    date: "Jul 15, 2026", readTime: "6 min read",
+    title: "Android ViewModel Composition: Building Scalable MVVM Architecture",
+    excerpt: "Master advanced ViewModel composition patterns to scale Android MVVM architecture. Learn how to avoid inheritance hell and build modular, testable components.",
+    tags: ["MVVM Android","Android Architecture","ViewModel","Kotlin","Clean Architecture"],
+    tocItems: [
+      {"id":"why-viewmodel-composition-matters","label":"Why ViewModel Composition Matters"},
+      {"id":"the-inheritance-problem","label":"The Inheritance Problem in MVVM"},
+      {"id":"composition-over-inheritance-approach","label":"Composition Over Inheritance Approach"},
+      {"id":"practical-implementation","label":"Practical Implementation with Code"},
+      {"id":"testing-composed-viewmodels","label":"Testing Composed ViewModels"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-viewmodel-composition-matters">Why ViewModel Composition Matters</h2>
+
+<p>Over my 8+ years building Android apps, I've seen teams struggle with scaling MVVM architecture as projects grow. The problem isn't <em>MVVM itself</em>—it's how we structure <strong>Android ViewModel</strong> dependencies and state management. When I led the migration at CodeBrew Labs that reduced our crash rate by 35%, one of the biggest wins came from rethinking how we composed ViewModels instead of inheriting them.</p>
+
+<p>Today, most junior and mid-level Android engineers inherit from a base ViewModel class. It feels clean at first. But as your codebase scales, you end up with deep inheritance chains, conflicting state logic, and testing nightmares. I've watched production apps crash because a parent ViewModel's lifecycle method was overridden incorrectly three layers down.</p>
+
+<p>This post shares the exact pattern I now use across all my projects at Raybit Technologies and as a freelancer. It's <strong>practical, battle-tested, and immediately applicable</strong> to your codebase.</p>
+
+<h2 id="the-inheritance-problem">The Inheritance Problem in MVVM</h2>
+
+<h3>The Classic Base ViewModel Anti-Pattern</h3>
+
+<p>Let me walk you through a real scenario. You start with a base ViewModel to handle common state:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>abstract class BaseViewModel : ViewModel() {
+    protected val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow&lt;Boolean&gt; = _isLoading.asStateFlow()
+    
+    protected val _errorMessage = MutableStateFlow&lt;String?&gt;(null)
+    val errorMessage: StateFlow&lt;String?&gt; = _errorMessage.asStateFlow()
+    
+    protected fun showError(message: String) {
+        _errorMessage.value = message
+    }
+}
+
+class UserProfileViewModel(private val userRepo: UserRepository) : BaseViewModel() {
+    private val _userState = MutableStateFlow&lt;User?&gt;(null)
+    val userState: StateFlow&lt;User?&gt; = _userState.asStateFlow()
+    
+    fun loadUser(id: String) {
+        _isLoading.value = true
+        // load user...
+    }
+}</code></pre></div>
+
+<p>This looks reasonable. But what happens when you need a ViewModel that manages network pagination AND local caching AND analytics? You create another base class. Then another for offline-first behavior. Soon you have inheritance diamonds, mixed concerns, and state mutations scattered across multiple files.</p>
+
+<h3>Why Inheritance Breaks at Scale</h3>
+
+<ul>
+<li><strong>Single Responsibility Violation:</strong> A base ViewModel tries to handle loading states, errors, AND analytics. That's three separate concerns.</li>
+<li><strong>Rigid Hierarchy:</strong> You can't mix behaviors from different branches. What if you need pagination AND analytics but NOT the error handling from your base class?</li>
+<li><strong>Testing Hell:</strong> You're forced to mock the entire parent class hierarchy. A simple unit test becomes a maze of setUp() chains.</li>
+<li><strong>Hidden Dependencies:</strong> A parent ViewModel might depend on a lifecycle callback that a child overrides, breaking the contract silently.</li>
+</ul>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Real Cost</p><p>At CodeBrew Labs, we had a crash where a parent ViewModel's <code>onCleared()</code> was trying to cancel Jobs created by a child class. The child had already nulled out the reference. Took us 3 hours to debug. That's when I decided to refactor toward composition.</p></div>
+
+<h2 id="composition-over-inheritance-approach">Composition Over Inheritance Approach</h2>
+
+<h3>The Composition Philosophy</h3>
+
+<p>Instead of a deep inheritance tree, I now use <strong>Android architecture</strong> built on composable concerns. Each responsibility is a separate interface or holder class. Your ViewModel composes these pieces, keeping it focused and testable.</p>
+
+<p>Here's the shift in thinking:</p>
+
+<blockquote><p>"Instead of asking 'What's my base class?', ask 'What behaviors do I need?'" — Me, after 6+ years of Android battles.</p></blockquote>
+
+<h3>Defining Behavior Holders</h3>
+
+<p>Let's create composable state managers instead of base classes:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// 1. Loading State Handler
+interface LoadingStateHolder {
+    val isLoading: StateFlow&lt;Boolean&gt;
+    fun setLoading(loading: Boolean)
+}
+
+class LoadingStateHolderImpl : LoadingStateHolder {
+    private val _isLoading = MutableStateFlow(false)
+    override val isLoading: StateFlow&lt;Boolean&gt; = _isLoading.asStateFlow()
+    override fun setLoading(loading: Boolean) { _isLoading.value = loading }
+}
+
+// 2. Error State Handler
+interface ErrorStateHolder {
+    val errorMessage: StateFlow&lt;String?&gt;
+    fun showError(message: String)
+    fun clearError()
+}
+
+class ErrorStateHolderImpl : ErrorStateHolder {
+    private val _errorMessage = MutableStateFlow&lt;String?&gt;(null)
+    override val errorMessage: StateFlow&lt;String?&gt; = _errorMessage.asStateFlow()
+    override fun showError(message: String) { _errorMessage.value = message }
+    override fun clearError() { _errorMessage.value = null }
+}
+
+// 3. Pagination Handler
+interface PaginationHolder {
+    val currentPage: StateFlow&lt;Int&gt;
+    fun nextPage()
+    fun resetPagination()
+}
+
+class PaginationHolderImpl : PaginationHolder {
+    private val _currentPage = MutableStateFlow(1)
+    override val currentPage: StateFlow&lt;Int&gt; = _currentPage.asStateFlow()
+    override fun nextPage() { _currentPage.value++ }
+    override fun resetPagination() { _currentPage.value = 1 }
+}</code></pre></div>
+
+<h2 id="practical-implementation">Practical Implementation with Code</h2>
+
+<h3>Building a Scalable ViewModel with Composition</h3>
+
+<p>Now here's the magic: your ViewModel composes exactly the behaviors it needs, nothing more:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>class UserListViewModel(
+    private val userRepository: UserRepository,
+    private val loadingStateHolder: LoadingStateHolder = LoadingStateHolderImpl(),
+    private val errorStateHolder: ErrorStateHolder = ErrorStateHolderImpl(),
+    private val paginationHolder: PaginationHolder = PaginationHolderImpl()
+) : ViewModel(),
+    LoadingStateHolder by loadingStateHolder,
+    ErrorStateHolder by errorStateHolder,
+    PaginationHolder by paginationHolder {
+    
+    private val _userList = MutableStateFlow&lt;List&lt;User&gt;&gt;(emptyList())
+    val userList: StateFlow&lt;List&lt;User&gt;&gt; = _userList.asStateFlow()
+    
+    init {
+        loadUsers()
+    }
+    
+    fun loadUsers() {
+        viewModelScope.launch {
+            setLoading(true)
+            clearError()
+            try {
+                val users = userRepository.fetchUsers(currentPage.value)
+                _userList.value = if (currentPage.value == 1) {
+                    users
+                } else {
+                    _userList.value + users
+                }
+            } catch (e: Exception) {
+                showError(e.message ?: "Failed to load users")
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+    
+    fun loadNextPage() {
+        nextPage()
+        loadUsers()
+    }
+}</code></pre></div>
+
+<h3>Why This Works</h3>
+
+<ul>
+<li><strong>No Inheritance Chain:</strong> The ViewModel uses delegation to compose behavior. If you don't need pagination later, remove it from the constructor.</li>
+<li><strong>Testable:</strong> You can mock each holder independently. No deep inheritance mock chains.</li>
+<li><strong>Flexible:</strong> Need analytics? Add an <code>AnalyticsHolder</code>. Your ViewModel doesn't change.</li>
+<li><strong>Reusable:</strong> <code>LoadingStateHolder</code> works in any ViewModel, any feature, any architecture.</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">📖 Kotlin Delegation Magic</p><p>The <code>by</code> keyword in Kotlin lets you delegate interface methods to the implementation class. This avoids boilerplate: you don't manually forward <code>setLoading()</code>, <code>showError()</code>, etc. The compiler generates it.</p></div>
+
+<h3>Handling Complex State with Composition</h3>
+
+<p>What if you need a specialized holder for your specific feature? Just create one:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>interface SearchHistoryHolder {
+    val searchHistory: StateFlow&lt;List&lt;String&gt;&gt;
+    fun addToHistory(query: String)
+    fun clearHistory()
+}
+
+class SearchHistoryHolderImpl : SearchHistoryHolder {
+    private val _history = MutableStateFlow&lt;List&lt;String&gt;&gt;(emptyList())
+    override val searchHistory = _history.asStateFlow()
+    
+    override fun addToHistory(query: String) {
+        _history.value = (listOf(query) + _history.value).take(10)
+    }
+    
+    override fun clearHistory() {
+        _history.value = emptyList()
+    }
+}
+
+// Now compose it into your ViewModel
+class SearchViewModel(
+    private val userRepository: UserRepository,
+    private val loadingStateHolder: LoadingStateHolder = LoadingStateHolderImpl(),
+    private val searchHistoryHolder: SearchHistoryHolder = SearchHistoryHolderImpl()
+) : ViewModel(),
+    LoadingStateHolder by loadingStateHolder,
+    SearchHistoryHolder by searchHistoryHolder {
+    
+    fun search(query: String) {
+        addToHistory(query)
+        // fetch results...
+    }
+}</code></pre></div>
+
+<h2 id="testing-composed-viewmodels">Testing Composed ViewModels</h2>
+
+<h3>Unit Testing Becomes Simple</h3>
+
+<p>Here's what your tests look like with this pattern:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>class UserListViewModelTest {
+    private val mockUserRepository = mockk&lt;UserRepository&gt;()
+    private val mockLoadingHolder = mockk&lt;LoadingStateHolder&gt;(relaxed = true)
+    private val mockErrorHolder = mockk&lt;ErrorStateHolder&gt;(relaxed = true)
+    private val mockPaginationHolder = mockk&lt;PaginationHolder&gt;(relaxed = true)
+    
+    private lateinit var viewModel: UserListViewModel
+    
+    @Before
+    fun setup() {
+        viewModel = UserListViewModel(
+            userRepository = mockUserRepository,
+            loadingStateHolder = mockLoadingHolder,
+            errorStateHolder = mockErrorHolder,
+            paginationHolder = mockPaginationHolder
+        )
+    }
+    
+    @Test
+    fun testLoadUsersSuccess() = runTest {
+        // Arrange
+        coEvery { mockUserRepository.fetchUsers(1) } returns listOf(
+            User(1, "Alice"),
+            User(2, "Bob")
+        )
+        every { mockLoadingHolder.setLoading(any()) } just Runs
+        
+        // Act
+        viewModel.loadUsers()
+        advanceUntilIdle()
+        
+        // Assert
+        verify { mockLoadingHolder.setLoading(true) }
+        verify { mockLoadingHolder.setLoading(false) }
+        assertEquals(2, viewModel.userList.value.size)
+    }
+    
+    @Test
+    fun testLoadUsersError() = runTest {
+        // Arrange
+        coEvery { mockUserRepository.fetchUsers(1) } throws Exception("Network error")
+        every { mockErrorHolder.showError(any()) } just Runs
+        
+        // Act
+        viewModel.loadUsers()
+        advanceUntilIdle()
+        
+        // Assert
+        verify { mockErrorHolder.showError("Network error") }
+    }
+}</code></pre></div>
+
+<h3>Why This Testing is Better</h3>
+
+<ul>
+<li>You mock only what you need. No forced mock chains.</li>
+<li>Each holder is independently testable. You can test <code>PaginationHolder</code> in isolation.</li>
+<li>Changes to one holder don't break unrelated tests.</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">📖 Practical Tip</p><p>I use <code>relaxed = true</code> on mock holders so I don't have to stub every single function. This keeps test code concise and focused on what matters.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Composition beats inheritance for scaling Android MVVM.</strong> Use composable state holders instead of deep base class hierarchies. Your codebase will remain flexible as requirements change.</li>
+<li><strong>Each holder has a single responsibility.</strong> <code>LoadingStateHolder</code> handles loading. <code>ErrorStateHolder</code> handles errors. This separation makes testing trivial and reuse natural.</li>
+<li><strong>Kotlin delegation eliminates boilerplate.</strong> The <code>by</code> keyword means you don't manually forward method calls. You get composition with minimal code.</li>
+<li><strong>Testing becomes straightforward.</strong> Mock individual holders instead of entire inheritance chains. Tests are faster, more readable, and less brittle.</li>
+<li><strong>Start applying this today:</strong> Refactor your base ViewModels into composable holders. Your future self—and your team—will thank you when the app scales to 100K+ lines of code.</li>
+</ul>`,
+  },
+
+  {
     slug: "ai-android-app-edge-inference-practical-guide",
     featured: false,
     icon: "🤖",
