@@ -139,6 +139,357 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "error-handling-strategies-rest-apis-node-js-laravel",
+    featured: false,
+    icon: "🛡️",
+    cat: "fullstack", catLabel: "Full-Stack",
+    date: "Jul 17, 2026", readTime: "6 min read",
+    title: "Error Handling in REST APIs: Node.js & Laravel Best Practices",
+    excerpt: "Master robust error handling for REST APIs in Node.js and Laravel. Learn production-tested strategies to build reliable, maintainable backends that scale.",
+    tags: ["REST API design","Node.js backend","Laravel","Error Handling","Full-Stack Development"],
+    tocItems: [
+      {"id":"why-error-handling-matters","label":"Why Error Handling Matters in REST APIs"},
+      {"id":"error-handling-node-js","label":"Error Handling Strategies in Node.js"},
+      {"id":"error-handling-laravel","label":"Error Handling in Laravel REST APIs"},
+      {"id":"standardizing-error-responses","label":"Standardizing Error Responses Across Frameworks"},
+      {"id":"monitoring-logging","label":"Monitoring & Logging for Production APIs"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-error-handling-matters">Why Error Handling Matters in REST APIs</h2>
+
+<p>I've spent the last eight years building REST APIs—from small startups to systems handling hundreds of thousands of requests per day. And I can tell you with absolute certainty: <strong>how you handle errors is what separates a junior backend from a production-grade system.</strong></p>
+
+<p>Most developers treat error handling as an afterthought. They throw a 500 status code, log a vague message, and move on. But in the real world, poor error handling costs you in multiple ways:</p>
+
+<ul>
+<li><strong>Client-side confusion:</strong> Frontend teams can't build proper error UX without clear, structured responses.</li>
+<li><strong>Debugging nightmares:</strong> Vague error messages make it impossible to trace issues in production.</li>
+<li><strong>Security vulnerabilities:</strong> Exposing stack traces or database details to clients is a serious risk.</li>
+<li><strong>API performance degradation:</strong> Unhandled errors can cascade and crash your entire service.</li>
+<li><strong>Trust erosion:</strong> Clients lose confidence when APIs fail silently or inconsistently.</li>
+</ul>
+
+<p>In this post, I'll share the exact error-handling patterns I've built across dozens of production REST APIs—both in Node.js and Laravel. These aren't theoretical best practices; they're battle-tested strategies that have kept my systems stable at scale.</p>
+
+<h2 id="error-handling-node-js">Error Handling Strategies in Node.js</h2>
+
+<h3>1. Centralized Error Handler Middleware</h3>
+
+<p>The foundation of clean error handling in Node.js is a centralized error middleware. Instead of wrapping every route handler in try-catch, you define a single middleware that catches all errors and formats them consistently.</p>
+
+<p>Here's what I typically use:</p>
+
+<div class="code-block" data-lang="javascript"><pre><code>// errorHandler.js
+class ApiError extends Error {
+  constructor(statusCode, message, code = null, details = null) {
+    super(message);
+    this.statusCode = statusCode;
+    this.code = code || 'INTERNAL_ERROR';
+    this.details = details;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+const errorHandler = (err, req, res, next) =&gt; {
+  const statusCode = err.statusCode || 500;
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Log error with context (use Winston, Pino, or similar)
+  logger.error({
+    message: err.message,
+    code: err.code,
+    statusCode,
+    url: req.originalUrl,
+    method: req.method,
+    userId: req.user?.id,
+    stack: err.stack,
+    timestamp: new Date().toISOString()
+  });
+
+  // Build response
+  const response = {
+    success: false,
+    error: {
+      code: err.code,
+      message: err.message,
+      ...(process.env.NODE_ENV !== 'production' && { details: err.details, stack: err.stack })
+    }
+  };
+
+  res.status(statusCode).json(response);
+};
+
+module.exports = { ApiError, errorHandler };</code></pre></div>
+
+<p>Then in your Express app:</p>
+
+<div class="code-block" data-lang="javascript"><pre><code>app.use(errorHandler);
+
+// Usage in routes:
+app.get('/api/users/:id', async (req, res, next) =&gt; {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      throw new ApiError(404, 'User not found', 'USER_NOT_FOUND');
+    }
+    res.json({ success: true, data: user });
+  } catch (error) {
+    next(error); // Passes to errorHandler middleware
+  }
+});</code></pre></div>
+
+<h3>2. Async/Await Wrapper for Cleaner Code</h3>
+
+<p>I always wrap async route handlers to avoid repeating try-catch everywhere:</p>
+
+<div class="code-block" data-lang="javascript"><pre><code>// asyncHandler.js
+const asyncHandler = (fn) =&gt; (req, res, next) =&gt; {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+// Usage:
+app.get('/api/data', asyncHandler(async (req, res) =&gt; {
+  const data = await fetchData();
+  if (!data) throw new ApiError(400, 'No data available');
+  res.json({ success: true, data });
+}));</code></pre></div>
+
+<h3>3. Validation Errors with Detailed Context</h3>
+
+<p>When validation fails, clients need to know exactly which fields failed and why. I use a structured validation error response:</p>
+
+<div class="code-block" data-lang="javascript"><pre><code>class ValidationError extends ApiError {
+  constructor(errors) {
+    super(400, 'Validation failed', 'VALIDATION_ERROR', errors);
+    this.errors = errors; // [{ field: 'email', message: 'Invalid email' }]
+  }
+}
+
+// In middleware:
+const validateBody = (schema) =&gt; (req, res, next) =&gt; {
+  const { error, value } = schema.validate(req.body, { abortEarly: false });
+  if (error) {
+    const errors = error.details.map(e =&gt; ({
+      field: e.path.join('.'),
+      message: e.message
+    }));
+    throw new ValidationError(errors);
+  }
+  req.validated = value;
+  next();
+};</code></pre></div>
+
+<h2 id="error-handling-laravel">Error Handling in Laravel REST APIs</h2>
+
+<h3>1. Custom Exception Handlers</h3>
+
+<p>Laravel's exception handling is built-in, but for REST APIs, I customize it heavily. Edit <code>app/Exceptions/Handler.php</code>:</p>
+
+<div class="code-block" data-lang="php"><pre><code>&lt;?php
+namespace App\\Exceptions;
+
+use Illuminate\\Foundation\\Exceptions\\Handler as ExceptionHandler;
+use Illuminate\\Validation\\ValidationException;
+use Illuminate\\Database\\Eloquent\\ModelNotFoundException;
+
+class Handler extends ExceptionHandler
+{
+    public function render($request, Throwable $exception)
+    {
+        if ($request-&gt;expectsJson()) {
+            if ($exception instanceof ModelNotFoundException) {
+                return response()-&gt;json([
+                    'success' =&gt; false,
+                    'error' =&gt; [
+                        'code' =&gt; 'RESOURCE_NOT_FOUND',
+                        'message' =&gt; 'The requested resource was not found'
+                    ]
+                ], 404);
+            }
+
+            if ($exception instanceof ValidationException) {
+                return response()-&gt;json([
+                    'success' =&gt; false,
+                    'error' =&gt; [
+                        'code' =&gt; 'VALIDATION_ERROR',
+                        'message' =&gt; 'Validation failed',
+                        'details' =&gt; $exception-&gt;errors()
+                    ]
+                ], 422);
+            }
+
+            // Log error
+            Log::error('API Error', [
+                'exception' =&gt; get_class($exception),
+                'message' =&gt; $exception-&gt;getMessage(),
+                'url' =&gt; $request-&gt;url(),
+                'method' =&gt; $request-&gt;method()
+            ]);
+
+            return response()-&gt;json([
+                'success' =&gt; false,
+                'error' =&gt; [
+                    'code' =&gt; 'INTERNAL_ERROR',
+                    'message' =&gt; 'An unexpected error occurred'
+                ]
+            ], 500);
+        }
+
+        return parent-&gt;render($request, $exception);
+    }
+}</code></pre></div>
+
+<h3>2. Custom Exception Classes</h3>
+
+<p>Create reusable exception classes for common API errors:</p>
+
+<div class="code-block" data-lang="php"><pre><code>&lt;?php
+namespace App\\Exceptions;
+
+use Exception;
+
+class ApiException extends Exception
+{
+    public $statusCode;
+    public $errorCode;
+    public $details;
+
+    public function __construct($message, $statusCode = 500, $errorCode = 'INTERNAL_ERROR', $details = null)
+    {
+        parent::__construct($message);
+        $this-&gt;statusCode = $statusCode;
+        $this-&gt;errorCode = $errorCode;
+        $this-&gt;details = $details;
+    }
+}
+
+class ResourceNotFoundException extends ApiException
+{
+    public function __construct($resource = 'Resource')
+    {
+        parent::__construct(
+            "{$resource} not found",
+            404,
+            'RESOURCE_NOT_FOUND'
+        );
+    }
+}
+
+class UnauthorizedException extends ApiException
+{
+    public function __construct()
+    {
+        parent::__construct(
+            'Unauthorized access',
+            401,
+            'UNAUTHORIZED'
+        );
+    }
+}</code></pre></div>
+
+<h2 id="standardizing-error-responses">Standardizing Error Responses Across Frameworks</h2>
+
+<p>One of the biggest advantages of working with both Node.js and Laravel is that I can standardize error response formats across teams. When your mobile team, frontend team, and third-party integrators all expect the same error structure, debugging becomes exponentially easier.</p>
+
+<p>Here's the standard I've adopted:</p>
+
+<div class="code-block" data-lang="json"><pre><code>{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": null,
+    "timestamp": "2025-01-15T10:30:45Z",
+    "requestId": "req_abc123xyz"
+  }
+}
+
+// For validation errors:
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": [
+      { "field": "email", "message": "Invalid email format" },
+      { "field": "password", "message": "Must be at least 8 characters" }
+    ]
+  }
+}</code></pre></div>
+
+<p>This standardized format means:</p>
+
+<ul>
+<li>Frontend can parse and display errors consistently.</li>
+<li>Mobile apps can show appropriate user-friendly messages.</li>
+<li>Monitoring tools can easily detect error patterns.</li>
+<li>API documentation remains clear and predictable.</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">💡 Pro Tip</p><p>Always include a <code>requestId</code> in error responses. This makes it trivial for users to report issues, and for you to find exact logs in your aggregated logging system.</p></div>
+
+<h2 id="monitoring-logging">Monitoring & Logging for Production APIs</h2>
+
+<p>Error handling doesn't end with returning a response. In production, you need real-time visibility into what's failing and why.</p>
+
+<h3>Structured Logging</h3>
+
+<p>I use structured logging (JSON format) with tools like Winston, Pino (Node.js), or Monolog (Laravel). This allows you to:</p>
+
+<ul>
+<li>Query logs by error code, user ID, or timestamp.</li>
+<li>Set up alerts for specific error patterns.</li>
+<li>Aggregate logs across multiple services.</li>
+</ul>
+
+<p>Example logging setup in Node.js:</p>
+
+<div class="code-block" data-lang="javascript"><pre><code>const winston = require('winston');
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.json(),
+  defaultMeta: { service: 'api-service' },
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+});
+
+// Log API errors with context
+logger.error('API Error', {
+  statusCode: 500,
+  errorCode: 'DATABASE_TIMEOUT',
+  userId: req.user?.id,
+  endpoint: req.originalUrl,
+  duration: Date.now() - req.startTime,
+  stack: err.stack
+});</code></pre></div>
+
+<h3>Error Rate Monitoring</h3>
+
+<p>Track error rates over time. If errors exceed thresholds, alert your team immediately:</p>
+
+<ul>
+<li><strong>5xx errors &gt; 5% of requests:</strong> Critical alert—service degradation.</li>
+<li><strong>4xx errors spike unexpectedly:</strong> May indicate a frontend issue or attack.</li>
+<li><strong>Specific error codes trending:</strong> Points to systemic issues (e.g., database timeouts).</li>
+</ul>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Security Note</p><p>Never expose sensitive information in error responses—no stack traces, database details, or internal server paths. This is a common security vulnerability. Always sanitize errors before sending to clients.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Centralize error handling:</strong> Use middleware in Node.js and exception handlers in Laravel to avoid scattered try-catch blocks and ensure consistent error responses.</li>
+<li><strong>Standardize error formats:</strong> Define a single, predictable error response structure across all your REST APIs—clients, monitoring, and debugging all benefit.</li>
+<li><strong>Log with context:</strong> Include request ID, user ID, endpoint, and duration in error logs. This makes production debugging exponentially faster.</li>
+<li><strong>Validate and differentiate:</strong> Distinguish between validation errors (client fault), authorization errors (permission issue), and server errors (your problem). Return appropriate HTTP status codes.</li>
+<li><strong>Monitor in real-time:</strong> Set up error rate alerts and log aggregation. You'll catch systemic issues minutes instead of hours after they start.</li>
+</ul>`,
+  },
+
+  {
     slug: "android-viewmodel-composition-over-inheritance",
     featured: false,
     icon: "🏗️",
