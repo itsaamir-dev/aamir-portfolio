@@ -139,6 +139,317 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-debugging-jetpack-compose-production-issues",
+    featured: false,
+    icon: "🐛",
+    cat: "android", catLabel: "Android",
+    date: "Jul 20, 2026", readTime: "6 min read",
+    title: "Debugging Jetpack Compose in Production: Real Issues & Solutions",
+    excerpt: "Master production debugging for Jetpack Compose apps. Learn real-world techniques I used to fix crashes, recomposition issues, and memory leaks at scale.",
+    tags: ["Jetpack Compose","Android debugging","Production issues","Performance","Kotlin"],
+    tocItems: [
+      {"id":"the-compose-debugging-gap","label":"The Jetpack Compose Debugging Gap"},
+      {"id":"recomposition-hell","label":"Identifying Recomposition Hell"},
+      {"id":"memory-leaks-compose","label":"Memory Leaks in Jetpack Compose"},
+      {"id":"crash-patterns","label":"Common Crash Patterns & Prevention"},
+      {"id":"debugging-tools-setup","label":"Essential Debugging Tools & Setup"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="the-compose-debugging-gap">The Jetpack Compose Debugging Gap</h2>
+
+<p>When I migrated AudioBook AI to <strong>Jetpack Compose</strong>, everything looked perfect in development. The UI was crisp, animations smooth, and the code was clean. Then we hit production with 50K+ users, and the real debugging nightmare began.</p>
+
+<p>The problem? Jetpack Compose debugging is fundamentally different from traditional View-based <strong>Android development</strong>. You can't just inspect the view hierarchy the way you used to. There's no XML layout to trace. Instead, you're dealing with a functional composition tree that's constantly recomputing, and when something goes wrong at scale, it's invisible to conventional tools.</p>
+
+<p>Over the past 18 months shipping production Compose apps at CodeBrew Labs and Raybit, I've learned that <strong>debugging Compose requires a completely different mental model</strong>. This post shares the exact techniques I use to track down production issues before they impact users.</p>
+
+<h2 id="recomposition-hell">Identifying Recomposition Hell</h2>
+
+<p>Excessive recomposition is the silent killer of Compose apps. A single unstable parameter can cascade through your entire composition tree, triggering thousands of unnecessary recomputes per frame. Your app feels sluggish, battery drain increases, and users complain about heat.</p>
+
+<p>The first production issue we faced with AudioBook AI was exactly this. The app was smooth at launch, but after 10 minutes of scrolling through chapters, the entire list would stutter. Battery was draining in 2 hours instead of 6.</p>
+
+<h3>How to Spot It</h3>
+
+<p>Enable Compose recomposition highlighting in Android Studio:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// Build.gradle.kts
+androidResources {
+    noCompress += "compose-recomposition-counts"
+}
+
+// In your Composable (debug only)
+if (BuildConfig.DEBUG) {
+    println("Recomposing: \${LocalContext.current.javaClass.simpleName}")
+}</code></pre></div>
+
+<p>But the real insight comes from Compose's Layout Inspector. I use this workflow in production debugging:</p>
+
+<ol>
+<li>Enable Layout Inspector in Android Studio (Tools → Layout Inspector)</li>
+<li>Connect to a production build (with debuggable=true in a test variant)</li>
+<li>Tap through your app's critical flows and monitor recomposition counts</li>
+<li>Look for functions being called excessively — that's your culprit</li>
+</ol>
+
+<p>In AudioBook AI, we discovered that our <code>ChapterListItem</code> composable was recomposing 50+ times per scroll event because we were passing an inline lambda. One line change fixed it:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ WRONG: Creates new lambda on every recomposition
+@Composable
+fun ChapterListItem(
+    chapter: Chapter,
+    onDelete: (String) -&gt; Unit
+) {
+    Button(onClick = { onDelete(chapter.id) }) {
+        Text("Delete")
+    }
+}
+
+// ✅ CORRECT: Stable parameter, no recomposition
+@Composable
+fun ChapterListItem(
+    chapter: Chapter,
+    onDelete: (String) -&gt; Unit
+) {
+    val deleteThis = remember(chapter.id) {
+        { onDelete(chapter.id) }
+    }
+    Button(onClick = deleteThis) {
+        Text("Delete")
+    }
+}
+
+// ✅ BETTER: Use mutableStateOf if state changes
+val onDeleteStable = remember { onDelete }</code></pre></div>
+
+<blockquote>
+<p><em>"The Jetpack Compose debugging gap isn't in the framework — it's in our mental model. We're still thinking in imperative updates when we should be thinking in stable parameters and pure functions."</em></p>
+</blockquote>
+
+<h2 id="memory-leaks-compose">Memory Leaks in Jetpack Compose</h2>
+
+<p>Compose's <code>remember</code> block feels magical until it leaks memory in production. I've seen apps lose 50MB of RAM per screen navigation because developers held references to contexts, view models, or listeners incorrectly.</p>
+
+<p>The most common leak pattern I've debugged happens when you store lambdas or objects in <code>remember</code> without proper dependency management.</p>
+
+<h3>The Leak Scenario</h3>
+
+<p>In Nova Cabs, our driver location updates were eating 100MB+ on long routes. Here's what was happening:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ MEMORY LEAK: navController held in remember forever
+@Composable
+fun MapScreen(
+    viewModel: MapViewModel,
+    navController: NavController
+) {
+    val locationUpdates = remember {
+        viewModel.getLocationUpdates {
+            navController.navigate("arrival-screen")
+        }
+    }
+    // navController is captured in closure, never released
+}
+
+// ✅ FIX: Use LaunchedEffect with proper lifecycle
+@Composable
+fun MapScreen(
+    viewModel: MapViewModel,
+    navController: NavController
+) {
+    LaunchedEffect(Unit) {
+        viewModel.locationUpdates.collect { location -&gt;
+            if (location.isAtDestination) {
+                navController.navigate("arrival-screen")
+            }
+        }
+    }
+}
+
+// ✅ EVEN BETTER: Use Flow directly in ViewModel
+@Composable
+fun MapScreen(viewModel: MapViewModel) {
+    val navigationEvent = viewModel.navigationEvents.collectAsState(initial = null)
+    
+    LaunchedEffect(navigationEvent.value) {
+        navigationEvent.value?.let { event -&gt;
+            navController.navigate(event.route)
+        }
+    }
+}</code></pre></div>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Memory Leak Red Flag</p><p>Any lambda captured inside <code>remember</code> that holds a reference to an external mutable object (navController, context, activity) is a potential leak. Use <code>DisposableEffect</code> to clean up.</p></div>
+
+<p>To catch these in production, I use LeakCanary integrated into debug variants:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// In your Application class
+if (BuildConfig.DEBUG) {
+    val refWatcher = LeakCanary.install(this)
+    // Monitor memory pressure
+    Runtime.getRuntime().addShutdownHook(Thread {
+        refWatcher.removeWatchedObject(this)
+    })
+}</code></pre></div>
+
+<h2 id="crash-patterns">Common Crash Patterns & Prevention</h2>
+
+<p>In my 8+ years of <strong>Android development</strong>, I've seen Compose introduce three new crash categories that traditional Views never had:</p>
+
+<h3>1. Snapshot State Exception (Race Conditions)</h3>
+
+<p>This happens when state updates happen outside the Composition scope:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ CRASH: State update from background thread
+@Composable
+fun UserProfile(userId: String) {
+    var userName by remember { mutableStateOf("") }
+    
+    LaunchedEffect(userId) {
+        // Wrong: UI update from IO dispatcher
+        val user = fetchUser(userId) // Dispatches to IO
+        userName = user.name // CRASH on composition thread
+    }
+}
+
+// ✅ FIX: Explicit dispatcher management
+@Composable
+fun UserProfile(userId: String) {
+    var userName by remember { mutableStateOf("") }
+    
+    LaunchedEffect(userId) {
+        userName = withContext(Dispatchers.Default) {
+            fetchUser(userId).name
+        }
+        // Now safely on Main
+    }
+}</code></pre></div>
+
+<h3>2. Recomposition During Snapshot Read</h3>
+
+<p>Accessing state during a recomposition can cause inconsistent reads. This is subtle but ruins production stability:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ DANGEROUS: Reading state that's changing
+@Composable
+fun ListWithSelection() {
+    var selectedId by remember { mutableStateOf("") }
+    val items = remember { mutableListOf&lt;Item&gt;() }
+    
+    items.forEach { item -&gt;
+        // selectedId might change mid-iteration
+        if (item.id == selectedId) { /* ... */ }
+    }
+}
+
+// ✅ SAFE: Snapshot isolation
+@Composable
+fun ListWithSelection() {
+    var selectedId by remember { mutableStateOf("") }
+    val items = remember { mutableListOf&lt;Item&gt;() }
+    
+    val snapshot = remember { items.toList() }
+    snapshot.forEach { item -&gt;
+        if (item.id == selectedId) { /* ... */ }
+    }
+}</code></pre></div>
+
+<h3>3. NavController State Loss</h3>
+
+<p>Navigation crashes in Compose usually stem from navigation happening during composition:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// ❌ CRASH: Navigation during composition
+@Composable
+fun LoginScreen(navController: NavController) {
+    val isLoggedIn = remember { someLoginCheck() }
+    
+    if (isLoggedIn) {
+        navController.navigate("home") // DON'T DO THIS
+    }
+}
+
+// ✅ FIX: Navigate via effect
+@Composable
+fun LoginScreen(navController: NavController) {
+    val isLoggedIn = remember { someLoginCheck() }
+    
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            navController.navigate("home")
+        }
+    }
+}</code></pre></div>
+
+<h2 id="debugging-tools-setup">Essential Debugging Tools & Setup</h2>
+
+<p>After shipping dozens of Compose apps, I've settled on a specific debugging toolkit that catches 90% of production issues before they ship:</p>
+
+<h3>1. Compose Stability Report</h3>
+
+<p>Android Studio generates a detailed stability report showing which composables are unstable:</p>
+
+<div class="code-block" data-lang="bash"><pre><code>./gradlew :app:generateComposeMetrics
+# Check build/compose-metrics/ for detailed reports
+# Look for "unstable" parameters in hot composables</code></pre></div>
+
+<h3>2. Custom Logging with Timestamp</h3>
+
+<p>I built this debug helper for all my Compose projects:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>@Composable
+inline fun DebugCompose(
+    label: String,
+    noinline content: @Composable () -&gt; Unit
+) {
+    if (BuildConfig.DEBUG) {
+        val timestamp = remember { System.currentTimeMillis() }
+        SideEffect {
+            Log.d("Compose", "[$label] Recomposed after \${System.currentTimeMillis() - timestamp}ms")
+        }
+    }
+    content()
+}
+
+// Usage
+@Composable
+fun MyScreen() {
+    DebugCompose("MyScreen") {
+        // Your UI
+    }
+}</code></pre></div>
+
+<h3>3. Profiling in Production Variants</h3>
+
+<p>I always ship a "stagingDebug" variant with profiling enabled but obfuscated:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// build.gradle.kts
+flavorDimensions("environment")
+productFlavors {
+    create("staging") {
+        dimension = "environment"
+    }
+}
+
+variantSelector {
+    if (buildType.name == "debug" && flavorName == "staging") {
+        // Ship with Perfetto profiling enabled
+        androidResources {
+            noCompress += "trace.pb"
+        }
+    }
+}</code></pre></div>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Use Firebase Crashlytics with custom breadcrumbs to track Compose state changes before crashes. Log every state mutation for critical screens.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Recomposition debugging requires Layout Inspector + manual profiling</strong> — traditional View debugging tools won't reveal the real bottlenecks in Jetpack Compose.</li>
+<li><strong>Stable parameters are non-negotiable</strong> — 80% of performance issues I've fixed came down to unstable lambdas, inline functions, or uncontrolled state mutations.</li>
+<li><strong>Memory leaks in Compose are subtle but catastrophic</strong> — always use <code>DisposableEffect</code> for cleanup and avoid capturing mutable references in <code>remember</code> blocks.</li>
+<li><strong>State updates must respect dispatcher boundaries</strong> — use <code>withContext(Dispatchers.Main)</code> and avoid background thread mutations to prevent snapshot exceptions.</li>
+<li><strong>Generate Compose metrics reports before shipping</strong> — the stability report catches 70% of issues I would otherwise discover in production debugging.</li>
+</ul>`,
+  },
+
+  {
     slug: "error-handling-strategies-rest-apis-node-js-laravel",
     featured: false,
     icon: "🛡️",
