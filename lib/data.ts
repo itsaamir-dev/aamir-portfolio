@@ -139,6 +139,281 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "rate-limiting-strategies-rest-api-node-laravel",
+    featured: false,
+    icon: "⚙️",
+    cat: "fullstack", catLabel: "Full-Stack",
+    date: "Jul 24, 2026", readTime: "6 min read",
+    title: "Rate Limiting in REST API Design: Node.js & Laravel",
+    excerpt: "Master rate limiting strategies for REST APIs. Learn token bucket, sliding window, and Redis implementation in Node.js & Laravel to prevent abuse and scale.",
+    tags: ["REST API Design","Node.js","Laravel","API Performance","Backend"],
+    tocItems: [
+      {"id":"why-rate-limiting-matters","label":"Why Rate Limiting Matters"},
+      {"id":"understanding-rate-limiting-algorithms","label":"Understanding Rate Limiting Algorithms"},
+      {"id":"implementing-rate-limiting-nodejs","label":"Implementing Rate Limiting in Node.js"},
+      {"id":"implementing-rate-limiting-laravel","label":"Implementing Rate Limiting in Laravel"},
+      {"id":"redis-based-approach","label":"Redis-Based Approach for Distributed Systems"},
+      {"id":"practical-considerations","label":"Practical Considerations & Gotchas"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-rate-limiting-matters">Why Rate Limiting Matters</h2>
+<p>I've learned the hard way that <strong>REST API design without rate limiting is a ticking time bomb</strong>. During my early days at CodeBrew Labs, we shipped a public API without proper protection. Within weeks, a client's misconfigured mobile app was hammering our endpoints with thousands of requests per second. Our database went down. Our ops team was paged at 2 AM. It was chaos.</p>
+<p>That experience taught me that rate limiting isn't just about preventing abuse—it's about <em>protecting your infrastructure</em>, ensuring fair resource allocation, and maintaining <strong>API performance</strong> for legitimate users. Whether you're building a SaaS platform, a mobile backend, or a third-party integration layer, rate limiting is non-negotiable.</p>
+<p>I've since implemented rate limiting across multiple production systems, and I want to share the practical strategies that actually work.</p>
+
+<h2 id="understanding-rate-limiting-algorithms">Understanding Rate Limiting Algorithms</h2>
+<p>Before jumping into code, let's cover the three main approaches I use in production.</p>
+
+<h3>1. Token Bucket Algorithm</h3>
+<p>This is my go-to for most scenarios. Imagine a bucket that fills with tokens at a fixed rate. Each request consumes one token. If the bucket is empty, the request is rejected.</p>
+<ul>
+<li><strong>Pros:</strong> Handles bursts gracefully, fair, easy to understand</li>
+<li><strong>Cons:</strong> Slightly more complex than other methods</li>
+<li><strong>Best for:</strong> Public APIs, multi-tier pricing</li>
+</ul>
+
+<h3>2. Sliding Window Log</h3>
+<p>Track individual request timestamps in a rolling window. If you exceed your limit in the last N seconds, reject the request.</p>
+<ul>
+<li><strong>Pros:</strong> Very accurate, no bursts allowed</li>
+<li><strong>Cons:</strong> Memory-intensive at scale</li>
+<li><strong>Best for:</strong> Strict rate enforcement, webhooks</li>
+</ul>
+
+<h3>3. Fixed Window Counter</h3>
+<p>Simple: reset a counter every N seconds. If it exceeds the limit, reject requests for that window.</p>
+<ul>
+<li><strong>Pros:</strong> Minimal overhead, easy to implement</li>
+<li><strong>Cons:</strong> Vulnerable to burst attacks at window boundaries</li>
+<li><strong>Best for:</strong> Internal APIs, non-critical endpoints</li>
+</ul>
+
+<p>In production, I usually combine <strong>token bucket for user-facing APIs</strong> and <strong>fixed window for internal services</strong>.</p>
+
+<h2 id="implementing-rate-limiting-nodejs">Implementing Rate Limiting in Node.js</h2>
+<p>Let me walk you through a practical Node.js implementation using Express and Redis. I've used this exact pattern across multiple backends with great results.</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>import express from 'express';
+import redis from 'redis';
+import { promisify } from 'util';
+
+const app = express();
+const redisClient = redis.createClient();
+const getAsync = promisify(redisClient.get).bind(redisClient);
+const incrAsync = promisify(redisClient.incr).bind(redisClient);
+const expireAsync = promisify(redisClient.expire).bind(redisClient);
+
+// Token Bucket Rate Limiter Middleware
+const rateLimitMiddleware = (limit = 100, windowInSeconds = 60) => {
+  return async (req, res, next) => {
+    const userId = req.user?.id || req.ip;
+    const key = \`rate_limit:\${userId}\`;
+    const ttl = windowInSeconds;
+
+    try {
+      const current = await incrAsync(key);
+      
+      // Set expiration on first request in window
+      if (current === 1) {
+        await expireAsync(key, ttl);
+      }
+
+      // Set rate limit headers
+      res.setHeader('X-RateLimit-Limit', limit);
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, limit - current));
+      res.setHeader('X-RateLimit-Reset', Math.floor(Date.now() / 1000) + ttl);
+
+      if (current > limit) {
+        return res.status(429).json({
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded. Please try again later.',
+          retryAfter: ttl
+        });
+      }
+
+      next();
+    } catch (err) {
+      // If Redis fails, fail open (allow request)
+      console.error('Rate limiter error:', err);
+      next();
+    }
+  };
+};
+
+// Apply different limits to different endpoints
+app.get('/api/data', rateLimitMiddleware(1000, 60), (req, res) => {
+  res.json({ data: 'public endpoint' });
+});
+
+app.post('/api/auth/login', rateLimitMiddleware(10, 60), (req, res) => {
+  res.json({ token: 'auth_token' });
+});
+
+app.listen(3000);</code></pre></div>
+
+<p>This implementation uses <strong>Redis for distributed state</strong>, which is critical when running Node.js across multiple servers. The counter increments atomically, and TTL is auto-managed.</p>
+
+<div class="callout-info"><p class="callout-label">💡 Pro Tip</p><p>Notice how I set <code>X-RateLimit-*</code> headers. This lets clients know their remaining quota without making extra requests. Always do this in production REST APIs.</p></div>
+
+<h2 id="implementing-rate-limiting-laravel">Implementing Rate Limiting in Laravel</h2>
+<p>Laravel makes this incredibly easy with built-in middleware, but I often need custom logic for specific use cases. Here's how I handle it:</p>
+
+<div class="code-block" data-lang="PHP"><pre><code>&lt;?php
+
+namespace App\\Http\\Middleware;
+
+use Closure;
+use Illuminate\\Cache\\RateLimiter;
+use Illuminate\\Http\\Request;
+
+class CustomRateLimit
+{
+    protected RateLimiter $limiter;
+
+    public function __construct(RateLimiter $limiter)
+    {
+        $this-&gt;limiter = $limiter;
+    }
+
+    public function handle(Request $request, Closure $next)
+    {
+        $key = 'api_limit:' . ($request-&gt;user()?-&gt;id ?? $request-&gt;ip());
+        $limit = 100;
+        $decayMinutes = 1;
+
+        if ($this-&gt;limiter-&gt;tooManyAttempts($key, $limit)) {
+            $retryAfter = $this-&gt;limiter-&gt;availableIn($key);
+            
+            return response()-&gt;json([
+                'error' =&gt; 'Too Many Requests',
+                'message' =&gt; 'Rate limit exceeded.',
+                'retry_after' =&gt; $retryAfter
+            ], 429)-&gt;header('Retry-After', $retryAfter);
+        }
+
+        $this-&gt;limiter-&gt;hit($key, $decayMinutes * 60);
+
+        $response = $next($request);
+
+        return $response
+            -&gt;header('X-RateLimit-Limit', $limit)
+            -&gt;header('X-RateLimit-Remaining', $this-&gt;limiter-&gt;remaining($key, $limit))
+            -&gt;header('X-RateLimit-Reset', now()-&gt;addMinutes($decayMinutes)-&gt;timestamp);
+    }
+}
+
+// In your routes/api.php
+Route::middleware('throttle:custom-rate-limit')-&gt;group(function () {
+    Route::get('/api/data', [DataController::class, 'index']);
+    Route::post('/api/auth/login', [AuthController::class, 'login']);
+});</code></pre></div>
+
+<p>Laravel's cache layer handles the complexity. By default it uses Redis if configured, and automatically manages TTLs and atomic increments.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Configuration Note</p><p>Make sure your Laravel <code>.env</code> has <code>CACHE_DRIVER=redis</code>. File-based caching won't work for distributed rate limiting across multiple servers.</p></div>
+
+<h2 id="redis-based-approach">Redis-Based Approach for Distributed Systems</h2>
+<p>At Raybit, we handle high-traffic APIs. A simple in-memory limiter won't work when you have requests hitting different servers. <strong>Redis is the answer</strong>.</p>
+
+<p>Here's why I always reach for Redis:</p>
+<ul>
+<li>Atomic operations (INCR is thread-safe)</li>
+<li>Automatic key expiration (TTL management)</li>
+<li>Sub-millisecond performance</li>
+<li>Works across distributed servers</li>
+<li>Easy integration with both Node.js and Laravel</li>
+</ul>
+
+<p>For Node.js, I use <code>redis</code> or <code>ioredis</code> directly. For Laravel, just set <code>CACHE_DRIVER=redis</code> and the framework handles it.</p>
+
+<blockquote>
+<p>"We went from 5-second API response times during traffic spikes to consistent 200ms responses after implementing Redis-based rate limiting. It forced us to be smart about request queuing."</p>
+</blockquote>
+
+<p>One optimization I've found: use <strong>Redis Lua scripts</strong> for complex rate limiting logic. This ensures atomicity without round-trips:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>const rateLimitScript = \`
+local key = KEYS[1]
+local limit = tonumber(ARGV[1])
+local ttl = tonumber(ARGV[2])
+
+local current = redis.call('incr', key)
+if current == 1 then
+  redis.call('expire', key, ttl)
+end
+
+if current &gt; limit then
+  return {0, current, ttl}
+else
+  return {1, current, ttl}
+end
+\`;
+
+const result = await redisClient.eval(
+  rateLimitScript,
+  1,
+  \`rate_limit:\${userId}\`,
+  100,
+  60
+);
+
+const [allowed, current, ttl] = result;
+if (!allowed) {
+  res.status(429).json({ error: 'Rate limit exceeded' });
+}</code></pre></div>
+
+<h2 id="practical-considerations">Practical Considerations & Gotchas</h2>
+
+<h3>Different Limits for Different User Tiers</h3>
+<p>One of the first things I implement in production APIs is <strong>tiered rate limiting</strong>. Free users get 100 req/min, pro users get 10,000 req/min:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>const getTierLimit = (user) => {
+  const tiers = {
+    free: { requests: 100, window: 60 },
+    pro: { requests: 10000, window: 60 },
+    enterprise: { requests: 100000, window: 60 }
+  };
+  return tiers[user.tier] || tiers.free;
+};
+
+const rateLimitMiddleware = async (req, res, next) => {
+  const tier = getTierLimit(req.user);
+  const key = \`rate_limit:\${req.user.id}\`;
+  
+  const current = await incrAsync(key);
+  if (current === 1) await expireAsync(key, tier.window);
+  
+  if (current &gt; tier.requests) {
+    return res.status(429).json({ error: 'Rate limit exceeded for your tier' });
+  }
+  next();
+};</code></pre></div>
+
+<h3>Handling Redis Failures</h3>
+<p>What happens if Redis goes down? <strong>Always fail open</strong>. Don't let rate limiting become a single point of failure. In my code examples above, I wrap Redis calls in try-catch and let requests through if Redis fails.</p>
+
+<h3>Handling Client Retries</h3>
+<p>Return proper HTTP status codes and headers:</p>
+<ul>
+<li><code>429 Too Many Requests</code> — Always use this status</li>
+<li><code>Retry-After</code> header — Tell clients when to retry</li>
+<li><code>X-RateLimit-*</code> headers — Let clients track their quota</li>
+</ul>
+
+<h3>Monitoring & Alerting</h3>
+<p>In production, I track how many requests hit the rate limit. A spike in 429s often indicates a bug in client code or a coordinated attack. Set up monitoring on your <code>429</code> response rate.</p>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>Rate limiting is essential</strong> for API performance and security. Use token bucket for most cases, implement it as middleware, and always use Redis for distributed systems.</li>
+<li><strong>Node.js and Laravel</strong> both have excellent rate limiting support. Node.js needs custom middleware; Laravel has built-in throttle middleware that works out of the box.</li>
+<li><strong>Always return proper HTTP headers</strong> (<code>X-RateLimit-*</code>, <code>Retry-After</code>) so clients can handle limits gracefully without wasting requests.</li>
+<li><strong>Fail open on infrastructure failures</strong>—don't let rate limiting become a bottleneck. If Redis is down, let requests through and trust your database to handle it.</li>
+<li><strong>Implement tiered limits</strong> based on user subscription level. This lets you monetize better and protects free-tier users from being abused.</li>
+</ul>`,
+  },
+
+  {
     slug: "android-debugging-jetpack-compose-production-issues",
     featured: false,
     icon: "🐛",
