@@ -139,6 +139,268 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "transaction-handling-rest-apis-node-js-laravel",
+    featured: false,
+    icon: "💳",
+    cat: "fullstack", catLabel: "Full-Stack",
+    date: "Jul 27, 2026", readTime: "7 min read",
+    title: "Transaction Handling in REST APIs: Node.js & Laravel",
+    excerpt: "Master ACID transactions in REST API design. Learn proven patterns for Node.js & Laravel backends to prevent data corruption at scale.",
+    tags: ["REST API Design","Node.js","Laravel","Database Transactions","Full-Stack"],
+    tocItems: [
+      {"id":"why-transactions-matter","label":"Why Transactions Matter in REST API Design"},
+      {"id":"node-js-patterns","label":"Transaction Patterns in Node.js Backends"},
+      {"id":"laravel-approach","label":"Laravel's Transaction-First Approach"},
+      {"id":"distributed-systems","label":"Handling Transactions Across Distributed Systems"},
+      {"id":"common-pitfalls","label":"Common Pitfalls & How I Fixed Them"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<p>I nearly lost $50,000 in revenue because of a single race condition in a payment processing flow. A user hit checkout twice in rapid succession, and both requests bypassed my transaction logic. Two separate transactions went through, but only one was recorded in our billing system. That's when I learned that <strong>REST API design without proper transaction handling is a ticking time bomb.</strong></p>
+
+<p>Over eight years building backends at CodeBrew Labs and Raybit Technologies, I've learned that solid transaction handling isn't optional—it's foundational. Whether you're using Node.js, Laravel, or any other stack, your REST API design must account for race conditions, concurrent writes, and partial failures. In this post, I'll share the exact patterns that saved my teams thousands of hours and prevented countless data corruption issues.</p>
+
+<h2 id="why-transactions-matter">Why Transactions Matter in REST API Design</h2>
+
+<p>When you're building a REST API, you're often coordinating multiple database operations across a single request. Consider an e-commerce order:</p>
+
+<ul>
+<li>Deduct inventory from stock</li>
+<li>Create an order record</li>
+<li>Log a payment transaction</li>
+<li>Update user balance</li>
+<li>Send confirmation email</li>
+</ul>
+
+<p>If your API crashes between step 2 and step 3, you've recorded an order but not charged the customer. If a concurrent request hits your API while step 1 is executing, you might oversell inventory. This is where <strong>ACID transactions</strong> become critical to your REST API design.</p>
+
+<blockquote><p>"I've seen production incidents cost companies more in 12 hours than they spent on engineering in a year. Transactions were the missing piece every single time."</p></blockquote>
+
+<p>The challenge is that REST APIs are stateless, and coordinating state across multiple requests is genuinely hard. But it's not impossible if you know the patterns.</p>
+
+<h2 id="node-js-patterns">Transaction Patterns in Node.js Backends</h2>
+
+<p>Node.js isn't transaction-first like Laravel. It's async and event-driven, which means you have to be <em>intentional</em> about wrapping operations in database transactions. Here's how I handle it:</p>
+
+<h3>Pattern 1: Database Connection Transactions</h3>
+
+<p>The most common pattern is explicit transaction management using your database driver:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>// Node.js + MySQL with mysql2/promise
+const connection = await pool.getConnection();
+
+try {
+  await connection.beginTransaction();
+  
+  // Deduct inventory
+  await connection.execute(
+    'UPDATE products SET stock = stock - ? WHERE id = ?',
+    [quantity, productId]
+  );
+  
+  // Create order
+  const [orderResult] = await connection.execute(
+    'INSERT INTO orders (user_id, total) VALUES (?, ?)',
+    [userId, total]
+  );
+  
+  // Log payment
+  await connection.execute(
+    'INSERT INTO payments (order_id, amount, status) VALUES (?, ?, ?)',
+    [orderResult.insertId, total, 'completed']
+  );
+  
+  await connection.commit();
+  return { success: true, orderId: orderResult.insertId };
+} catch (error) {
+  await connection.rollback();
+  throw new Error(\`Transaction failed: \${error.message}\`);
+} finally {
+  connection.release();
+}</code></pre></div>
+
+<p>This ensures all three operations succeed together or all roll back. The key is <strong>releasing the connection in finally</strong>—I've seen production outages from connection pool exhaustion because developers forgot that step.</p>
+
+<h3>Pattern 2: ORM-Level Transactions with Sequelize</h3>
+
+<p>If you're using Sequelize, the ORM handles connection management for you:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>const result = await sequelize.transaction(async (t) => {
+  // All queries within this callback use the transaction
+  const product = await Product.findByPk(productId, { transaction: t });
+  
+  if (product.stock < quantity) {
+    throw new Error('Insufficient stock');
+  }
+  
+  await product.decrement('stock', { by: quantity, transaction: t });
+  
+  const order = await Order.create(
+    { userId, total },
+    { transaction: t }
+  );
+  
+  await Payment.create(
+    { orderId: order.id, amount: total, status: 'completed' },
+    { transaction: t }
+  );
+  
+  return order;
+});</code></pre></div>
+
+<p>I prefer this approach for REST API design in Node.js because it's cleaner and the ORM handles edge cases. The catch is that every single query in your transaction must explicitly pass the transaction object, or it'll execute outside the transaction.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Transaction Timeout</p><p>Node.js transactions can hang if a query never completes. Always set explicit timeout values on your transaction context to prevent zombie connections from exhausting your pool.</p></div>
+
+<h2 id="laravel-approach">Laravel's Transaction-First Approach</h2>
+
+<p>Laravel's Eloquent ORM treats transactions as a first-class citizen. This is one of the reasons I still love Laravel for REST API design—it forces good habits:</p>
+
+<div class="code-block" data-lang="PHP"><pre><code>&lt;?php
+DB::transaction(function () use ($userId, $productId, $quantity, $total) {
+    $product = Product::lockForUpdate()->find($productId);
+    
+    if ($product-&gt;stock &lt; $quantity) {
+        throw new InsufficientStockException();
+    }
+    
+    $product-&gt;decrement('stock', $quantity);
+    
+    $order = Order::create([
+        'user_id' =&gt; $userId,
+        'total' =&gt; $total,
+    ]);
+    
+    Payment::create([
+        'order_id' =&gt; $order-&gt;id,
+        'amount' =&gt; $total,
+        'status' =&gt; 'completed',
+    ]);
+    
+    return $order;
+});</code></pre></div>
+
+<p>Notice the <code>lockForUpdate()</code> call? That's crucial. In Laravel's REST API design, pessimistic locking prevents another concurrent request from reading the product record until your transaction completes. Without it, two requests could both see available stock and oversell.</p>
+
+<p>Laravel also has built-in retry logic:</p>
+
+<div class="code-block" data-lang="PHP"><pre><code>&lt;?php
+DB::transaction(function () {
+    // Your transaction logic
+}, maxAttempts: 3);</code></pre></div>
+
+<p>If a deadlock occurs (common in high-concurrency scenarios), Laravel automatically retries up to 3 times. This is a lifesaver in production REST API design.</p>
+
+<h2 id="distributed-systems">Handling Transactions Across Distributed Systems</h2>
+
+<p>Here's where things get complicated: <strong>what if you're calling an external API as part of your transaction?</strong> You can't wrap an external payment gateway call in a database transaction.</p>
+
+<p>I handle this with the <em>Saga pattern</em>. Instead of trying to atomically update the database and call a payment provider, I break it into steps with compensating transactions:</p>
+
+<h3>The Saga Pattern in REST API Design</h3>
+
+<ul>
+<li><strong>Step 1:</strong> Create order in "pending" state (local transaction)</li>
+<li><strong>Step 2:</strong> Call payment provider (external, not transactional)</li>
+<li><strong>Step 3:</strong> If payment succeeds, mark order as "confirmed" (compensating transaction)</li>
+<li><strong>Step 4:</strong> If payment fails, mark order as "cancelled" and refund inventory</li>
+</ul>
+
+<p>In Node.js, I implement this with explicit state tracking:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>async function processOrder(userId, items, paymentMethod) {
+  let orderId;
+  
+  try {
+    // Step 1: Create pending order
+    const t = await sequelize.transaction();
+    const order = await Order.create(
+      { userId, status: 'pending', total: calculateTotal(items) },
+      { transaction: t }
+    );
+    orderId = order.id;
+    await t.commit();
+    
+    // Step 2: Call external payment (not transactional)
+    const paymentResult = await stripeClient.charge({
+      amount: order.total,
+      customerId: paymentMethod,
+    });
+    
+    // Step 3: Confirm order
+    await Order.update(
+      { status: 'confirmed', paymentId: paymentResult.id },
+      { where: { id: orderId } }
+    );
+    
+    return { success: true, orderId };
+  } catch (error) {
+    // Step 4: Compensate
+    if (orderId) {
+      await Order.update(
+        { status: 'cancelled' },
+        { where: { id: orderId } }
+      );
+    }
+    throw error;
+  }
+}</code></pre></div>
+
+<p>This pattern isn't perfect—there's a window between step 2 and step 3 where a crash could leave an order in limbo. That's why I add idempotency keys and async job queues for reliability.</p>
+
+<h2 id="common-pitfalls">Common Pitfalls & How I Fixed Them</h2>
+
+<h3>Pitfall 1: Forgetting to Read Within the Transaction</h3>
+
+<p>I've seen developers write REST API code like this:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>// DON'T DO THIS
+const product = await Product.findByPk(productId); // Outside transaction!
+await sequelize.transaction(async (t) =&gt; {
+  await product.decrement('stock', { by: quantity, transaction: t });
+});</code></pre></div>
+
+<p>The read happens outside the transaction, so another request could modify the product between the read and write. <strong>Always read inside your transaction context.</strong></p>
+
+<h3>Pitfall 2: Mixing Async Operations Without Proper Error Handling</h3>
+
+<p>In Node.js REST API design, it's tempting to fire off multiple async operations in parallel:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>// DON'T DO THIS in a transaction
+await Promise.all([
+  deductInventory(),
+  processPayment(),
+  sendEmail(),
+]);</code></pre></div>
+
+<p>If <code>processPayment()</code> fails but <code>deductInventory()</code> succeeded, you've orphaned a database mutation. Keep transaction operations sequential and save async work for after the transaction commits.</p>
+
+<h3>Pitfall 3: Ignoring Isolation Levels</h3>
+
+<p>Most databases default to <code>READ_COMMITTED</code>, which allows dirty reads in some scenarios. For REST API design with sensitive operations (payments, inventory), I explicitly set isolation level:</p>
+
+<div class="code-block" data-lang="PHP"><pre><code>&lt;?php
+DB::transaction(function () {
+    // High isolation for critical operations
+    DB::setTransactionIsolationLevel('SERIALIZABLE');
+    // Your transaction logic
+});</code></pre></div>
+
+<p>Higher isolation means slower performance, so use it only where necessary.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Isolation Levels Explained</p><p><strong>READ_UNCOMMITTED:</strong> Can read uncommitted changes (dangerous). <strong>READ_COMMITTED:</strong> Only committed data (default, acceptable for most APIs). <strong>REPEATABLE_READ:</strong> Snapshot consistency within a transaction. <strong>SERIALIZABLE:</strong> Complete isolation, no concurrency (slowest).</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Wrap multi-step operations in explicit transactions</strong> — whether using raw SQL, ORM methods, or connection-level APIs. This prevents partial failures and race conditions in your REST API design.</li>
+<li><strong>Use pessimistic locking (SELECT FOR UPDATE) for high-contention resources</strong> — like inventory or account balances. It's slower but prevents overselling and double-charging.</li>
+<li><strong>For external API calls, use the Saga pattern with compensating transactions</strong> — you can't atomically update your database and call Stripe, so design for failure gracefully.</li>
+<li><strong>Always test concurrent scenarios in your REST API design</strong> — write tests that spawn multiple simultaneous requests. I've caught transaction bugs with 100 concurrent requests that didn't show up in single-threaded testing.</li>
+<li><strong>Monitor transaction duration and connection pool exhaustion</strong> — long-running transactions starve other requests. Set timeouts and log slow transactions aggressively.</li>
+</ul>`,
+  },
+
+  {
     slug: "rate-limiting-strategies-rest-api-node-laravel",
     featured: false,
     icon: "⚙️",
