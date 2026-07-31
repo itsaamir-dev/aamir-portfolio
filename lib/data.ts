@@ -139,6 +139,284 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "pagination-cursor-based-rest-api-node-laravel",
+    featured: false,
+    icon: "📖",
+    cat: "fullstack", catLabel: "Full-Stack",
+    date: "Jul 31, 2026", readTime: "6 min read",
+    title: "Pagination in REST API Design: Cursor vs Offset at Scale",
+    excerpt: "Master cursor-based and offset pagination for REST APIs. Learn when to use each, implement in Node.js & Laravel, and optimize API performance for millions of records.",
+    tags: ["REST API Design","Node.js Backend","Laravel","Full-Stack Development","API Performance"],
+    tocItems: [
+      {"id":"why-pagination-matters","label":"Why Pagination Matters in REST API Design"},
+      {"id":"offset-pagination","label":"Offset Pagination: The Classic Approach"},
+      {"id":"cursor-pagination","label":"Cursor-Based Pagination: The Modern Standard"},
+      {"id":"node-implementation","label":"Implementing Cursor Pagination in Node.js"},
+      {"id":"laravel-implementation","label":"Building Cursor Pagination in Laravel"},
+      {"id":"performance-comparison","label":"API Performance: When to Choose Each Strategy"},
+      {"id":"gotchas","label":"Common Pitfalls & How to Avoid Them"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-pagination-matters">Why Pagination Matters in REST API Design</h2>
+
+<p>When I was building the backend for <strong>AudioBook AI</strong> — a platform that now serves 50K+ users — I made a rookie mistake. I loaded 10,000 records into a single API response because I hadn't thought about pagination. The first user complaint came within hours: the app crashed, network requests timed out, and the database melted.</p>
+
+<p>That's when I realized: <em>pagination isn't optional in REST API design</em>. It's fundamental. Whether you're using <strong>Node.js backend</strong> or <strong>Laravel</strong>, how you paginate directly impacts your <strong>API performance</strong>, user experience, and infrastructure costs.</p>
+
+<p>There are two main strategies: offset pagination and cursor-based pagination. Both work. But one scales, and the other doesn't. Let me show you the difference from 8+ years of production experience.</p>
+
+<h2 id="offset-pagination">Offset Pagination: The Classic Approach</h2>
+
+<p>Offset pagination is what most developers learn first. You ask for a page number and a limit:</p>
+
+<div class="code-block" data-lang="http"><pre><code>GET /api/v1/audiobooks?page=2&amp;limit=20</code></pre></div>
+
+<p>The API then returns:</p>
+
+<ul>
+<li>Items 21–40 (skipping the first 20)</li>
+<li>Total count</li>
+<li>Current page</li>
+</ul>
+
+<p><strong>Why it's intuitive:</strong> Users understand "page 2." It's familiar. You can jump directly to any page.</p>
+
+<p><strong>Why it breaks at scale:</strong> To get page 1000, the database must scan and skip the first 19,999 rows. With millions of records, this becomes prohibitively expensive. I learned this the hard way when our EmpSuite ERP platform's report endpoint started taking 30+ seconds.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Performance Risk</p><p>Offset pagination performs a full table scan from the beginning every request. At 1M+ records, even with indexing, you'll feel the pain.</p></div>
+
+<h2 id="cursor-pagination">Cursor-Based Pagination: The Modern Standard</h2>
+
+<p>Cursor-based pagination doesn't skip rows. Instead, it remembers where you left off and starts from that point. You get a cursor (typically an encoded string or ID) instead of a page number:</p>
+
+<div class="code-block" data-lang="http"><pre><code>GET /api/v1/audiobooks?limit=20&amp;cursor=eyJpZCI6IDEwMjN9</code></pre></div>
+
+<p>The response includes:</p>
+
+<ul>
+<li>20 items</li>
+<li>A <code>next_cursor</code> for fetching the next batch</li>
+<li><em>No total count</em> (you don't need it for forward-only navigation)</li>
+</ul>
+
+<p><strong>Why it's superior at scale:</strong> The database seeks directly to where the cursor points. No scanning. No skipping. O(1) lookups instead of O(n).</p>
+
+<p>This is what Stripe, GitHub, and Facebook use. At CodeBrew Labs, when we migrated Nova Cabs' ride history API from offset to cursor-based pagination, response times dropped from 2.3s to 140ms.</p>
+
+<h2 id="node-implementation">Implementing Cursor Pagination in Node.js</h2>
+
+<p>Here's how I implement cursor-based pagination in a Node.js backend with Express and a relational database:</p>
+
+<div class="code-block" data-lang="javascript"><pre><code>const express = require('express');
+const mysql = require('mysql2/promise');
+const Buffer = require('buffer').Buffer;
+
+const app = express();
+
+// Encode cursor: base64(JSON)
+const encodeCursor = (id) =&gt; {
+  return Buffer.from(JSON.stringify({ id })).toString('base64');
+};
+
+// Decode cursor
+const decodeCursor = (cursor) =&gt; {
+  try {
+    const decoded = Buffer.from(cursor, 'base64').toString('utf-8');
+    return JSON.parse(decoded);
+  } catch (e) {
+    return null;
+  }
+};
+
+app.get('/api/v1/audiobooks', async (req, res) =&gt; {
+  const { limit = 20, cursor } = req.query;
+  const numLimit = Math.min(parseInt(limit), 100); // Cap at 100
+
+  try {
+    const connection = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+    });
+
+    let whereClause = '';
+    const params = [];
+
+    // If cursor exists, start after that ID
+    if (cursor) {
+      const decodedCursor = decodeCursor(cursor);
+      if (!decodedCursor) {
+        return res.status(400).json({ error: 'Invalid cursor' });
+      }
+      whereClause = 'WHERE id &gt; ?';
+      params.push(decodedCursor.id);
+    }
+
+    // Fetch limit + 1 to check if there's a next page
+    const query = \`
+      SELECT id, title, author, created_at
+      FROM audiobooks
+      \${whereClause}
+      ORDER BY id ASC
+      LIMIT ?
+    \`;
+
+    params.push(numLimit + 1);
+    const [rows] = await connection.execute(query, params);
+
+    const hasMore = rows.length &gt; numLimit;
+    const items = rows.slice(0, numLimit);
+
+    const response = {
+      data: items,
+      pagination: {
+        limit: numLimit,
+        next_cursor: hasMore ? encodeCursor(items[items.length - 1].id) : null,
+      },
+    };
+
+    await connection.end();
+    return res.json(response);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.listen(3000);</code></pre></div>
+
+<p><strong>Key points in this Node.js implementation:</strong></p>
+
+<ul>
+<li>We encode the cursor as base64 (safe for URLs)</li>
+<li>We fetch <code>limit + 1</code> to detect if more pages exist</li>
+<li>We use an indexed <code>ORDER BY id</code> for fast seeks</li>
+<li>No expensive <code>COUNT(*)</code> query — we just check if the next record exists</li>
+</ul>
+
+<h2 id="laravel-implementation">Building Cursor Pagination in Laravel</h2>
+
+<p>Laravel has built-in cursor pagination support, which I use heavily. Here's how:</p>
+
+<div class="code-block" data-lang="php"><pre><code>&lt;?php
+
+namespace App\\Http\\Controllers;
+
+use App\\Models\\Audiobook;
+use Illuminate\\Pagination\\Cursor;
+use Illuminate\\Pagination\\CursorPaginator;
+
+class AudiobookController extends Controller
+{
+    public function index()
+    {
+        // Laravel handles encoding/decoding automatically
+        $audiobooks = Audiobook::query()
+            ->orderBy('id', 'asc')
+            -&gt;cursorPaginate(
+                perPage: request('limit', 20)
+            );
+
+        return response()-&gt;json([
+            'data' =&gt; $audiobooks-&gt;items(),
+            'pagination' =&gt; [
+                'limit' =&gt; $audiobooks-&gt;perPage(),
+                'next_cursor' =&gt; $audiobooks-&gt;nextCursor(),
+                'prev_cursor' =&gt; $audiobooks-&gt;previousCursor(),
+            ],
+        ]);
+    }
+}
+
+// routes/api.php
+Route::get('/audiobooks', [AudiobookController::class, 'index']);</code></pre></div>
+
+<p><strong>Why Laravel's cursor pagination is elegant:</strong></p>
+
+<ul>
+<li><code>cursorPaginate()</code> handles cursor encoding/decoding internally</li>
+<li>Automatic support for <code>nextCursor()</code> and <code>previousCursor()</code></li>
+<li>Works with Eloquent relationships seamlessly</li>
+<li>Built-in request binding — no manual parsing</li>
+</ul>
+
+<p>If you need more control, you can build custom cursor logic like I did for EmpSuite's complex filtering. But for most <strong>REST API design</strong> scenarios, this is production-ready out of the box.</p>
+
+<h2 id="performance-comparison">API Performance: When to Choose Each Strategy</h2>
+
+<p>Here's my decision matrix based on 8 years of production systems:</p>
+
+<h3>Use Offset Pagination When:</h3>
+
+<ul>
+<li><strong>Dataset is small</strong> (&lt;100K records)</li>
+<li><strong>Random access is critical</strong> (e.g., "jump to page 500")</li>
+<li><strong>Users need a total count</strong> (e.g., search results: "Showing 1–20 of 4,532")</li>
+<li><strong>You're building internal tools</strong> where performance isn't user-facing</li>
+</ul>
+
+<h3>Use Cursor Pagination When:</h3>
+
+<ul>
+<li><strong>Dataset is massive</strong> (1M+ records)</li>
+<li><strong>Sequential browsing is the norm</strong> (feeds, timelines, logs)</li>
+<li><strong>Data changes frequently</strong> (cursor prevents duplicates/gaps)</li>
+<li><strong>You're optimizing for mobile</strong> (infinite scroll, lower bandwidth)</li>
+<li><strong>Your business depends on response time</strong> (e-commerce, real-time systems)</li>
+</ul>
+
+<blockquote>
+<p>At AudioBook AI, switching to cursor pagination reduced our server costs by 25% because we eliminated expensive <code>COUNT(*)</code> queries and slow offset scans. That's real money saved.</p>
+</blockquote>
+
+<h2 id="gotchas">Common Pitfalls & How to Avoid Them</h2>
+
+<h3>Pitfall 1: Unordered Results Break Cursors</h3>
+
+<p>Your cursor strategy fails if results aren't consistently ordered. Always use a stable, indexed column (usually <code>id</code> or <code>created_at</code>). If you need secondary sort, include it in the cursor:</p>
+
+<div class="code-block" data-lang="javascript"><pre><code>// Good: primary + secondary sort
+const encodeCursor = (id, createdAt) =&gt; {
+  return Buffer.from(
+    JSON.stringify({ id, created_at: createdAt })
+  ).toString('base64');
+};</code></pre></div>
+
+<h3>Pitfall 2: Forgetting Index on Cursor Column</h3>
+
+<p>If your cursor column (<code>id</code>, <code>created_at</code>) isn't indexed, the database still scans. In your migration:</p>
+
+<div class="code-block" data-lang="php"><pre><code>Schema::create('audiobooks', function (Blueprint $table) {
+    $table-&gt;id();
+    $table-&gt;string('title');
+    $table-&gt;index('id'); // Explicit index for cursor
+    $table-&gt;index('created_at');
+    $table-&gt;timestamps();
+});</code></pre></div>
+
+<h3>Pitfall 3: Exposing Internal IDs in Cursors</h3>
+
+<p>If you encode raw IDs, users can infer your scale ("we're at ID 5M?"). Use opaque tokens instead. This is where encoding as base64 helps — it hides the underlying structure.</p>
+
+<h3>Pitfall 4: Not Validating Cursor Format</h3>
+
+<p>Always validate and sanitize cursors. I've seen APIs crash because a malformed cursor broke JSON parsing. The example code above handles this with try-catch.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Test your pagination with 10M+ records locally using a database seed. You'll catch performance issues before they hit production. I do this for every new endpoint.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Cursor-based pagination is the modern standard for REST API design.</strong> It scales linearly regardless of dataset size, while offset pagination degrades exponentially.</li>
+<li><strong>Use offset pagination only for small datasets (&lt;100K records) or when random page access is critical.</strong> For most production REST APIs, cursor pagination is the right choice.</li>
+<li><strong>Always index your cursor column.</strong> An indexed <code>id</code> or <code>created_at</code> turns an O(n) scan into an O(1) seek. This is the difference between 2.3s and 140ms responses.</li>
+<li><strong>Encode cursors as opaque tokens.</strong> Base64-encoding JSON provides security through obscurity and prevents users from guessing internal IDs.</li>
+<li><strong>Test pagination with realistic data volumes.</strong> Build cursor pagination into your Node.js backend and Laravel REST APIs from the start. It's not an afterthought — it's foundational to API performance.</li>
+</ul>`,
+  },
+
+  {
     slug: "real-time-ai-inference-android-apps-websockets-firebase",
     featured: false,
     icon: "⚡",
