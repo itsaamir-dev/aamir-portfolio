@@ -139,6 +139,222 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "mentoring-junior-developers-senior-engineer-guide",
+    featured: false,
+    icon: "🚀",
+    cat: "career", catLabel: "Career",
+    date: "Aug 7, 2026", readTime: "7 min read",
+    title: "Mentoring Junior Developers: A Senior Developer's Practical Guide",
+    excerpt: "Learn how senior developers build high-performing teams through effective mentoring. Real strategies from 8 years of leading engineers and shipping production apps.",
+    tags: ["mentoring","team leadership","junior developers","senior developer tips","career growth"],
+    tocItems: [
+      {"id":"why-mentoring-matters","label":"Why Mentoring Matters for Your Senior Developer Career"},
+      {"id":"structured-onboarding","label":"Building a Structured Onboarding System"},
+      {"id":"code-review-coaching","label":"Code Review as a Teaching Tool"},
+      {"id":"ownership-delegation","label":"Delegating Ownership, Not Just Tasks"},
+      {"id":"common-mistakes","label":"Common Mentoring Mistakes Senior Developers Make"},
+      {"id":"measuring-growth","label":"Measuring Mentee Growth and Impact"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-mentoring-matters">Why Mentoring Matters for Your Senior Developer Career</h2>
+
+<p>When I became a senior engineer at CodeBrew Labs in 2020, I thought my job was to <strong>write better code faster</strong>. I was wrong.</p>
+
+<p>My real job was to <em>multiply the output of my entire team</em>. That shift in mindset changed everything about how I approached my role as a senior developer.</p>
+
+<p>Mentoring junior developers isn't a "nice to have" in a software engineer career — it's <strong>the defining difference between senior and mid-level engineers</strong>. At Raybit Technologies, I lead a 4-engineer squad. The throughput of that team isn't determined by my individual coding speed; it's determined by how effectively I amplify each person's capability.</p>
+
+<p>When you mentor well, you:</p>
+
+<ul>
+<li>Reduce onboarding time from weeks to days</li>
+<li>Cut knowledge silos that kill team velocity</li>
+<li>Build a culture where junior devs grow into your future senior engineers</li>
+<li>Free yourself from bottlenecks so you can work on higher-impact problems</li>
+<li>Create institutional knowledge that survives team turnover</li>
+</ul>
+
+<p>This is why companies actually promote senior developers. Not because they wrote the most lines of code. Because they <em>built the people who did</em>.</p>
+
+<h2 id="structured-onboarding">Building a Structured Onboarding System</h2>
+
+<p>The worst thing you can do as a senior developer is throw a junior engineer at the codebase and expect them to figure it out.</p>
+
+<p>I learned this the hard way. In my second year at CodeBrew, we hired a talented junior Android developer. I gave him access to the repo and said, "Start with the main activity." Two weeks later, he was still context-switching between Firebase setup, Hilt configuration, and Kotlin syntax. We'd wasted his time, and he felt lost.</p>
+
+<p>Now I use a <strong>3-week structured onboarding framework</strong>:</p>
+
+<h3>Week 1: Architecture & Foundations</h3>
+
+<ul>
+<li><strong>Day 1-2:</strong> Codebase walkthrough. I show the folder structure, explain the MVVM pattern we use, and why we chose Hilt for DI.</li>
+<li><strong>Day 3-5:</strong> Build a simple feature end-to-end with me pair programming. This isn't passive observation — they write the code while I guide.</li>
+</ul>
+
+<h3>Week 2: Hands-On with Safety Rails</h3>
+
+<ul>
+<li>Assign a small, well-scoped bug fix or feature on a non-critical screen</li>
+<li>They implement it independently, but I review every commit</li>
+<li>We sync daily to unblock and reinforce patterns</li>
+</ul>
+
+<h3>Week 3: Independent Contribution with Mentorship</h3>
+
+<ul>
+<li>Assign a medium-complexity feature or refactor</li>
+<li>They drive the design and implementation</li>
+<li>Code review becomes collaborative problem-solving, not corrections</li>
+</ul>
+
+<p>This structure removes the anxiety that paralyzes junior developers. They know exactly what to expect, and you're present at each stage.</p>
+
+<h2 id="code-review-coaching">Code Review as a Teaching Tool</h2>
+
+<p>Most code reviews look like this:</p>
+
+<blockquote>
+<p>"This should be a sealed class, not an abstract class. Check the Kotlin docs."</p>
+</blockquote>
+
+<p>That's <strong>not mentoring</strong>. That's gatekeeping.</p>
+
+<p>Real mentoring in code review looks like this:</p>
+
+<blockquote>
+<p>"I see you went with an abstract class here. That works, but we typically use sealed classes for state representation because they force exhaustive \`when\` expressions — the compiler catches incomplete state handling. Want to refactor and see the difference?"</p>
+</blockquote>
+
+<p>The second approach teaches <em>why</em>, not just <em>what</em>. It builds judgment, not just compliance.</p>
+
+<p>Here's my code review framework as a senior developer:</p>
+
+<h3>Level 1: Surface Issues (Quick Feedback)</h3>
+<ul>
+<li>Naming inconsistencies</li>
+<li>Missing error handling</li>
+<li>Obvious performance issues</li>
+</ul>
+
+<h3>Level 2: Architecture Questions (Teaching Moments)</h3>
+<ul>
+<li>"Why did you structure this as a ViewModel vs a Repository?"</li>
+<li>"Can you walk me through the data flow here?"</li>
+<li>"What happens if this coroutine scope gets cancelled?"</li>
+</ul>
+
+<h3>Level 3: Strategic Discussions (Mentee-Led Problem Solving)</h3>
+<ul>
+<li>"I see two ways to solve this. What are the tradeoffs you see?"</li>
+<li>"How would you test this edge case?"</li>
+<li>"What would you do differently next time?"</li>
+</ul>
+
+<p>Questions are more powerful than corrections. They force the junior developer to think, not just comply.</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// BAD CODE REVIEW (gatekeeping):
+// "Remove this LiveData, use StateFlow instead."
+
+// GOOD CODE REVIEW (mentoring):
+// "I notice you're using LiveData here for state management.
+// StateFlow has some advantages for coroutine-based architectures:
+// 1. It's a cold stream, so collectors only get updates while collecting
+// 2. It integrates better with Kotlin's structured concurrency
+// 3. You can use flow operators like map(), filter() directly
+// Want to refactor this together and I'll show you the pattern?"
+
+// This teaches the junior developer:
+// - The why (tradeoffs between tools)
+// - The how (concrete alternatives)
+// - That learning is collaborative, not confrontational</code></pre></div>
+
+<h2 id="ownership-delegation">Delegating Ownership, Not Just Tasks</h2>
+
+<p>There's a huge difference between <strong>assigning tasks</strong> and <strong>delegating ownership</strong>.</p>
+
+<p>Task assignment: "Build the login screen."</p>
+<p>Ownership delegation: "We need a login screen. It should handle email/password and biometric auth. You own the design, implementation, and testing. Here are the design specs and API docs. Show me your architecture plan before you start coding."</p>
+
+<p>The second approach builds confidence, accountability, and judgment.</p>
+
+<p>As a senior developer managing a squad, I've seen junior engineers transform when they're given <em>real ownership</em>. Not micromanaged tasks. Real problems to solve.</p>
+
+<p>When delegating ownership:</p>
+
+<ul>
+<li><strong>Set clear constraints:</strong> Timeline, design requirements, acceptance criteria</li>
+<li><strong>Let them own the solution:</strong> Don't prescribe the exact implementation</li>
+<li><strong>Be available for unblocking:</strong> Not for holding their hand, but for removing obstacles</li>
+<li><strong>Review the approach before full implementation:</strong> Catch architecture issues early, not at the end</li>
+<li><strong>Let them own the post-mortems:</strong> If something breaks, they lead the analysis</li>
+</ul>
+
+<p>This builds senior engineers. People who can think independently, not just execute code.</p>
+
+<h2 id="common-mistakes">Common Mentoring Mistakes Senior Developers Make</h2>
+
+<h3>Mistake 1: Solving Problems Instead of Teaching Problem-Solving</h3>
+
+<p>A junior developer gets stuck on a bug. Your instinct: grab their laptop and debug it in 5 minutes. Wrong move.</p>
+
+<p>Better: "Let's walk through this together. What have you tried? What does the stacktrace tell you? Let's add some logging here..."</p>
+
+<p>It takes 20 minutes, but they learn debugging methodology they'll use for their entire career.</p>
+
+<h3>Mistake 2: Expecting Them to Know What You Know</h3>
+
+<p>You've shipped 30 production apps. You know Kotlin Coroutines inside out. You understand Flow, Channels, and structured concurrency intuitively.</p>
+
+<p>Your junior developer is seeing this for the first time. Don't expect them to infer context from thin documentation. <strong>Teach it explicitly.</strong></p>
+
+<h3>Mistake 3: Mentoring Only When It's Convenient</h3>
+
+<p>Consistent mentoring beats sporadic deep dives. A 15-minute sync every other day is more valuable than a 2-hour session once a month.</p>
+
+<p>I block 30 minutes every Tuesday and Thursday with each junior engineer on my squad. Non-negotiable. It's not a side project; it's core to my job as a senior developer.</p>
+
+<h3>Mistake 4: Not Giving Hard Feedback</h3>
+
+<p>Real mentoring includes hard truths. If a junior developer's code isn't meeting production standards, tell them. Clearly. Kindly. But clearly.</p>
+
+<p>"This works, but we need better error handling before it ships. Here's why [explain impact]. Let's refactor together."</p>
+
+<p>Avoiding hard feedback isn't kindness; it's setting them up to fail.</p>
+
+<h2 id="measuring-growth">Measuring Mentee Growth and Impact</h2>
+
+<p>At CodeBrew, one junior developer I mentored went from needing guidance on basic Android patterns to shipping features independently in 6 months. How did I know he'd grown?</p>
+
+<ul>
+<li><strong>Reduced code review cycles:</strong> From 3-4 rounds to 1-2 rounds per PR</li>
+<li><strong>Better problem decomposition:</strong> He started breaking large features into smaller PRs unprompted</li>
+<li><strong>Proactive documentation:</strong> He began writing docs for complex patterns without being asked</li>
+<li><strong>Mentoring others:</strong> He started helping other junior developers debug</li>
+<li><strong>Asking better questions:</strong> Moving from "how do I do X?" to "should we use approach A or B?"</li>
+</ul>
+
+<p>These are the signals that a junior developer is leveling up to mid-level engineer status.</p>
+
+<p>Track these metrics over time. They're the real measure of your effectiveness as a mentor and as a senior developer.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Create a simple growth matrix for each mentee: Architecture understanding, Code quality, Debugging skills, Ownership/autonomy, Communication. Rate them 1-5 at hire, 3 months, 6 months. Watch the trajectory. Share this with them quarterly.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Mentoring is not optional for senior developers</strong> — it's what separates senior from mid-level roles. Your value isn't your code; it's your impact on the team.</li>
+<li><strong>Structure onboarding into a 3-week system</strong>: foundations, hands-on guided work, independent contribution. Reduce guesswork and anxiety.</li>
+<li><strong>Use code reviews as teaching moments</strong>: Ask questions that build judgment instead of just correcting code. Teaching the why matters more than the what.</li>
+<li><strong>Delegate ownership, not tasks</strong>: Give real problems with clear constraints, not step-by-step instructions. This builds future senior engineers.</li>
+<li><strong>Measure growth by behavioral change</strong>: Fewer code review cycles, better problem decomposition, proactive documentation, mentoring others. These signals tell you your mentoring is working.</li>
+</ul>
+
+<p>The best investment you can make as a senior developer isn't a new tool or framework. It's the people on your team. Mentor them well, and you'll build a team that ships faster, learns together, and produces engineers who become the next generation of leaders.</p>
+
+<p>That's how you scale your impact in a software engineer career.</p>`,
+  },
+
+  {
     slug: "finding-high-quality-clients-freelance-software-engineer",
     featured: false,
     icon: "🎯",
