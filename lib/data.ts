@@ -139,6 +139,332 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "retrieval-augmented-generation-android-offline-ai",
+    featured: false,
+    icon: "🧠",
+    cat: "ai", catLabel: "AI & Tech",
+    date: "Aug 24, 2026", readTime: "7 min read",
+    title: "RAG Architecture for On-Device AI: Building Smarter Android Apps",
+    excerpt: "Master retrieval-augmented generation for on-device AI without cloud dependency. Build intelligent Android apps that learn from local data and deliver personalized AI responses offline.",
+    tags: ["On-Device AI","RAG Architecture","LLM Integration","Android Development","Machine Learning Mobile"],
+    tocItems: [
+      {"id":"why-rag-matters","label":"Why RAG Matters for Mobile AI"},
+      {"id":"rag-architecture","label":"Understanding RAG Architecture"},
+      {"id":"implementing-rag-android","label":"Implementing RAG on Android"},
+      {"id":"vector-databases","label":"Vector Databases & Embeddings"},
+      {"id":"production-challenges","label":"Production Challenges & Solutions"},
+      {"id":"performance-optimization","label":"Performance Optimization"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-rag-matters">Why RAG Matters for On-Device AI</h2>
+
+<p>When I was building the AI NoteTaker, I hit a wall. The LLM integration worked fine, but the model had no context about a user's previous notes, tasks, or personal preferences. Every response felt generic—like talking to a stranger who'd never met you before.</p>
+
+<p>That's when I discovered Retrieval-Augmented Generation (RAG). Instead of throwing a massive fine-tuned model at the problem, RAG gives your <strong>on-device AI</strong> a memory. It retrieves relevant context from a local knowledge base, then feeds that context into the LLM to generate personalized responses. The result? Smarter, more relevant <strong>AI Android app</strong> experiences—all without sending data to the cloud.</p>
+
+<p>For developers building <strong>machine learning mobile</strong> applications, RAG is a game-changer. It solves three critical problems:</p>
+
+<ul>
+<li><strong>Privacy:</strong> User data never leaves the device</li>
+<li><strong>Personalization:</strong> Context-aware responses based on local history</li>
+<li><strong>Cost:</strong> Minimal server load; inference happens locally</li>
+</ul>
+
+<blockquote>RAG bridges the gap between generic LLMs and truly intelligent apps. It's the difference between a chatbot and a personal assistant.</blockquote>
+
+<h2 id="rag-architecture">Understanding RAG Architecture</h2>
+
+<p>RAG consists of two main components working in tandem:</p>
+
+<h3>1. The Retriever</h3>
+<p>This component searches your local knowledge base for relevant documents or chunks of text related to the user's query. Instead of keyword matching (which fails for semantic understanding), modern RAG uses <em>embedding models</em>—small, lightweight neural networks that convert text into vector representations. Semantically similar texts end up close together in this vector space.</p>
+
+<h3>2. The Generator (LLM)</h3>
+<p>Once the retriever finds relevant context, it's bundled with the user's query and sent to a quantized LLM running on the device. The model reads both the context and question, then generates a response grounded in that local knowledge.</p>
+
+<p>The flow looks like this:</p>
+
+<div class="callout-info">
+<p class="callout-label">🔄 RAG Pipeline</p>
+<p><strong>User Query</strong> → <strong>Embedding Generation</strong> → <strong>Vector Search</strong> → <strong>Retrieve Top-K Results</strong> → <strong>Augment Prompt</strong> → <strong>LLM Inference</strong> → <strong>Response</strong></p>
+</div>
+
+<p>What makes this powerful for <strong>on-device AI</strong> is that both the embedding model and LLM are quantized (compressed) to run efficiently on mobile hardware, typically consuming 500MB–2GB of storage and reasonable battery.</p>
+
+<h2 id="implementing-rag-android">Implementing RAG on Android</h2>
+
+<p>Let me walk you through a practical implementation using TensorFlow Lite for embeddings and Ollama or similar frameworks for LLM inference.</p>
+
+<h3>Step 1: Choose Your Components</h3>
+
+<ul>
+<li><strong>Embedding Model:</strong> MobileBERT or distilBERT (quantized)—~30MB</li>
+<li><strong>Vector Database:</strong> SQLite with custom vector search or SQLCipher</li>
+<li><strong>LLM:</strong> Mistral 7B or similar, quantized to 4-bit (~4GB)</li>
+<li><strong>Framework:</strong> TensorFlow Lite or ONNX Runtime for mobile inference</li>
+</ul>
+
+<h3>Step 2: Sample Architecture</h3>
+
+<div class="code-block" data-lang="Kotlin">
+<pre><code>// RAG Manager for AI Android App
+class RAGManager(
+    private val embeddingModel: TFLiteEmbeddings,
+    private val vectorDb: VectorDatabase,
+    private val llmInference: LLMInference
+) {
+
+    suspend fun generateRAGResponse(userQuery: String): String {
+        // Step 1: Generate query embedding
+        val queryEmbedding = embeddingModel.embed(userQuery)
+
+        // Step 2: Search vector database for similar documents
+        val relevantDocs = vectorDb.searchKNN(
+            embedding = queryEmbedding,
+            k = 5  // Retrieve top 5 most relevant documents
+        )
+
+        // Step 3: Build augmented prompt
+        val context = relevantDocs.joinToString("\\n") { doc -&gt; doc.content }
+        val augmentedPrompt = buildString {
+            append("Context:\\n")
+            append(context)
+            append("\\n\\nQuery: ")
+            append(userQuery)
+            append("\\n\\nAnswer:")
+        }
+
+        // Step 4: Run LLM inference with context
+        val response = llmInference.generate(
+            prompt = augmentedPrompt,
+            maxTokens = 256,
+            temperature = 0.7f
+        )
+
+        return response
+    }
+
+    suspend fun addDocument(docId: String, content: String) {
+        val embedding = embeddingModel.embed(content)
+        vectorDb.insert(docId, content, embedding)
+    }
+}
+</code></pre>
+</div>
+
+<h3>Step 3: Vector Database Setup</h3>
+
+<p>For SQLite-based vector search, I use a custom extension or a lightweight library like Chroma (which now has mobile support):</p>
+
+<div class="code-block" data-lang="Kotlin">
+<pre><code>// Simplified Vector Database Interface
+interface VectorDatabase {
+    suspend fun insert(docId: String, content: String, embedding: FloatArray)
+    suspend fun searchKNN(embedding: FloatArray, k: Int): List&lt;Document&gt;
+}
+
+data class Document(
+    val id: String,
+    val content: String,
+    val embedding: FloatArray
+)
+
+// SQLite implementation with cosine similarity
+class SQLiteVectorDB(private val db: SQLiteDatabase) : VectorDatabase {
+    
+    override suspend fun searchKNN(embedding: FloatArray, k: Int): List&lt;Document&gt; = withContext(Dispatchers.IO) {
+        // Compute cosine similarity between query embedding and stored embeddings
+        // SELECT doc_id, content, COSINE_SIMILARITY(embedding, ?) as score
+        // ORDER BY score DESC LIMIT k
+        
+        db.rawQuery(
+            """SELECT doc_id, content FROM documents 
+               ORDER BY vector_distance(embedding, ?) ASC LIMIT ?""",
+            arrayOf(embedding.joinToString(","), k.toString())
+        ).use { cursor -&gt;
+            val docs = mutableListOf&lt;Document&gt;()
+            while (cursor.moveToNext()) {
+                docs.add(
+                    Document(
+                        id = cursor.getString(0),
+                        content = cursor.getString(1),
+                        embedding = floatArrayOf()  // Load if needed
+                    )
+                )
+            }
+            docs
+        }
+    }
+
+    override suspend fun insert(docId: String, content: String, embedding: FloatArray) = withContext(Dispatchers.IO) {
+        db.insert(
+            "documents",
+            null,
+            ContentValues().apply {
+                put("doc_id", docId)
+                put("content", content)
+                put("embedding", embedding.joinToString(","))
+            }
+        )
+    }
+}
+</code></pre>
+</div>
+
+<p>I've implemented this exact pattern in AudioBook AI, where user highlights and notes become searchable context. When users query "What was that part about AI ethics?", the system retrieves relevant passages from their library and generates a summative response—all on the device.</p>
+
+<h2 id="vector-databases">Vector Databases & Embeddings</h2>
+
+<p>The quality of your <strong>machine learning mobile</strong> app depends heavily on embedding quality and search speed.</p>
+
+<h3>Embedding Models for Mobile</h3>
+
+<ul>
+<li><strong>MobileBERT (25MB):</strong> Best balance of size and quality</li>
+<li><strong>distilBERT (50MB):</strong> Slightly better accuracy, still mobile-friendly</li>
+<li><strong>ALL-MiniLM (22MB):</strong> Specifically designed for semantic search</li>
+</ul>
+
+<h3>Storage & Search Performance</h3>
+
+<p>For a user library of 10,000 documents (e.g., notes, emails, articles), storing embeddings in SQLite is practical:</p>
+
+<ul>
+<li>Each embedding (384-dim): ~1.5KB</li>
+<li>10,000 documents: ~15MB</li>
+<li>Search latency: 50–200ms for exact vector search</li>
+</ul>
+
+<p>If you need sub-50ms latency, consider approximate nearest neighbor (ANN) libraries like FAISS (ported to Android via NDK) or SQLite extensions like sqlite-vec.</p>
+
+<h2 id="production-challenges">Production Challenges & Solutions</h2>
+
+<h3>Challenge 1: Model Size & Cold Start</h3>
+
+<p>Downloading a 4GB quantized LLM on first launch is brutal. I solved this in AI NoteTaker by:</p>
+
+<ul>
+<li><strong>Progressive loading:</strong> Start with a smaller model (1GB), upgrade in background</li>
+<li><strong>Lazy evaluation:</strong> Only download when user first uses RAG feature</li>
+<li><strong>Incremental updates:</strong> Ship model deltas, not full binaries</li>
+</ul>
+
+<h3>Challenge 2: Memory Constraints</h3>
+
+<p>Running embeddings + LLM simultaneously can exceed device RAM. Solution: Separate processes or sequential inference.</p>
+
+<div class="code-block" data-lang="Kotlin">
+<pre><code>// Run embedding in background service to avoid memory spike
+val embeddingIntent = Intent(context, EmbeddingService::class.java)
+embeddingIntent.putExtra("text", userQuery)
+context.startForegroundService(embeddingIntent)
+
+// Retrieve embedding result via callback when ready
+// Then load LLM and run inference in main process
+</code></pre>
+</div>
+
+<h3>Challenge 3: Stale Knowledge Base</h3>
+
+<p>User data changes constantly. Implement incremental indexing:</p>
+
+<ul>
+<li>Listen to local database changes (Room, SQLite observers)</li>
+<li>Queue new documents for embedding in background using WorkManager</li>
+<li>Update vector database asynchronously</li>
+</ul>
+
+<div class="callout-warn">
+<p class="callout-label">⚠️ Embedding Latency</p>
+<p>On-device embedding is CPU-intensive. A 500-word document takes 2–5 seconds on mid-range phones. Batch processing in background workers is essential.</p>
+</div>
+
+<h2 id="performance-optimization">Performance Optimization</h2>
+
+<h3>1. Quantization</h3>
+
+<p>Both embedding and LLM models should be quantized to INT8 or INT4:</p>
+
+<ul>
+<li><strong>INT8:</strong> 75% size reduction, minimal accuracy loss</li>
+<li><strong>INT4:</strong> 90% size reduction, ~2% accuracy loss</li>
+</ul>
+
+<h3>2. Batch Indexing</h3>
+
+<p>Don't embed documents one by one. Batch them to leverage SIMD operations:</p>
+
+<div class="code-block" data-lang="Kotlin">
+<pre><code>// Good: Batch embedding
+suspend fun indexDocuments(docs: List&lt;String&gt;) {
+    val embeddings = embeddingModel.embedBatch(docs)  // Much faster
+    vectorDb.insertBatch(docs.zip(embeddings))
+}
+
+// Avoid: Sequential embedding
+suspend fun indexDocumentsSequential(docs: List&lt;String&gt;) {
+    docs.forEach { doc -&gt;
+        val embedding = embeddingModel.embed(doc)  // Slow!
+        vectorDb.insert(doc, embedding)
+    }
+}
+</code></pre>
+</div>
+
+<h3>3. Caching & Reranking</h3>
+
+<p>Cache frequently accessed query results. For expensive reranking, use a lightweight cross-encoder:</p>
+
+<ul>
+<li>Retrieve top-20 with embedding similarity (fast)</li>
+<li>Rerank top-20 with cross-encoder (more accurate, still fast)</li>
+<li>Pass top-5 to LLM</li>
+</ul>
+
+<h3>4. Disk I/O Optimization</h3>
+
+<p>Vector searches hit the disk heavily. Use memory-mapped files or keep hot indexes in RAM:</p>
+
+<div class="code-block" data-lang="Kotlin">
+<pre><code>// Memory-map frequently accessed embeddings
+val frequentDocIds = setOf("note_1", "note_2", ...)
+val cachedEmbeddings = mutableMapOf&lt;String, FloatArray&gt;()
+
+// Preload on app start or idle
+suspend fun preloadHotEmbeddings() {
+    frequentDocIds.forEach { docId -&gt;
+        cachedEmbeddings[docId] = vectorDb.getEmbedding(docId)
+    }
+}
+
+// Use cache-first search
+suspend fun searchKNNFast(embedding: FloatArray, k: Int): List&lt;Document&gt; {
+    val cached = cachedEmbeddings.values.take(k)
+    if (cached.isNotEmpty()) return cached
+    return vectorDb.searchKNN(embedding, k)
+}
+</code></pre>
+</div>
+
+<blockquote>The real art of on-device AI is fitting powerful models into constrained hardware. Every millisecond and megabyte matters.</blockquote>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>RAG is essential for personalized on-device AI:</strong> By combining a lightweight embedding model with a quantized LLM and local knowledge base, you create AI apps that understand user context without cloud dependency.</li>
+<li><strong>Vector databases are the backbone:</strong> SQLite with vector extensions or lightweight alternatives like sqlite-vec enable fast semantic search on-device. Plan for 15–50MB per 10K documents.</li>
+<li><strong>Production RAG requires careful resource management:</strong> Batch embed documents in background, use quantized models (INT4 minimum), implement progressive loading, and monitor memory pressure to avoid crashes.</li>
+<li><strong>Performance scales with optimization:</strong> Combine embedding similarity (fast retrieval) with cross-encoder reranking (accuracy) to balance speed and quality, keeping latency under 500ms for responsive UX.</li>
+<li><strong>Start small, iterate fast:</strong> Begin with a 5-10MB embedding model and SQLite vector search. Only add complexity (FAISS, chunking strategies, fine-tuning) when you've validated the core <strong>LLM integration</strong> works for your use case.</li>
+</ul>
+
+<div class="callout-info">
+<p class="callout-label">📖 Next Steps</p>
+<p>Build a prototype with MobileBERT embeddings and a 1B-parameter quantized LLM. Measure embedding latency on your target device. If it exceeds 3 seconds per document, switch to batch processing or reduce embedding dimension. Share your results—I'm curious how RAG performs on real hardware.</p>
+</div>`,
+  },
+
+  {
     slug: "building-sustainable-freelance-income-android-developer",
     featured: false,
     icon: "💰",
