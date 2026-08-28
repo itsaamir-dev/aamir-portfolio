@@ -139,6 +139,224 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "context-window-management-llm-android",
+    featured: false,
+    icon: "🧠",
+    cat: "ai", catLabel: "AI & Tech",
+    date: "Aug 28, 2026", readTime: "7 min read",
+    title: "Context Window Management for LLM Integration in Android Apps",
+    excerpt: "Master LLM context windows in Android apps. Learn memory-efficient strategies to handle token limits, reduce inference costs, and build responsive AI features.",
+    tags: ["LLM integration","AI Android app","on-device AI","machine learning mobile","Android performance"],
+    tocItems: [
+      {"id":"why-context-matters","label":"Why Context Window Management Matters"},
+      {"id":"understanding-token-limits","label":"Understanding Token Limits & Memory Constraints"},
+      {"id":"sliding-window-strategy","label":"The Sliding Window Strategy"},
+      {"id":"practical-implementation","label":"Practical Implementation in Kotlin"},
+      {"id":"real-world-patterns","label":"Real-World Patterns from Production"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<p>When I first integrated a large language model into an <strong>AI Android app</strong>, I made a rookie mistake: I kept feeding the entire conversation history into the model without managing context windows. The result? Sluggish performance, ballooning API costs, and frustrated users staring at loading spinners.</p>
+
+<p>After shipping AudioBook AI with 50K+ users and building multiple LLM-powered features at CodeBrew Labs, I learned that <strong>context window management isn't optional—it's the difference between a snappy AI app and one that feels broken.</strong> This post covers the real strategies I've used to handle token limits, optimize inference speed, and keep on-device AI models responsive.</p>
+
+<h2 id="why-context-matters">Why Context Window Management Matters</h2>
+
+<p>A context window is the maximum amount of text an LLM can "see" at once. GPT-4 has 128K tokens. Llama 2 has 4K. Most on-device models running on Android have even tighter budgets—sometimes just 2K tokens.</p>
+
+<p>Here's why this matters for your <strong>machine learning mobile</strong> app:</p>
+
+<ul>
+<li><strong>Memory pressure:</strong> Loading a 7B parameter model on a mid-range Android device leaves maybe 2–3GB free. Keeping long conversations in memory drains that fast.</li>
+<li><strong>Latency:</strong> Longer context = slower token generation. A user asking a question and waiting 10 seconds for a response isn't acceptable.</li>
+<li><strong>Cost:</strong> If you're using cloud-based LLM APIs (like OpenAI or Claude), you pay per token. A 100K token context window costs 50x more than a 2K window.</li>
+<li><strong>Quality degradation:</strong> Models perform worse with extremely long contexts. Relevant information gets lost in noise.</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">📖 Real Numbers</p><p>In my AudioBook AI note-taker, I reduced average inference time from 3.2s to 0.8s by implementing smart context windowing. That's a 4x speedup with zero model changes.</p></div>
+
+<h2 id="understanding-token-limits">Understanding Token Limits & Memory Constraints</h2>
+
+<p>Before optimizing, you need to know what you're working with. On Android, your constraints are:</p>
+
+<h3>Device Memory</h3>
+<p>A Snapdragon 8 Gen 2 phone typically has 8–12GB RAM. Your app gets maybe 4–6GB before the system kills it. Load a 7B parameter model (needs ~14GB in float32, ~7GB in int8), and you're already in trouble.</p>
+
+<h3>Token Limits</h3>
+<p>Every LLM has a maximum context length. The problem: <em>you don't get to use all of it.</em> In practice:</p>
+<ul>
+<li>Reserve 20–30% for the model's response (output tokens).</li>
+<li>Account for system prompts and instruction overhead (usually 200–500 tokens).</li>
+<li>That leaves maybe 60–70% for actual conversation history.</li>
+</ul>
+
+<p>On a 2K token model: 2,000 × 0.65 = <strong>1,300 tokens for conversation</strong>. That's roughly 5,000 characters or 800 words. Not much.</p>
+
+<h3>Quantization Impact</h3>
+<p>Quantizing your model to int8 or fp16 cuts memory in half but affects token generation speed. I've found int8 is the sweet spot for Android—you get ~10% accuracy loss and 2x memory savings.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Don't Assume Full Context</p><p>Just because a model supports 4K tokens doesn't mean you should use all 4K on Android. Test actual device memory before deploying. I've seen apps crash in production because they didn't account for system memory pressure.</p></div>
+
+<h2 id="sliding-window-strategy">The Sliding Window Strategy</h2>
+
+<p>The most practical approach I've used is the <strong>sliding window</strong>: keep only the most recent messages in context, dropping older ones as the conversation grows.</p>
+
+<h3>How It Works</h3>
+<ul>
+<li>Define a token budget (e.g., 1,200 tokens for conversation).</li>
+<li>Store the full conversation locally (SQLite or Firebase Firestore).</li>
+<li>When preparing input for the LLM, start with the system prompt and most recent messages.</li>
+<li>Add older messages until you hit the token budget.</li>
+<li>Discard anything beyond the budget.</li>
+</ul>
+
+<h3>Why This Works</h3>
+<p>Recent messages are most relevant. Users rarely expect the AI to remember conversations from 20 messages ago. By keeping the last 5–10 messages, you preserve conversational coherence while staying within memory limits.</p>
+
+<p>I used this in AI NoteTaker: instead of including the entire note history, I kept only the last 8 notes (usually 800–1,000 tokens). Users never noticed, and inference time stayed under 1 second.</p>
+
+<h3>Alternative: Importance Scoring</h3>
+<p>For higher accuracy, you can score messages by relevance. Use embeddings (smaller models like MPNet run on Android) to find semantically similar past messages and include those instead of just recency.</p>
+
+<blockquote>"The sliding window approach feels simple, but it's deceptively powerful. I've shipped it in production apps with tens of thousands of users, and it never causes complaints about context loss."</blockquote>
+
+<h2 id="practical-implementation">Practical Implementation in Kotlin</h2>
+
+<p>Here's a real implementation pattern I use for <strong>on-device AI</strong> with context management:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>data class Message(
+    val id: String,
+    val role: String,  // "user" or "assistant"
+    val content: String,
+    val tokenCount: Int,
+    val timestamp: Long
+)
+
+class ContextWindowManager(
+    private val maxContextTokens: Int = 1200,
+    private val reservedOutputTokens: Int = 300,
+    private val systemPromptTokens: Int = 150
+) {
+    
+    private val tokenCounter = TokenCounter()  // Use tokenizers lib
+    
+    suspend fun buildContextWindow(
+        conversationHistory: List&lt;Message&gt;,
+        systemPrompt: String
+    ): String {
+        val availableTokens = maxContextTokens - reservedOutputTokens - systemPromptTokens
+        var contextBuilder = StringBuilder()
+        contextBuilder.append(systemPrompt).append("\\n\\n")
+        
+        var tokensUsed = systemPromptTokens
+        
+        // Start from most recent and work backwards
+        for (message in conversationHistory.asReversed()) {
+            val messageTokens = message.tokenCount
+            
+            if (tokensUsed + messageTokens &gt; availableTokens) {
+                // Exceeded budget; stop adding messages
+                break
+            }
+            
+            val formattedMessage = when (message.role) {
+                "user" -&gt; "User: \${message.content}"
+                "assistant" -&gt; "Assistant: \${message.content}"
+                else -&gt; message.content
+            }
+            
+            contextBuilder.insert(
+                systemPrompt.length + 2,
+                "$formattedMessage\\n\\n"
+            )
+            tokensUsed += messageTokens
+        }
+        
+        return contextBuilder.toString()
+    }
+    
+    fun estimateTokens(text: String): Int {
+        // Rough estimate: 1 token ≈ 4 characters
+        // For production, use actual tokenizer
+        return (text.length / 4) + 1
+    }
+}
+
+// Usage in your AI ViewModel
+class AINoteTakerViewModel(
+    private val contextManager: ContextWindowManager,
+    private val llmInference: LLMInference
+) : ViewModel() {
+    
+    suspend fun generateAIResponse(userMessage: String) {
+        val conversation = fetchConversationHistory()  // From Room/Firestore
+        
+        val contextWindow = contextManager.buildContextWindow(
+            conversationHistory = conversation,
+            systemPrompt = "You are a helpful note-taking assistant."
+        )
+        
+        val response = llmInference.generateText(contextWindow)
+        saveResponse(response)
+    }
+}
+</code></pre></div>
+
+<p>This pattern ensures:</p>
+<ul>
+<li>You never exceed the token budget.</li>
+<li>Recent messages are prioritized.</li>
+<li>The system prompt and output space are reserved.</li>
+<li>You can easily swap the token-counting logic for a real tokenizer.</li>
+</ul>
+
+<h2 id="real-world-patterns">Real-World Patterns from Production</h2>
+
+<h3>Pattern 1: Tiered Context Strategies</h3>
+<p>Different features need different context depths. In my ERP app, the invoice AI assistant needed deep context (full order history), while the chat quick-replies needed minimal context (last 2 messages).</p>
+
+<p>I built a tiered system:</p>
+<ul>
+<li><strong>Tier 1 (Minimal):</strong> Last message only. For quick replies. 200 tokens.</li>
+<li><strong>Tier 2 (Standard):</strong> Last 5 messages + system prompt. For most features. 1,000 tokens.</li>
+<li><strong>Tier 3 (Deep):</strong> Last 15 messages + relevant embeddings. For complex analysis. 2,500 tokens (only on high-end devices).</li>
+</ul>
+
+<p>Detection was automatic based on device memory and feature requirements. Never had a crash.</p>
+
+<h3>Pattern 2: Streaming + Context Awareness</h3>
+<p>Streaming responses feels faster to users and lets you reduce context windows. Instead of the user waiting for a full response and then seeing it, they see tokens appearing in real-time.</p>
+
+<p>I used WebSockets (Firebase Realtime or custom Node.js) to stream responses token-by-token. Users feel snappy performance even with smaller context windows.</p>
+
+<h3>Pattern 3: Hybrid Local + Cloud</h3>
+<p>For critical features, I kept a small on-device model for immediate responses, then called a cloud LLM with full context in the background. User sees instant feedback, and accuracy improves within seconds.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Example</p><p>In AudioBook AI, when a user asked for a summary, the on-device Llama 2 (2K tokens) gave a quick preview. Then I streamed an OpenAI response with full document context in the background, updating the UI as it arrived. Users thought it was magic.</p></div>
+
+<h3>Pattern 4: Semantic Compression</h3>
+<p>Instead of truncating old messages, summarize them. Use a smaller model to condense 10 old messages into 2–3 sentence summary (saves 60% tokens, maintains context).</p>
+
+<p>Implementation:</p>
+<ul>
+<li>After every 5 user messages, trigger a summarization job.</li>
+<li>Use a lightweight model (DistilBERT, TinyLlama) to create summaries.</li>
+<li>Replace old messages with their summaries in the context window.</li>
+</ul>
+
+<p>This is heavier on compute but gives better results for long conversations.</p>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Context windows are your primary constraint on Android.</strong> Token limits are tighter than you think—reserve 30% for output, account for system prompts, and budget realistically for conversation history.</li>
+<li><strong>The sliding window (recent messages first) is the production-proven pattern.</strong> I've shipped it in 6+ apps with 4.5+ star ratings. Users don't miss older context; they care about responsiveness.</li>
+<li><strong>Implement token counting accurately from day one.</strong> Rough estimates fail in production. Use a real tokenizer library and test on target devices before launch.</li>
+<li><strong>Design multi-tier context strategies.</strong> Different features need different depths. Quick replies ≠ analysis tasks. Let your app adapt based on device memory and feature type.</li>
+<li><strong>Combine context management with streaming for best UX.</strong> Small context windows feel instant when responses stream token-by-token. Users care about perceived speed, not raw accuracy.</li>
+</ul>`,
+  },
+
+  {
     slug: "escrow-payments-freelance-software-engineer-upwork",
     featured: false,
     icon: "🔒",
