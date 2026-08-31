@@ -139,6 +139,274 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-architecture-patterns-mvvm-clean-architecture-2025",
+    featured: false,
+    icon: "🏗️",
+    cat: "android", catLabel: "Android",
+    date: "Aug 31, 2026", readTime: "7 min read",
+    title: "Android Architecture Patterns: Moving Beyond MVVM in 2025",
+    excerpt: "Master modern Android architecture patterns beyond MVVM. Learn Clean Architecture, layering strategies, and real-world patterns that scale from 8+ years of experience.",
+    tags: ["Android Architecture","MVVM Android","Clean Architecture","Kotlin","Android Development"],
+    tocItems: [
+      {"id":"why-mvvm-isnt-enough","label":"Why MVVM Alone Isn't Enough"},
+      {"id":"understanding-clean-architecture","label":"Understanding Clean Architecture"},
+      {"id":"layering-strategy","label":"The Three-Layer Approach"},
+      {"id":"real-world-patterns","label":"Real-World Implementation Patterns"},
+      {"id":"dependency-injection-backbone","label":"Dependency Injection as the Backbone"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<p>When I started my journey as an Android developer eight years ago, MVVM was the golden standard. Every tutorial, every Medium post, every code review checklist pointed to ViewModel, LiveData, and Repository pattern. It worked. It still works. But after shipping 6+ production apps on the Play Store and leading teams through architecture decisions that made or broke app maintainability, I've learned that <strong>MVVM is a starting point, not a destination</strong>.</p>
+
+<p>In this post, I'm sharing what I've learned about Android architecture patterns that go beyond MVVM—patterns that have helped our apps handle millions of users, scale teams from 1 to 4+ engineers, and reduce technical debt instead of accumulating it.</p>
+
+<h2 id="why-mvvm-isnt-enough">Why MVVM Alone Isn't Enough</h2>
+
+<p>Let me be direct: MVVM works great for simple to moderately complex apps. The separation between UI and business logic is clean. ViewModel lifecycle is tied to the Android lifecycle, which is convenient. But here's what I've seen go wrong:</p>
+
+<ul>
+<li><strong>Business logic bleeds into ViewModel.</strong> You start with a clean ViewModel, then add validation, caching logic, feature flags, and suddenly you're testing complex scenarios in AndroidX tests instead of pure JUnit tests.</li>
+<li><strong>Repository pattern becomes a dumping ground.</strong> It's supposed to abstract data sources, but it often becomes a God class that handles networking, caching, database queries, and transformation—all tangled together.</li>
+<li><strong>Testing complexity explodes.</strong> You need Espresso tests for UI, MockK for dependencies, Room test databases, and fake repositories. The testing pyramid inverts.</li>
+<li><strong>Team scaling becomes harder.</strong> When you have 4+ engineers working on the same codebase, unclear boundaries between layers cause merge conflicts and duplicate logic.</li>
+</ul>
+
+<p>I realized this in 2021 at CodeBrew Labs when we were refactoring one of our 4.5+ star apps. The codebase was MVVM-compliant on paper, but the actual logic flow was tangled. That's when I started exploring Clean Architecture in Android—not as a theory exercise, but as a practical necessity.</p>
+
+<h2 id="understanding-clean-architecture">Understanding Clean Architecture in Android</h2>
+
+<p><strong>Clean Architecture</strong> isn't new—Uncle Bob defined it years ago—but applying it to Android requires rethinking how you structure your project. The core principle is simple: <em>your business logic should be completely independent of any framework, including Android itself.</em></p>
+
+<p>Think about it: a use case like "fetch user profile and cache it" is the same whether you're building for Android, iOS, or web. The only difference is how you deliver results. Clean Architecture separates these concerns.</p>
+
+<p>The architecture typically has three main layers:</p>
+
+<ul>
+<li><strong>Presentation Layer</strong> (UI + ViewModel)</li>
+<li><strong>Domain Layer</strong> (Use Cases + Entities)</li>
+<li><strong>Data Layer</strong> (Repositories + Data Sources)</li>
+</ul>
+
+<p>But here's what's often missed: the direction of dependencies. In Clean Architecture, <strong>dependencies point inward</strong>. Your Presentation layer depends on Domain, Domain doesn't depend on Presentation. Data depends on Domain, Domain never depends on Data.</p>
+
+<blockquote>The magic isn't in the layers—it's in the boundaries. You should be able to test your entire business logic without touching Android framework code.</blockquote>
+
+<h2 id="layering-strategy">The Three-Layer Approach: How I Structure Modern Android Apps</h2>
+
+<p>Over the past 3 years at Raybit Technologies, we've refined an approach that balances Clean Architecture principles with practical Android development. Here's how I structure it:</p>
+
+<h3>1. Domain Layer (Business Logic)</h3>
+
+<p>This layer contains no Android imports. Ever. It's pure Kotlin.</p>
+
+<ul>
+<li><strong>Entities</strong>: Simple data classes representing core business concepts</li>
+<li><strong>Use Cases</strong>: Encapsulate a single user action or business flow</li>
+<li><strong>Repositories (Interfaces)</strong>: Abstract contracts for data access</li>
+</ul>
+
+<p>Example entity:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// Domain layer - no Android dependencies
+data class UserProfile(
+    val id: String,
+    val name: String,
+    val email: String,
+    val cachedAt: Long
+)
+
+interface UserRepository {
+    suspend fun getUserProfile(userId: String): Result&lt;UserProfile&gt;
+    suspend fun cacheProfile(profile: UserProfile)
+}</code></pre></div>
+
+<p>And a use case:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>class FetchUserProfileUseCase(
+    private val userRepository: UserRepository
+) {
+    suspend operator fun invoke(userId: String): Result&lt;UserProfile&gt; {
+        return try {
+            val profile = userRepository.getUserProfile(userId)
+            profile.onSuccess { userRepository.cacheProfile(it) }
+            profile
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}</code></pre></div>
+
+<p>Notice: <strong>This is testable with plain JUnit. No Android framework needed.</strong></p>
+
+<h3>2. Data Layer (Data Sources)</h3>
+
+<p>This layer implements the repository interfaces and manages actual data sources:</p>
+
+<ul>
+<li><strong>Remote Data Source</strong> (REST API via Retrofit)</li>
+<li><strong>Local Data Source</strong> (Room database or Firestore)</li>
+<li><strong>Repository Implementation</strong> (coordinates between sources)</li>
+</ul>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// Data layer
+class UserRepositoryImpl(
+    private val remoteDataSource: UserRemoteDataSource,
+    private val localDataSource: UserLocalDataSource
+) : UserRepository {
+    override suspend fun getUserProfile(userId: String): Result&lt;UserProfile&gt; = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val remoteProfile = remoteDataSource.fetchUser(userId)
+            Result.success(remoteProfile)
+        } catch (e: Exception) {
+            // Fallback to local cache
+            val cachedProfile = localDataSource.getUser(userId)
+            if (cachedProfile != null) {
+                Result.success(cachedProfile)
+            } else {
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun cacheProfile(profile: UserProfile) {
+        localDataSource.insertUser(profile)
+    }
+}</code></pre></div>
+
+<h3>3. Presentation Layer (UI)</h3>
+
+<p>This is where Jetpack Compose and ViewModel live:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// Presentation layer
+class UserProfileViewModel(
+    private val fetchUserProfileUseCase: FetchUserProfileUseCase
+) : ViewModel() {
+    private val _uiState = MutableStateFlow&lt;UiState&gt;(UiState.Loading)
+    val uiState: StateFlow&lt;UiState&gt; = _uiState.asStateFlow()
+
+    fun loadUserProfile(userId: String) {
+        viewModelScope.launch {
+            _uiState.value = UiState.Loading
+            val result = fetchUserProfileUseCase(userId)
+            _uiState.value = when {
+                result.isSuccess -&gt; UiState.Success(result.getOrNull()!!)
+                else -&gt; UiState.Error(result.exceptionOrNull()?.message ?: "Unknown error")
+            }
+        }
+    }
+}
+
+@Composable
+fun UserProfileScreen(viewModel: UserProfileViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    when (val state = uiState) {
+        is UiState.Loading -&gt; CircularProgressIndicator()
+        is UiState.Success -&gt; UserProfileContent(state.profile)
+        is UiState.Error -&gt; ErrorMessage(state.message)
+    }
+}</code></pre></div>
+
+<h2 id="real-world-patterns">Real-World Implementation Patterns</h2>
+
+<h3>Pattern 1: Feature Modules</h3>
+
+<p>As your app grows, splitting into feature modules becomes essential. Each feature module has its own presentation, domain, and data layers. This is how we structured apps at CodeBrew and Raybit:</p>
+
+<ul>
+<li><code>:app</code> (main app, dependency aggregator)</li>
+<li><code>:features:auth</code> (authentication feature)</li>
+<li><code>:features:profile</code> (user profile)</li>
+<li><code>:core:domain</code> (shared use cases and entities)</li>
+<li><code>:core:data</code> (shared repositories and data sources)</li>
+<li><code>:core:ui</code> (shared composables and design system)</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">💡 Pro Tip</p><p>Feature modules shouldn't directly depend on each other. Instead, use navigation events or shared domain interfaces to communicate. This keeps teams independent and reduces merge conflicts.</p></div>
+
+<h3>Pattern 2: MVI (Model-View-Intent) for Complex State</h3>
+
+<p>For apps with complex user interactions, I've adopted MVI on top of MVVM. Instead of multiple LiveData/StateFlow fields, you have a single state object and intents (user actions):</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>sealed class UserIntent {
+    data class LoadProfile(val userId: String) : UserIntent()
+    object RefreshProfile : UserIntent()
+}
+
+data class UserViewState(
+    val profile: UserProfile? = null,
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
+class UserViewModel(private val fetchUseCase: FetchUserProfileUseCase) : ViewModel() {
+    private val _state = MutableStateFlow(UserViewState())
+    val state: StateFlow&lt;UserViewState&gt; = _state.asStateFlow()
+
+    fun handleIntent(intent: UserIntent) {
+        when (intent) {
+            is UserIntent.LoadProfile -&gt; loadProfile(intent.userId)
+            is UserIntent.RefreshProfile -&gt; refreshProfile()
+        }
+    }
+}
+</code></pre></div>
+
+<h3>Pattern 3: Repository-as-Source-of-Truth</h3>
+
+<p>For offline-first apps (which most modern apps should be), the local database becomes the source of truth, not the API:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// Repository emits local data, syncs in background
+fun getUserProfile(userId: String): Flow&lt;UserProfile&gt; = flow {
+    // Emit cached data immediately
+    val cached = localDataSource.getUser(userId)
+    if (cached != null) emit(cached)
+
+    // Sync in background
+    try {
+        val remote = remoteDataSource.fetchUser(userId)
+        localDataSource.insertUser(remote)
+        emit(remote)
+    } catch (e: Exception) {
+        if (cached == null) throw e
+        // Otherwise, keep using cache
+    }
+}.distinctUntilChanged()</code></pre></div>
+
+<h2 id="dependency-injection-backbone">Dependency Injection: The Backbone of Scalable Architecture</h2>
+
+<p>All of this is only possible with proper dependency injection. I use <strong>Hilt</strong> for its seamless Android integration:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>@Module
+@InstallIn(SingletonComponent::class)
+object RepositoryModule {
+    @Provides
+    fun provideUserRepository(
+        remoteDataSource: UserRemoteDataSource,
+        localDataSource: UserLocalDataSource
+    ): UserRepository = UserRepositoryImpl(remoteDataSource, localDataSource)
+
+    @Provides
+    fun provideFetchUserProfileUseCase(
+        repository: UserRepository
+    ): FetchUserProfileUseCase = FetchUserProfileUseCase(repository)
+}</code></pre></div>
+
+<p><strong>Why this matters:</strong> You can swap implementations without changing code. Testing becomes trivial—inject fake repositories. Adding a new feature? Wire it up at the module level, not throughout the codebase.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Avoid Over-Engineering</p><p>Clean Architecture is powerful, but it's easy to over-engineer. If your app is small (under 5 screens, simple logic), MVVM alone might be enough. The trade-off is complexity for scalability. Choose based on your actual needs and team size.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>MVVM is a UI pattern, not a complete architecture.</strong> Combine it with Clean Architecture principles for apps that scale beyond simple CRUD operations.</li>
+<li><strong>Separate domain (business) logic from Android framework.</strong> This makes testing exponentially easier and lets you reuse logic across platforms.</li>
+<li><strong>Use dependency injection (Hilt/Koin) as your structural backbone.</strong> It's not optional for maintainable codebases; it's essential for team collaboration.</li>
+<li><strong>Choose your pattern based on app complexity, not hype.</strong> Simple apps = MVVM. Medium apps = Clean + MVVM. Complex apps = Clean + MVVM + MVI + feature modules.</li>
+<li><strong>Test business logic with pure JUnit, not Espresso.</strong> The more logic you can verify without the Android framework, the faster and more reliable your test suite becomes.</li>
+</ul>`,
+  },
+
+  {
     slug: "context-window-management-llm-android",
     featured: false,
     icon: "🧠",
