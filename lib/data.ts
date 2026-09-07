@@ -139,6 +139,218 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-app-state-restoration-jetpack-compose",
+    featured: false,
+    icon: "💾",
+    cat: "android", catLabel: "Android",
+    date: "Sep 7, 2026", readTime: "6 min read",
+    title: "State Restoration in Jetpack Compose: Surviving Process Death",
+    excerpt: "Master Jetpack Compose state restoration after process death. Learn rememberSaveable, Bundle strategies, and real-world patterns to keep your Android app state intact.",
+    tags: ["Jetpack Compose","Android Development","State Management","MVVM Android","Kotlin"],
+    tocItems: [
+      {"id":"the-problem-android-process-death","label":"The Problem: Android Process Death"},
+      {"id":"understanding-rememberSaveable","label":"Understanding rememberSaveable"},
+      {"id":"implementing-state-restoration-mvvm","label":"Implementing State Restoration in MVVM"},
+      {"id":"custom-savers-complex-objects","label":"Custom Savers for Complex Objects"},
+      {"id":"testing-state-restoration","label":"Testing State Restoration"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="the-problem-android-process-death">The Problem: Android Process Death</h2><p>When I was building <em>EmpSuite</em>, our team encountered a frustrating bug: users would be filling out a complex form, the system would kill the app in the background to free memory, and when they returned—the entire form was blank. No error. No crash. Just data loss.</p><p>This is <strong>Android process death</strong>, and it's one of the most overlooked challenges in <strong>Jetpack Compose development</strong>. Unlike older Fragment-based Android development where you had lifecycle callbacks and automatic state saving, Jetpack Compose puts the burden of state persistence on you. Miss this, and your users will lose data.</p><p>In this post, I'll share the exact patterns I've used across production apps to handle state restoration in <strong>Jetpack Compose</strong> so your <strong>Android architecture</strong> remains resilient even when the OS terminates your process.</p><blockquote><p>"Process death happens. Users don't care about your excuses. They care about their data. Build for it."</p></blockquote><h2 id="understanding-rememberSaveable">Understanding rememberSaveable in Jetpack Compose</h2><p>The first tool in your arsenal is <code>rememberSaveable</code>. This is Jetpack Compose's answer to state restoration after process death.</p><p>The key difference from <code>remember</code>:</p><ul><li><code>remember</code> — survives recomposition within the same session</li><li><code>rememberSaveable</code> — survives recomposition AND process death (via Bundle persistence)</li></ul><p>When you use <code>rememberSaveable</code>, Compose automatically saves your state to Android's Bundle during <code>onSaveInstanceState</code> and restores it when the activity is recreated.</p><div class="code-block" data-lang="Kotlin"><pre><code>// ❌ Bad: Lost on process death
+var email by remember { mutableStateOf("") }
+
+// ✅ Good: Survives process death
+var email by rememberSaveable { mutableStateOf("") }
+
+// ✅ Better: With key for debugging
+var email by rememberSaveable(key = "email_input") { mutableStateOf("") }
+
+@Composable
+fun LoginForm() {
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    
+    Column(modifier = Modifier.padding(16.dp)) {
+        TextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") }
+        )
+        
+        TextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation()
+        )
+        
+        Button(onClick = { /* login */ }) {
+            Text("Sign In")
+        }
+    }
+}</code></pre></div><div class="callout-info"><p class="callout-label">📖 How It Works</p><p><code>rememberSaveable</code> uses a <code>Saver</code> object behind the scenes. For primitives like String, Int, Boolean, Compose provides default savers. For complex objects, you need to define your own (more on that later).</p></div><h2 id="implementing-state-restoration-mvvm">Implementing State Restoration in MVVM Android Architecture</h2><p>In real production apps, you're not just storing simple strings. You're managing complex <strong>MVVM Android</strong> patterns with ViewModels, Repositories, and domain models.</p><p>Here's how I structure state restoration across the layers:</p><h3>Layer 1: ViewModel State</h3><p>Your ViewModel should own the source of truth. Use <code>SavedStateHandle</code> to automatically persist ViewModel state:</p><div class="code-block" data-lang="Kotlin"><pre><code>@HiltViewModel
+class FormViewModel @Inject constructor(
+    private val repository: FormRepository,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    
+    private val _formState = MutableStateFlow(
+        savedStateHandle.get&lt;FormState&gt;("formState")
+            ?: FormState()
+    )
+    val formState: StateFlow&lt;FormState&gt; = _formState.asStateFlow()
+    
+    fun updateEmail(email: String) {
+        val current = _formState.value
+        _formState.value = current.copy(email = email)
+        
+        // Auto-save to SavedStateHandle
+        savedStateHandle["formState"] = _formState.value
+    }
+}
+
+data class FormState(
+    val email: String = "",
+    val name: String = "",
+    val phone: String = "",
+    val isLoading: Boolean = false
+)</code></pre></div><h3>Layer 2: Composable State with rememberSaveable</h3><p>Even when your ViewModel handles persistence, your Composable UI should have a local backup using <code>rememberSaveable</code>:</p><div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun FormScreen(viewModel: FormViewModel = hiltViewModel()) {
+    val formState by viewModel.formState.collectAsState()
+    
+    // Local UI state with process death resilience
+    var emailInput by rememberSaveable { mutableStateOf("") }
+    var nameInput by rememberSaveable { mutableStateOf("") }
+    
+    // Sync from ViewModel when first loaded
+    LaunchedEffect(formState) {
+        emailInput = formState.email
+        nameInput = formState.name
+    }
+    
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
+        
+        TextField(
+            value = emailInput,
+            onValueChange = { newEmail -&gt;
+                emailInput = newEmail
+                viewModel.updateEmail(newEmail)
+            },
+            label = { Text("Email") }
+        )
+        
+        TextField(
+            value = nameInput,
+            onValueChange = { newName -&gt;
+                nameInput = newName
+                viewModel.updateName(newName)
+            },
+            label = { Text("Name") }
+        )
+        
+        Button(
+            onClick = { viewModel.submitForm() },
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = 16.dp)
+        ) {
+            Text("Submit")
+        }
+    }
+}</code></pre></div><div class="callout-warn"><p class="callout-label">⚠️ Sync Carefully</p><p>Don't create circular state flows between ViewModel and Composable. The pattern above uses <code>LaunchedEffect</code> to sync once when loaded, then the Composable owns the input state locally.</p></div><h2 id="custom-savers-complex-objects">Custom Savers for Complex Objects</h2><p>Jetpack Compose can only serialize primitives and Lists by default. When you have complex domain objects, you need a custom <code>Saver</code>.</p><p>I ran into this building <em>AudioBook AI</em> with complex book metadata. Here's how I solved it:</p><div class="code-block" data-lang="Kotlin"><pre><code>data class Book(
+    val id: String,
+    val title: String,
+    val author: String,
+    val chapters: List&lt;Chapter&gt;,
+    val currentPosition: Long
+)
+
+data class Chapter(
+    val number: Int,
+    val title: String,
+    val duration: Long
+)
+
+// Define a custom Saver
+val BookSaver: Saver&lt;Book, Map&lt;String, Any&gt;&gt; = mapSaver(
+    save = { book -&gt;
+        mapOf(
+            "id" to book.id,
+            "title" to book.title,
+            "author" to book.author,
+            "currentPosition" to book.currentPosition,
+            "chaptersJson" to Json.encodeToString(book.chapters)
+        )
+    },
+    restore = { map -&gt;
+        Book(
+            id = map["id"] as String,
+            title = map["title"] as String,
+            author = map["author"] as String,
+            chapters = Json.decodeFromString(map["chaptersJson"] as String),
+            currentPosition = map["currentPosition"] as Long
+        )
+    }
+)
+
+// Use it with rememberSaveable
+@Composable
+fun AudiobookPlayer(bookId: String) {
+    var currentBook by rememberSaveable(saver = BookSaver) {
+        mutableStateOf(Book.empty())
+    }
+    
+    // Your UI here
+}</code></pre></div><p>The key insight: convert complex objects to Maps or JSON strings, then restore them. It's not elegant, but it's <strong>reliable</strong>.</p><div class="callout-info"><p class="callout-label">📖 When to Use Custom Savers</p><p>Use them only when necessary. For most cases, keep Compose state simple (Strings, Ints, Booleans) and store complex objects in your ViewModel or Repository.</p></div><h2 id="testing-state-restoration">Testing State Restoration in Jetpack Compose</h2><p>Theory is one thing. Testing is another. I always add these tests to verify state survives process death:</p><div class="code-block" data-lang="Kotlin"><pre><code>@RunWith(AndroidJUnit4::class)
+class FormStateRestorationTest {
+    
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule&lt;FormActivity&gt;()
+    
+    @Test
+    fun testEmailStateSurvivedProcessDeath() {
+        // Enter email
+        composeTestRule.onNodeWithTag("email_field")
+            .performTextInput("user@example.com")
+        
+        // Verify it's there
+        composeTestRule.onNodeWithTag("email_field")
+            .assert(hasText("user@example.com"))
+        
+        // Simulate process death + recreation
+        composeTestRule.activityRule.scenario.recreate()
+        
+        // Verify email is restored
+        composeTestRule.onNodeWithTag("email_field")
+            .assert(hasText("user@example.com"))
+    }
+    
+    @Test
+    fun testFormStateRestoredFromViewModel() {
+        // Enter data
+        composeTestRule.onNodeWithTag("name_field")
+            .performTextInput("John Doe")
+        
+        composeTestRule.onNodeWithTag("phone_field")
+            .performTextInput("+1234567890")
+        
+        // Trigger save
+        composeTestRule.onNodeWithTag("submit_btn").performClick()
+        
+        // Recreate
+        composeTestRule.activityRule.scenario.recreate()
+        
+        // Verify restoration
+        composeTestRule.onNodeWithTag("name_field")
+            .assert(hasText("John Doe"))
+        composeTestRule.onNodeWithTag("phone_field")
+            .assert(hasText("+1234567890"))
+    }
+}</code></pre></div><p>In my experience, this test catches state restoration bugs before users do. Run it every time you refactor state handling.</p><h2 id="key-takeaways">Key Takeaways</h2><ul><li><strong>Use <code>rememberSaveable</code> for Compose state</strong> — it automatically handles Bundle persistence across process death. Never use plain <code>remember</code> for user input or critical app state.</li><li><strong>Layer your state: ViewModel + Composable</strong> — keep the source of truth in ViewModel (via SavedStateHandle), but maintain local UI state in Composable with <code>rememberSaveable</code> for resilience.</li><li><strong>Custom Savers for complex objects</strong> — convert domain models to Maps or JSON before saving. It's boilerplate, but it beats losing user data in production.</li><li><strong>Test state restoration with <code>recreate()</code></strong> — don't assume it works. Simulate process death in your tests to catch bugs before release.</li><li><strong>Keep Compose state lightweight</strong> — avoid storing large objects or coroutine state directly. Delegate to ViewModels and Repositories for heavy lifting.</li></ul><p>State restoration isn't glamorous. It doesn't make your app feel faster or look prettier. But it makes your app <em>feel trustworthy</em>, and that's what separates apps users love from ones they uninstall.</p>`,
+  },
+
+  {
     slug: "multimodal-ai-android-app-audio-vision-text-integration",
     featured: false,
     icon: "🎤",
