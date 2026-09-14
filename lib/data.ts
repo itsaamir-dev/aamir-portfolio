@@ -139,6 +139,238 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-performance-profiling-jetpack-compose",
+    featured: false,
+    icon: "⚡",
+    cat: "android", catLabel: "Android",
+    date: "Sep 14, 2026", readTime: "7 min read",
+    title: "Android Performance Profiling in Jetpack Compose: Finding Hidden Bottlenecks",
+    excerpt: "Master Android performance profiling in Jetpack Compose. Learn to identify recomposition issues, memory leaks, and frame drops using real tools and techniques.",
+    tags: ["Jetpack Compose","Android Development","Performance Optimization","Kotlin","Android Architecture"],
+    tocItems: [
+      {"id":"why-profiling-matters","label":"Why Performance Profiling Matters in Jetpack Compose"},
+      {"id":"compose-compiler-metrics","label":"Understanding Compose Compiler Metrics"},
+      {"id":"profiling-tools","label":"Essential Android Profiling Tools"},
+      {"id":"real-world-case","label":"Real-World Case: Debugging AudioBook AI"},
+      {"id":"best-practices","label":"Performance Profiling Best Practices"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-profiling-matters">Why Performance Profiling Matters in Jetpack Compose</h2>
+
+<p>I've shipped 6 production Android apps on the Play Store, and I can tell you with absolute certainty: <strong>intuition is not a debugging tool</strong>. When I started working with <strong>Jetpack Compose</strong>, I made the exact same mistake I see junior developers make constantly—assuming my code was performant because it <em>looked</em> clean and ran fine on my flagship Pixel phone.</p>
+
+<p>Then I hit production. Users with mid-range devices reported janky animations, frame drops during list scrolling, and battery drain that made no sense. The kicker? My MVVM architecture was solid. My <strong>Kotlin Coroutines</strong> were properly scoped. My state management looked textbook perfect.</p>
+
+<p>The problem wasn't architecture. It was unnecessary recompositions happening 40+ times per second when they should happen 1–2 times. Without <strong>Android performance profiling</strong>, I never would have caught it.</p>
+
+<p>Performance profiling in <strong>Android development</strong> isn't optional anymore. It's the difference between shipping apps users love and shipping apps users delete after 2 weeks.</p>
+
+<h2 id="compose-compiler-metrics">Understanding Compose Compiler Metrics</h2>
+
+<p>Before you open Android Studio's profiler, you need to understand what Jetpack Compose is actually doing under the hood. The Compose compiler generates reports that tell you exactly which composables are skippable, which ones recompose too often, and which ones are causing cascading recompositions.</p>
+
+<h3>Enabling Compiler Metrics</h3>
+
+<p>Add this to your <code>build.gradle.kts</code>:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>android {
+    kotlinOptions {
+        freeCompilerArgs += listOf(
+            "-P",
+            "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=" +
+            project.buildDir.absolutePath + "/compose_metrics",
+            "-P",
+            "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=" +
+            project.buildDir.absolutePath + "/compose_metrics"
+        )
+    }
+}</code></pre></div>
+
+<p>After building, check <code>build/compose_metrics/</code> for two critical files:</p>
+
+<ul>
+<li><strong>module-statistics.txt</strong> — Overall recomposition stats</li>
+<li><strong>composable-metrics.txt</strong> — Per-composable breakdown showing which ones skip composition</li>
+</ul>
+
+<p>In the metrics file, you're looking for composables marked as <code>restartable</code> and <code>skippable</code>. If a composable that should be skippable isn't, that's your smoking gun.</p>
+
+<h3>What the Metrics Actually Mean</h3>
+
+<p>When you see this in your metrics:</p>
+
+<div class="code-block" data-lang="plaintext"><pre><code>fun ProductCard(product: Product): Line 42
+  skippable: false
+  restartable: true</code></pre></div>
+
+<p>It means this composable <em>will recompose every single time its parent recomposes</em>, regardless of whether <code>product</code> changed. That's often a red flag.</p>
+
+<p>A properly optimized composable looks like:</p>
+
+<div class="code-block" data-lang="plaintext"><pre><code>fun ProductCard(product: Product): Line 42
+  skippable: true
+  restartable: true</code></pre></div>
+
+<p><strong>Skippable</strong> means the Compose runtime can skip recomposition if the parameters haven't changed. This is what you want.</p>
+
+<h2 id="profiling-tools">Essential Android Profiling Tools</h2>
+
+<h3>Android Studio Profiler: Your First Line of Defense</h3>
+
+<p>Open <strong>View → Tool Windows → Profiler</strong> in Android Studio. Run your app and navigate to the screen that feels janky. Watch three metrics obsessively:</p>
+
+<ul>
+<li><strong>Frame Rate</strong> — Should stay at 60 FPS (90 on 90Hz displays). Anything below 30 FPS feels laggy.</li>
+<li><strong>Memory</strong> — Watch for steady climbs (memory leaks) or sudden spikes (allocation storms).</li>
+<li><strong>CPU</strong> — If it spikes during idle time, background tasks are eating resources.</li>
+</ul>
+
+<p>I regularly see apps with solid architecture but terrible CPU graphs because they're running database queries or JSON parsing on the main thread. The profiler makes it obvious instantly.</p>
+
+<h3>Compose Layout Inspector: Visualizing Recompositions</h3>
+
+<p>This is pure gold for Jetpack Compose performance debugging. Open <strong>Layout Inspector</strong> (Tools → Layout Inspector) and you'll see:</p>
+
+<ul>
+<li>Every composable in your hierarchy</li>
+<li>Which ones recomposed (highlighted in blue)</li>
+<li>How many times they recomposed</li>
+<li>What state triggered the recomposition</li>
+</ul>
+
+<p>I caught a bug in AudioBook AI where a single state change was causing 47 composables to recompose when only 1 should have. The Layout Inspector showed me exactly which composable was holding the state poorly.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Enable "Show Recompose Counts" in the Layout Inspector settings. Numbers don't lie—if you see a number in the hundreds for a simple list item, you've found your bottleneck.</p></div>
+
+<h3>Baseline Profiles: Measuring Real User Performance</h3>
+
+<p>Baseline profiles tell the Android runtime which methods matter most, so it prioritizes compilation. I've seen baseline profiles reduce cold start times by 40%.</p>
+
+<p>Add this to your app and generate profiles from real user journeys:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// In your BaselineProfileGenerator module
+fun generateBaselineProfile() {
+    rule.measureRepeated {
+        // Trace your critical user paths
+        runOnUiThread {
+            // Navigate to product list
+            // Scroll through 20 items
+            // Tap on a product
+            // Trigger animation
+        }
+    }
+}</code></pre></div>
+
+<p>Baseline profiles capture <em>what actually matters to users</em>, not what matters in benchmarks. This is why they're so effective.</p>
+
+<h2 id="real-world-case">Real-World Case: Debugging AudioBook AI</h2>
+
+<p>AudioBook AI hit 50K+ users, and around 100K monthly active users, we started seeing complaints about stuttering during audio playback visualization. The visualizer was a Compose animation that showed frequency bars responding to real-time audio data.</p>
+
+<p>Here's what I did:</p>
+
+<h3>Step 1: Profile First, Speculate Never</h3>
+
+<p>I opened the profiler on a mid-range device (crucial—this is where problems show up) and started playback. The CPU graph went ballistic. Frame rate dropped to 22 FPS.</p>
+
+<h3>Step 2: Check Compiler Metrics</h3>
+
+<p>I built with compiler metrics enabled and found that my visualizer composable—which should have been skippable—wasn't. It was recomposing on every single audio frame update.</p>
+
+<h3>Step 3: Identify the Culprit</h3>
+
+<p>The problem was this (simplified):</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun AudioVisualizer(frequencies: List&lt;Float&gt;) {
+    Column {
+        frequencies.forEach { freq -&gt;
+            VisualizerBar(height = freq) // ❌ Problem: Creates new lambda every recomposition
+        }
+    }
+}
+
+@Composable
+fun VisualizerBar(height: Float) {
+    Box(modifier = Modifier.height(height.dp))
+}</code></pre></div>
+
+<p>The <code>frequencies</code> list was a new object reference on every state update, so the compiler couldn't prove <code>VisualizerBar</code>'s parameters were stable. Solution:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun AudioVisualizer(frequencies: List&lt;Float&gt;) {
+    Column {
+        // ✅ Fixed: Use index-based iteration
+        repeat(frequencies.size) { index -&gt;
+            VisualizerBar(
+                height = frequencies[index],
+                modifier = Modifier.animateItemPlacement()
+            )
+        }
+    }
+}
+
+@Composable
+fun VisualizerBar(height: Float, modifier: Modifier = Modifier) {
+    Box(modifier = modifier.height(height.dp))
+}</code></pre></div>
+
+<p>Result? Frame rate jumped to 58–60 FPS. CPU usage dropped by 65%. The visualizer was now skippable, and individual bars only recomposed when <em>their specific frequency value</em> changed.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ The Stability Problem</p><p>Jetpack Compose's entire performance model depends on parameter stability. If you pass unstable types (mutable lists, local class instances) to composables, the compiler assumes they always change and can't skip recomposition. This is the #1 performance gotcha I see in production code.</p></div>
+
+<h2 id="best-practices">Performance Profiling Best Practices</h2>
+
+<h3>Profile on Real Devices, Not Emulators</h3>
+
+<p>Emulators run at different frame rates, have different memory constraints, and don't represent your actual user base. I always profile on a Pixel 5a (mid-range, ~$300 device) because that's closer to median users than a Pixel 9 Pro.</p>
+
+<h3>Establish a Performance Budget</h3>
+
+<p>Before optimization, decide what's acceptable:</p>
+
+<ul>
+<li>Frame rate: 60 FPS minimum (90+ FPS for scrolling lists)</li>
+<li>Memory: 100–150 MB for typical screen</li>
+<li>CPU: &lt;30% during idle, &lt;60% during interaction</li>
+</ul>
+
+<p>Measure against these numbers consistently. Don't optimize randomly—measure, set targets, then optimize toward them.</p>
+
+<h3>Use Jetpack Compose's Built-in Tools</h3>
+
+<p>Compose already gives you <code>remember</code>, <code>derivedStateOf</code>, and <code>rememberCoroutineScope</code> for free. Use them. If your composable depends on derived state, <code>derivedStateOf</code> prevents unnecessary recompositions:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun ProductList(products: List&lt;Product&gt;, searchQuery: String) {
+    // ✅ Only recompute when products OR searchQuery actually change
+    val filtered = remember(products, searchQuery) {
+        products.filter { it.name.contains(searchQuery) }
+    }
+    
+    LazyColumn {
+        items(filtered.size) { index -&gt;
+            ProductRow(filtered[index])
+        }
+    }
+}</code></pre></div>
+
+<h3>Monitor Performance in CI/CD</h3>
+
+<p>Don't wait for production to find performance issues. Integrate Baseline Profiles and simple frame-rate checks into your CI/CD pipeline. At Raybit, we fail builds if frame rate drops below 55 FPS on our test device during smoke tests.</p>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Profile first, speculate never</strong> — Use Compose Compiler Metrics and Android Studio Profiler to identify real bottlenecks, not assumed ones. Intuition fails 80% of the time.</li>
+<li><strong>Parameter stability is everything</strong> — Jetpack Compose can only skip recomposition when it's certain parameters haven't changed. Unstable types force recomposition, destroying performance.</li>
+<li><strong>Test on mid-range devices</strong> — Profile on devices your actual users have, not flagship phones. That Pixel 5a will expose performance issues your Pixel 9 Pro hides.</li>
+<li><strong>Establish and measure against performance budgets</strong> — 60 FPS, 100–150 MB memory, &lt;30% CPU idle. Don't optimize blindly; measure against real targets.</li>
+<li><strong>Use the Layout Inspector aggressively</strong> — It shows you exactly which composables recompose and why. This visual feedback is invaluable for catching cascading recomposition bugs.</li>
+</ul>`,
+  },
+
+  {
     slug: "scope-creep-freelance-software-engineer-upwork",
     featured: false,
     icon: "🛡️",
