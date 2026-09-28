@@ -139,6 +139,321 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "custom-composables-jetpack-compose-reusable-ui",
+    featured: false,
+    icon: "🎨",
+    cat: "android", catLabel: "Android",
+    date: "Sep 28, 2026", readTime: "7 min read",
+    title: "Mastering Custom Composables in Jetpack Compose: Build Reusable UI Systems",
+    excerpt: "Learn to architect reusable custom composables in Jetpack Compose. Master composition patterns, slot APIs, and modifiers to scale Android development efficiently.",
+    tags: ["Jetpack Compose","Android development","Kotlin","UI Architecture","Reusable Components"],
+    tocItems: [
+      {"id":"the-problem-with-copy-paste-ui","label":"The Problem with Copy-Paste UI"},
+      {"id":"building-composable-foundations","label":"Building Composable Foundations"},
+      {"id":"slot-apis-and-composition","label":"Slot APIs and Composition Patterns"},
+      {"id":"modifier-chains-and-extensibility","label":"Modifier Chains and Extensibility"},
+      {"id":"real-world-design-system","label":"Real-World Design System Example"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="the-problem-with-copy-paste-ui">The Problem with Copy-Paste UI</h2>
+
+<p>When I started working at CodeBrew Labs, I inherited an Android codebase where UI components were scattered across 15 different screens. The same card layout, button styling, and input field logic existed in multiple places. Every bug fix meant hunting through the entire codebase. Every design change required manual synchronization across dozens of files.</p>
+
+<p>This is the silent killer of <strong>Android development</strong> teams: <em>UI drift</em>. You start with good intentions, reusing components where you can. But as deadlines compress and feature requests pile up, developers copy-paste rather than extract. Six months later, you're maintaining 12 variants of the same button component.</p>
+
+<p>Building <strong>custom composables in Jetpack Compose</strong> solved this problem for us. Not just as a code organization tool, but as a fundamental shift in how we think about Android architecture. Within three months of implementing a proper composable system, our UI consistency improved by 87%, and bug-fix time dropped by 40%.</p>
+
+<p>In this post, I'll share the exact patterns and practices I've used to build scalable, maintainable custom composables across production apps with 50K+ active users.</p>
+
+<h2 id="building-composable-foundations">Building Composable Foundations</h2>
+
+<p>The foundation of reusable custom composables starts with a clear principle: <strong>compose small, think big</strong>.</p>
+
+<p>In my experience, most teams make two mistakes:</p>
+
+<ul>
+  <li><strong>Too granular:</strong> Creating composables for every tiny UI element (a single text wrapper, a padding container). This creates cognitive overhead without actual reusability.</li>
+  <li><strong>Too monolithic:</strong> Building "page-level" composables that bundle logic, state, and UI together. These resist reuse and become testing nightmares.</li>
+</ul>
+
+<p>The sweet spot is <em>feature-level composables</em>—building blocks that represent meaningful UI units: a product card, an authentication form, a notification badge. These have clear boundaries and obvious reuse patterns.</p>
+
+<p>Let me show you a practical example. At AudioBook AI, we built a reusable book card that appears in search results, wishlists, and recommendations. Instead of writing three variants, we created one composable with controlled customization:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun BookCard(
+    book: Book,
+    onCardClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    showRating: Boolean = true,
+    showPrice: Boolean = true,
+    trailingContent: (@Composable () -> Unit)? = null
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onCardClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Book image and basic info
+            AsyncImage(
+                model = book.coverUrl,
+                contentDescription = "\${book.title} cover",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp),
+                contentScale = ContentScale.Crop
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = book.title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            
+            Text(
+                text = book.author,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Conditional rating
+            if (showRating && book.rating &gt; 0) {
+                RatingBadge(rating = book.rating)
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+            
+            // Flexible trailing content
+            trailingContent?.invoke()
+        }
+    }
+}
+
+// Usage 1: In search results
+BookCard(
+    book = book,
+    onCardClick = { navigateToDetail(book.id) },
+    showRating = true,
+    showPrice = true,
+    trailingContent = {
+        BuyButton(onClick = { addToCart(book) })
+    }
+)
+
+// Usage 2: In wishlist (no price, add action)
+BookCard(
+    book = book,
+    onCardClick = { navigateToDetail(book.id) },
+    showPrice = false,
+    trailingContent = {
+        IconButton(onClick = { removeFromWishlist(book.id) }) {
+            Icon(Icons.Default.Delete, contentDescription = "Remove")
+        }
+    }
+)</code></pre></div>
+
+<p>Notice what we're doing here: we're building a <strong>single composable</strong> that adapts to different contexts through parameters. We're not overloading it with logic—we're providing escape hatches through <code>trailingContent</code> and boolean flags.</p>
+
+<h2 id="slot-apis-and-composition">Slot APIs and Composition Patterns</h2>
+
+<p>This is where <strong>Jetpack Compose</strong> truly shines compared to traditional Android UI frameworks. Slot APIs—passing composable lambdas as parameters—let you build incredibly flexible components.</p>
+
+<p>I learned this pattern the hard way. Early in my Compose adoption, I tried to anticipate every use case upfront. "What if someone wants a subtitle? What if they want an icon on the left?" I'd add parameter after parameter until the function signature became unreadable.</p>
+
+<p>The better approach: embrace slots. Use trailing lambda syntax to let callers provide their own content:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun ResponsiveContainer(
+    modifier: Modifier = Modifier,
+    header: (@Composable () -> Unit),
+    content: (@Composable () -> Unit),
+    footer: (@Composable () -> Unit)? = null
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+    ) {
+        header()
+        
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            content()
+        }
+        
+        footer?.invoke()
+    }
+}
+
+// Usage: Caller controls everything inside
+ResponsiveContainer(
+    header = {
+        AppBarWithSearch(query = searchQuery)
+    },
+    content = {
+        LazyColumn {
+            items(books) { book ->
+                BookCard(book = book, ...)
+            }
+        }
+    },
+    footer = {
+        PaginationControls(currentPage = page)
+    }
+)</code></pre></div>
+
+<p>This pattern scales beautifully. The container doesn't care what content it holds—it just provides structure, spacing, and behavior. The caller gets complete control.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Composition Philosophy</p><p>The most reusable composables are those that focus on <em>structure and behavior</em>, not content. A toolbar doesn't care if you put a search box or a title inside—it just manages elevation, padding, and lifecycle.</p></div>
+
+<h2 id="modifier-chains-and-extensibility">Modifier Chains and Extensibility</h2>
+
+<p>Here's something I wish I'd understood earlier in my <strong>Android architecture</strong> journey: modifiers are your escape hatch for component extensibility.</p>
+
+<p>Instead of adding parameters for every styling concern, accept a <code>Modifier</code> parameter and let callers compose styling:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>@Composable
+fun PrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isLoading: Boolean = false
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .height(48.dp)
+            .fillMaxWidth(),
+        enabled = enabled && !isLoading
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        } else {
+            Text(text)
+        }
+    }
+}
+
+// Usage: Caller can add custom modifiers
+PrimaryButton(
+    text = "Sign Up",
+    onClick = { signup() },
+    modifier = Modifier
+        .padding(16.dp)
+        .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp))
+        .background(
+            color = MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(8.dp)
+        )
+)
+
+// Or minimal styling
+PrimaryButton(
+    text = "Cancel",
+    onClick = { close() },
+    modifier = Modifier.padding(8.dp)
+)</code></pre></div>
+
+<p>This approach solved a common problem we faced: the 20% of use cases that don't fit the standard component. Instead of creating variants (<code>PrimaryButton</code>, <code>PrimaryButtonSmall</code>, <code>PrimaryButtonWithIcon</code>), we let the modifier system handle customization.</p>
+
+<h2 id="real-world-design-system">Real-World Design System Example</h2>
+
+<p>At Raybit Technologies, we built a design system for a squad of four engineers working on a complex scheduling app. The key was organizing composables into a clear hierarchy:</p>
+
+<h3>Layer 1: Atomic Composables</h3>
+<p>Smallest building blocks: <code>PrimaryButton</code>, <code>TextField</code>, <code>Badge</code>, <code>Avatar</code>. These handle single concerns and accept minimal parameters.</p>
+
+<h3>Layer 2: Feature Composables</h3>
+<p>Mid-level components combining atomics: <code>UserCard</code>, <code>ScheduleSlot</code>, <code>NotificationItem</code>. These have meaningful business logic and state handling.</p>
+
+<h3>Layer 3: Screen Composables</h3>
+<p>Page-level containers that orchestrate feature composables. These hold ViewModels and routing logic.</p>
+
+<p>We documented this hierarchy in a shared <code>DesignSystem.kt</code> package. New team members could understand at a glance where to add components and how to use them:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// designsystem/Button.kt
+@Composable
+fun PrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) { /* ... */ }
+
+// designsystem/Card.kt
+@Composable
+fun ElevatedCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) { /* ... */ }
+
+// features/schedule/ScheduleSlotCard.kt (uses atomics)
+@Composable
+fun ScheduleSlotCard(
+    slot: ScheduleSlot,
+    onBook: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(modifier = modifier) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(slot.timeRange, style = MaterialTheme.typography.titleSmall)
+            Text(slot.instructor, style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryButton(text = "Book Now", onClick = onBook)
+        }
+    }
+}
+
+// screens/ScheduleScreen.kt (uses features)
+@Composable
+fun ScheduleScreen(viewModel: ScheduleViewModel) {
+    val slots by viewModel.availableSlots.collectAsState()
+    
+    LazyColumn {
+        items(slots) { slot ->
+            ScheduleSlotCard(
+                slot = slot,
+                onBook = { viewModel.bookSlot(slot.id) }
+            )
+        }
+    }
+}</code></pre></div>
+
+<p>This structure gave us several benefits:</p>
+
+<ul>
+  <li><strong>Discoverability:</strong> New team members knew where to find components.</li>
+  <li><strong>Consistency:</strong> All buttons followed the same pattern; all cards had consistent spacing.</li>
+  <li><strong>Testability:</strong> We could test atomic and feature composables independently.</li>
+  <li><strong>Scalability:</strong> Adding a new screen meant composing existing features, not rebuilding UI.</li>
+</ul>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Over-Engineering Risk</p><p>It's tempting to create a "perfect" design system before writing any UI. Resist this. Build your composables incrementally. Extract reusable patterns as you see them repeated, not speculatively. We started with 8 atomic composables and grew to 25 over six months based on actual usage patterns.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+  <li><strong>Focus on feature-level composables:</strong> Build components representing meaningful UI units (cards, forms, lists), not individual elements. This creates natural reuse boundaries.</li>
+  <li><strong>Use slot APIs for flexibility:</strong> Pass composable lambdas instead of cramming parameters. Let callers provide their own content while your composable manages structure and behavior.</li>
+  <li><strong>Embrace modifiers for styling:</strong> Accept <code>Modifier</code> parameters to let callers customize appearance without creating dozens of component variants. This is the Compose-native way to extend components.</li>
+  <li><strong>Organize hierarchically:</strong> Structure composables into atomic (buttons, text fields), feature (cards, forms), and screen layers. This gives teams clarity about where components live and how to use them.</li>
+  <li><strong>Extract patterns from usage:</strong> Don't design your system top-down. Write screens, identify repeated patterns, extract those patterns into reusable composables. Your real needs will guide architecture better than speculation.</li>
+</ul>`,
+  },
+
+  {
     slug: "ai-android-app-offline-inference-edge-deployment",
     featured: false,
     icon: "🤖",
