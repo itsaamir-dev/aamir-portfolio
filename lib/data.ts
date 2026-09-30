@@ -139,6 +139,197 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "technical-debt-senior-software-engineer",
+    featured: false,
+    icon: "⚖️",
+    cat: "career", catLabel: "Career",
+    date: "Sep 30, 2026", readTime: "7 min read",
+    title: "Technical Debt Management: A Senior Developer's Guide to Sustainable Growth",
+    excerpt: "Learn how senior software engineers balance feature velocity with technical debt. Strategies I've used to maintain code quality while scaling teams and delivering faster.",
+    tags: ["Technical Debt","Software Engineer Career","Senior Developer Tips","Code Quality","Team Leadership"],
+    tocItems: [
+      {"id":"what-is-technical-debt","label":"What Technical Debt Really Is"},
+      {"id":"cost-of-ignoring","label":"The Hidden Cost of Ignoring Technical Debt"},
+      {"id":"strategic-approach","label":"My Strategic Approach to Managing Technical Debt"},
+      {"id":"quantifying-debt","label":"Quantifying Technical Debt for Leadership"},
+      {"id":"debt-paydown-sprint","label":"Building Debt Paydown Into Your Sprint Cycle"},
+      {"id":"preventing-new-debt","label":"Preventing New Technical Debt From Accumulating"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="what-is-technical-debt">What Technical Debt Really Is</h2>
+<p>When I started as a junior Android developer 8+ years ago, I had no idea what technical debt meant. I just wrote code, shipped features, and moved on. Fast forward to today as a <strong>senior software engineer</strong> leading a 4-engineer squad at Raybit Technologies, and I can tell you: technical debt is the invisible tax on every codebase.</p>
+<p>Technical debt isn't just "messy code." It's the <strong>cumulative cost of shortcuts taken</strong>—skipped tests, missing abstractions, hardcoded values, deprecated dependencies, or architectural decisions that made sense at the time but don't scale anymore. It's real. It compounds. And if you don't manage it, it will <em>destroy</em> your productivity.</p>
+<p>I learned this the hard way. During my time at CodeBrew Labs, we had a legacy codebase that had accumulated years of debt. Every feature took twice as long to ship. Tests were flaky. Onboarding new engineers took months instead of weeks. That's when I realized: <strong>managing technical debt is not optional for a senior developer</strong>—it's part of the job.</p>
+
+<h2 id="cost-of-ignoring">The Hidden Cost of Ignoring Technical Debt</h2>
+<p>Here's what happens when you ignore technical debt:</p>
+<ul>
+<li><strong>Velocity crashes.</strong> What took 2 days now takes 2 weeks because you're fighting the codebase at every step.</li>
+<li><strong>Quality suffers.</strong> Bug rates increase. You're patching symptoms instead of fixing root causes.</li>
+<li><strong>Burnout accelerates.</strong> Engineers get frustrated. Retention drops. I've seen entire teams leave because of legacy debt.</li>
+<li><strong>Hiring becomes harder.</strong> No senior developer wants to join a team drowning in debt.</li>
+<li><strong>Rewrites become inevitable.</strong> Eventually, the debt is so bad that a complete rewrite is cheaper than maintaining it.</li>
+</ul>
+<p>At CodeBrew, we had a production Android app that crashed at a 5% rate—unacceptable. The crash rate wasn't just a "testing problem." It was architectural debt. We had tight coupling between layers, no dependency injection, and mixed concerns everywhere. So I led a strategic Kotlin migration from Java, introduced Hilt for dependency injection, and restructured the codebase to follow clean architecture principles. That single effort <strong>cut our crash rate by 35%</strong> and reduced time-to-fix for new bugs by nearly 50%.</p>
+<p>That's the impact of managing technical debt proactively.</p>
+
+<blockquote>
+<p>"Technical debt isn't about perfectionism—it's about sustainable velocity. You can't move fast if your foundation is crumbling."</p>
+</blockquote>
+
+<h2 id="strategic-approach">My Strategic Approach to Managing Technical Debt</h2>
+<p>After 8 years, I've learned that you can't eliminate technical debt. You can only <em>manage</em> it strategically. Here's my framework:</p>
+
+<h3>1. Categorize Debt by Impact and Effort</h3>
+<p>Not all debt is equal. I use a simple 2x2 matrix:</p>
+<ul>
+<li><strong>High Impact + Low Effort:</strong> Fix immediately. These are your quick wins.</li>
+<li><strong>High Impact + High Effort:</strong> Schedule for future sprints. Plan the work.</li>
+<li><strong>Low Impact + Low Effort:</strong> Fix when you have spare cycles.</li>
+<li><strong>Low Impact + High Effort:</strong> Ignore (for now). Reevaluate later.</li>
+</ul>
+<p>This keeps you focused on what actually matters, rather than chasing perfectionism.</p>
+
+<h3>2. Allocate Time Explicitly</h3>
+<p>At Raybit, we allocate <strong>20% of sprint capacity to technical debt paydown</strong>. This isn't optional. It's built into sprint planning from day one. Without this explicit allocation, debt work gets perpetually deprioritized for features.</p>
+<p>How does this play out? In a 2-week sprint with a 4-engineer team:</p>
+<ul>
+<li>80% capacity: New features, bug fixes, client requirements.</li>
+<li>20% capacity: Refactoring, upgrading dependencies, improving test coverage, optimizing performance.</li>
+</ul>
+<p>This steady, predictable cadence prevents debt from exploding while maintaining feature velocity.</p>
+
+<h3>3. Make It Visible to Leadership</h3>
+<p>This is critical. Most non-technical stakeholders don't understand why you need to spend time on "paying down debt" when you could be shipping features. They see it as a cost center, not an investment.</p>
+<p>So I track it differently. Instead of "technical debt sprint," I frame it as:</p>
+<ul>
+<li><strong>Velocity improvement work:</strong> "We're reducing code complexity so future features ship 30% faster."</li>
+<li><strong>Quality investment:</strong> "Improving test coverage reduces production bugs by 20%."</li>
+<li><strong>Risk mitigation:</strong> "Upgrading dependencies prevents security vulnerabilities."</li>
+</ul>
+<p>When you tie debt paydown to business outcomes—faster delivery, fewer bugs, reduced risk—leadership buys in.</p>
+
+<h2 id="quantifying-debt">Quantifying Technical Debt for Leadership</h2>
+<p>Numbers matter. Here's how I quantify debt in a way that resonates with decision-makers:</p>
+
+<div class="code-block" data-lang="metrics"><pre><code>Technical Debt Metrics Dashboard
+
+1. Code Complexity (Cyclomatic Complexity)
+   - Average per function: 5 (ideal) vs 15 (debt indicator)
+   - Impact: Functions with complexity &gt; 10 are 3x more likely to have bugs
+
+2. Test Coverage
+   - Current: 45% (low)
+   - Target: 80% (sustainable)
+   - ROI: Each 10% increase in coverage reduces production bugs by ~15%
+
+3. Dependency Age
+   - Kotlin version: 1.8 (current: 1.9 — 6 months behind)
+   - Security risk: Medium
+   - Effort to upgrade: 8 hours
+
+4. Time-to-Feature Ratio
+   - Feature development: 40% (code writing)
+   - Debugging legacy code: 30% (fighting debt)
+   - Tests/setup: 30%
+   - Improvement potential: Cut "fighting debt" to 10% with refactoring
+
+5. Crash Rate by Module
+   - Database layer: 2% (high debt, tightly coupled)
+   - UI layer: 0.3% (low debt, well-tested)
+   - Opportunity: Refactor database layer, expect 50% reduction
+</code></pre></div>
+
+<p>When I present this to leadership, they immediately see: "If we invest 40 hours in refactoring the database layer, we reduce crash rate by 50% and free up 30 hours per month that engineers currently waste debugging." That's a <em>business case</em>, not a technical request.</p>
+
+<h2 id="debt-paydown-sprint">Building Debt Paydown Into Your Sprint Cycle</h2>
+<p>Here's how I structure debt work within a sprint:</p>
+
+<h3>Start of Sprint: Identify & Prioritize</h3>
+<p>Reserve 1–2 hours for the team to surface debt:</p>
+<ul>
+<li>"What part of the codebase frustrates you most?"</li>
+<li>"Where do bugs keep recurring?"</li>
+<li>"What's slowing down new features?"</li>
+</ul>
+<p>This creates psychological ownership. Engineers aren't told to fix debt; they identify what's most painful.</p>
+
+<h3>During Sprint: Context Switching Matters</h3>
+<p>I don't ask engineers to spend entire days on debt work. Instead, we batch it:</p>
+<ul>
+<li>Monday & Friday afternoons: Debt paydown</li>
+<li>Tuesday–Thursday: Feature development</li>
+</ul>
+<p>This prevents context-switching burnout while ensuring consistent progress.</p>
+
+<h3>End of Sprint: Measure Impact</h3>
+<p>In the retrospective, we track:</p>
+<ul>
+<li>Code coverage increase</li>
+<li>Cyclomatic complexity reduction</li>
+<li>Dependency upgrades completed</li>
+<li>Time saved on subsequent features</li>
+</ul>
+<p>Visibility creates momentum. Teams get motivated when they see concrete progress.</p>
+
+<div class="callout-info"><p class="callout-label">📖 Pro Tip</p><p>Use static analysis tools to automate debt detection. SonarQube, CodeClimate, or Detekt (for Kotlin) catch complexity issues, coverage gaps, and code smells before they accumulate. Make debt <em>visible</em> before it becomes a problem.</p></div>
+
+<h2 id="preventing-new-debt">Preventing New Technical Debt From Accumulating</h2>
+<p>The best debt is the debt you never create. Here's my approach as a <strong>senior developer</strong> on code reviews and architecture decisions:</p>
+
+<h3>1. Enforce Architecture Standards Early</h3>
+<p>I'm strict about separation of concerns. Every feature review includes:</p>
+<ul>
+<li>Does this layer have a single responsibility?</li>
+<li>Are we injecting dependencies or creating tight coupling?</li>
+<li>Would a junior engineer understand this 6 months from now?</li>
+</ul>
+<p>Small architectural compromises today compound into massive refactoring efforts later.</p>
+
+<h3>2. Test-Driven Development (TDD) Mindset</h3>
+<p>I don't mandate TDD, but I model it. When I code:</p>
+<ul>
+<li>I write the test first</li>
+<li>I think about the API before implementation</li>
+<li>I make sure edge cases are covered</li>
+</ul>
+<p>This naturally prevents over-complicated code. When you have to test something, you write simpler code.</p>
+
+<h3>3. Documentation for Context</h3>
+<p>I add comments that explain <em>why</em>, not <em>what</em>:</p>
+
+<div class="code-block" data-lang="kotlin"><pre><code>// BAD: Explains what, not why
+val result = database.query(sql) // Query the database
+
+// GOOD: Explains the context
+// We batch queries to reduce connection overhead.
+// DO NOT refactor to single queries without profiling—tests show 2x slower.
+val result = database.batchQuery(sql)
+</code></pre></div>
+
+<p>When the next engineer understands the constraints, they won't accidentally "improve" something into a performance regression.</p>
+
+<h3>4. Gradual Refactoring, Not Big Bang Rewrites</h3>
+<p>I'm allergic to 3-month "let's rewrite everything" initiatives. Instead:</p>
+<ul>
+<li>Each feature includes incremental improvements to surrounding code</li>
+<li>Dependency upgrades happen quarterly, not catastrophically</li>
+<li>New engineers are onboarded to improve one module at a time</li>
+</ul>
+<p>This keeps debt manageable and prevents the "rewrite project that never ships" trap.</p>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>Technical debt is a career-defining skill for senior software engineers.</strong> Your ability to balance feature velocity with code quality is what separates senior developers from mid-level engineers.</li>
+<li><strong>Allocate 15–20% of sprint capacity explicitly to debt paydown.</strong> Make it predictable, visible, and tied to business outcomes (faster features, fewer bugs, lower risk).</li>
+<li><strong>Quantify debt in terms leadership understands.</strong> Not "our code is messy," but "we'll save 30 hours per month by reducing complexity from 15 to 8."</li>
+<li><strong>Prevent new debt through architecture enforcement and code review rigor.</strong> Small compromises compound exponentially. Set standards early.</li>
+<li><strong>Use metrics to track progress.</strong> Code coverage, cyclomatic complexity, dependency age, crash rates—make debt visible and track improvements over time.</li>
+</ul>
+<p>After 8 years, I can confidently say: the engineers who understand technical debt management rise to senior roles. Those who ignore it burn out or get stuck maintaining legacy systems. Choose wisely.</p>`,
+  },
+
+  {
     slug: "custom-composables-jetpack-compose-reusable-ui",
     featured: false,
     icon: "🎨",
