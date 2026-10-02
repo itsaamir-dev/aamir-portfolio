@@ -139,6 +139,331 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "rest-api-caching-strategies-node-laravel",
+    featured: false,
+    icon: "⚡",
+    cat: "fullstack", catLabel: "Full-Stack",
+    date: "Oct 2, 2026", readTime: "7 min read",
+    title: "REST API Caching: Node.js & Laravel Performance at Scale",
+    excerpt: "Master REST API caching strategies in Node.js and Laravel. Learn multi-layer caching, cache invalidation patterns, and boost API performance by 10x.",
+    tags: ["REST API Design","Node.js","Laravel","API Performance","Caching"],
+    tocItems: [
+      {"id":"why-caching-matters","label":"Why Caching Matters for API Performance"},
+      {"id":"caching-layers","label":"Multi-Layer Caching Architecture"},
+      {"id":"node-redis-caching","label":"Implementing Redis Caching in Node.js"},
+      {"id":"laravel-cache-driver","label":"Laravel Cache Drivers & Best Practices"},
+      {"id":"cache-invalidation","label":"Cache Invalidation Patterns That Work"},
+      {"id":"monitoring-cache","label":"Monitoring & Optimizing Cache Hit Rates"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<h2 id="why-caching-matters">Why Caching Matters for REST API Performance</h2>
+
+<p>I've built dozens of REST APIs across Node.js and Laravel backends, and I can tell you with certainty: <strong>caching is the difference between an API that scales and one that collapses under load.</strong></p>
+
+<p>Three years ago at CodeBrew, I inherited a Laravel API that was hitting the database 15 times per request. Response times were averaging 800ms. After implementing a strategic caching layer, we dropped that to 120ms—a 6.5x improvement. The database went from maxed out to 30% utilization.</p>
+
+<p>REST API caching isn't optional when you're building for scale. Whether you're using Node.js with Express or a Laravel backend, the principle is identical: <em>avoid expensive operations by serving pre-computed data.</em></p>
+
+<p>But here's what most developers miss: <strong>caching without proper invalidation becomes a liability.</strong> I've seen cached APIs serve stale data for hours, destroying user trust. That's why I'm sharing the exact patterns I use in production.</p>
+
+<h2 id="caching-layers">Multi-Layer Caching Architecture</h2>
+
+<p>The fastest request is one that never hits your code. That's why professional REST API design uses multiple caching layers:</p>
+
+<h3>Layer 1: Client-Side HTTP Caching</h3>
+<p>Your browser and CDN are the first line of defense. Set <code>Cache-Control</code>, <code>ETag</code>, and <code>Last-Modified</code> headers correctly, and you avoid 50% of requests hitting your server at all.</p>
+
+<h3>Layer 2: Edge/CDN Caching</h3>
+<p>Cloudflare, Akamai, or AWS CloudFront cache responses geographically. Perfect for public endpoints (product catalogs, blog posts, user profiles).</p>
+
+<h3>Layer 3: Application-Level Caching (Redis)</h3>
+<p>This is where most performance gains happen. Redis sits between your API and database, storing frequently-accessed data in memory. API performance improves dramatically because memory access is 100x+ faster than disk I/O.</p>
+
+<h3>Layer 4: Database Query Caching</h3>
+<p>Some databases (MySQL with Query Cache, or database-native caching) cache query results. Less critical now, but useful for expensive aggregations.</p>
+
+<p><strong>In practice:</strong> I implement Layer 2 + Layer 3 for most REST API projects. That combination handles 95% of real-world scenarios.</p>
+
+<h2 id="node-redis-caching">Implementing Redis Caching in Node.js</h2>
+
+<p>Node.js makes Redis integration straightforward. Here's how I structure REST API caching in production:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>// cache.js - Reusable caching utility
+const redis = require('redis');
+const client = redis.createClient({
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT,
+});
+
+const cache = {
+  async get(key) {
+    try {
+      const value = await client.get(key);
+      return value ? JSON.parse(value) : null;
+    } catch (err) {
+      console.error(\`Cache get error for \${key}:\`, err);
+      return null;
+    }
+  },
+
+  async set(key, value, ttl = 3600) {
+    try {
+      await client.setex(key, ttl, JSON.stringify(value));
+    } catch (err) {
+      console.error(\`Cache set error for \${key}:\`, err);
+    }
+  },
+
+  async del(key) {
+    await client.del(key);
+  },
+
+  async invalidatePattern(pattern) {
+    const keys = await client.keys(pattern);
+    if (keys.length &gt; 0) {
+      await client.del(keys);
+    }
+  },
+};
+
+module.exports = cache;
+</code></pre></div>
+
+<p>Now, in my REST API endpoints:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>// routes/users.js
+const express = require('express');
+const cache = require('../cache');
+const User = require('../models/User');
+
+const router = express.Router();
+
+router.get('/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const cacheKey = \`user:\${id}\`;
+
+  // Check cache first
+  const cachedUser = await cache.get(cacheKey);
+  if (cachedUser) {
+    return res.json(cachedUser);
+  }
+
+  // Cache miss - query database
+  const user = await User.findById(id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  // Store in cache for 1 hour
+  await cache.set(cacheKey, user, 3600);
+
+  res.json(user);
+});
+
+router.post('/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const updatedUser = await User.findByIdAndUpdate(id, req.body);
+
+  // Invalidate cache on write
+  await cache.del(\`user:\${id}\`);
+  await cache.invalidatePattern('users:list:*');
+
+  res.json(updatedUser);
+});
+
+module.exports = router;
+</code></pre></div>
+
+<p><strong>Key points:</strong></p>
+<ul>
+<li>Always check cache <em>before</em> querying the database</li>
+<li>Set appropriate TTL (time-to-live) based on data freshness needs</li>
+<li>Invalidate cache on writes to prevent serving stale data</li>
+<li>Handle cache failures gracefully—if Redis is down, your API should still work</li>
+</ul>
+
+<h2 id="laravel-cache-driver">Laravel Cache Drivers & Best Practices</h2>
+
+<p>Laravel's caching abstraction is elegant. You can switch backends (Redis, Memcached, file, database) without changing code. Here's how I structure REST API caching in Laravel:</p>
+
+<div class="code-block" data-lang="PHP"><pre><code>// app/Http/Controllers/UserController.php
+&lt;?php
+
+namespace App\\Http\\Controllers;
+
+use App\\Models\\User;
+use Illuminate\\Support\\Facades\\Cache;
+
+class UserController extends Controller
+{
+    public function show($id)
+    {
+        // Use 'cache:remember' for elegant get-or-fetch
+        $user = Cache::remember(
+            "user.{$id}",
+            60 * 60, // 1 hour TTL
+            function () use ($id) {
+                return User::find($id);
+            }
+        );
+
+        return response()->json($user);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $user->update($request->validated());
+
+        // Invalidate single key
+        Cache::forget("user.{$id}");
+
+        // Or invalidate a pattern (requires Redis)
+        Cache::tags(['users'])->flush();
+
+        return response()->json($user);
+    }
+
+    public function listUsers()
+    {
+        // Cache list with tags for flexible invalidation
+        $users = Cache::tags(['users'])->remember(
+            'users.all',
+            60 * 60,
+            function () {
+                return User::paginate(20);
+            }
+        );
+
+        return response()->json($users);
+    }
+}
+</code></pre></div>
+
+<p>Configure your cache backend in <code>.env</code>:</p>
+
+<div class="code-block" data-lang="bash"><pre><code>CACHE_DRIVER=redis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+</code></pre></div>
+
+<p><strong>Laravel advantages I leverage:</strong></p>
+<ul>
+<li><code>Cache::remember()</code> eliminates boilerplate—fetch or cache in one line</li>
+<li>Cache tags enable bulk invalidation without key name patterns</li>
+<li>Driver abstraction means testing with array/file drivers is trivial</li>
+<li>Built-in queue support for cache warming and background invalidation</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">💡 Pro Tip</p><p>For REST APIs serving thousands of requests/second, use <strong>cache warming</strong>: pre-load hot data (trending items, top users) into Redis during off-peak hours. This eliminates cache misses for your most critical endpoints.</p></div>
+
+<h2 id="cache-invalidation">Cache Invalidation Patterns That Work</h2>
+
+<p><strong>Phil Karlton famously said: "There are only two hard things in Computer Science: cache invalidation and naming things."</strong> He wasn't exaggerating.</p>
+
+<p>I've spent more time debugging stale cache issues than I'd like to admit. Here are the patterns that actually work in production:</p>
+
+<h3>Pattern 1: Time-Based Expiration (TTL)</h3>
+<p>Set a reasonable TTL and accept eventual consistency. For user profiles, 1 hour is fine. For product inventory, 5 minutes. For real-time data, skip caching entirely.</p>
+
+<h3>Pattern 2: Event-Based Invalidation</h3>
+<p>Whenever a write happens, invalidate immediately. This is my preferred approach because data is always fresh:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>// Node.js: Invalidate on write
+router.post('/posts/:id', async (req, res) => {
+  const post = await Post.findByIdAndUpdate(req.params.id, req.body);
+
+  // Invalidate this post's cache
+  await cache.del(\`post:\${req.params.id}\`);
+
+  // Invalidate author's posts list
+  await cache.invalidatePattern(\`user:\${post.authorId}:posts:*\`);
+
+  // Publish event for subscribers (WebSocket users)
+  pubsub.publish(\`post:updated:\${req.params.id}\`, post);
+
+  res.json(post);
+});
+</code></pre></div>
+
+<h3>Pattern 3: Hybrid Approach</h3>
+<p>Combine TTL + event invalidation. Cache for 1 hour, but invalidate on writes. If Redis crashes, data is still correct after expiry.</p>
+
+<h3>Pattern 4: Versioning</h3>
+<p>Instead of deleting cache keys, append a version:</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>const cacheVersion = await cache.get('cache:version');
+const cacheKey = \`user:\${id}:v\${cacheVersion}\`;
+
+// On data change, increment version
+await cache.incr('cache:version');
+// Old keys expire naturally; new requests use new version
+</code></pre></div>
+
+<p>This avoids the thundering herd problem where all clients re-request stale data simultaneously.</p>
+
+<h2 id="monitoring-cache">Monitoring & Optimizing Cache Hit Rates</h2>
+
+<p>A caching layer is only effective if it's actually being used. I monitor three metrics religiously:</p>
+
+<h3>1. Cache Hit Rate</h3>
+<p>Calculate: <code>(hits / (hits + misses)) × 100</code></p>
+
+<p>Target: 80%+ for read-heavy APIs. Below 60% means your TTL is too short or access patterns are too random.</p>
+
+<div class="code-block" data-lang="JavaScript"><pre><code>// Middleware to track cache metrics
+const cacheMetrics = {
+  hits: 0,
+  misses: 0,
+
+  record(isHit) {
+    if (isHit) this.hits++;
+    else this.misses++;
+  },
+
+  getHitRate() {
+    const total = this.hits + this.misses;
+    return total === 0 ? 0 : ((this.hits / total) * 100).toFixed(2);
+  },
+};
+
+// Use in your endpoints
+router.get('/api/resource/:id', async (req, res) => {
+  const cacheKey = \`resource:\${req.params.id}\`;
+  const cached = await cache.get(cacheKey);
+
+  cacheMetrics.record(!!cached);
+  // ... rest of logic
+});
+</code></pre></div>
+
+<h3>2. Memory Usage</h3>
+<p>Redis stores everything in RAM. Monitor memory consumption with:</p>
+
+<div class="code-block" data-lang="bash"><pre><code>redis-cli INFO memory
+</code></pre></div>
+
+<p>If memory grows unbounded, your TTLs are too long or you're caching too much.</p>
+
+<h3>3. Average Response Time</h3>
+<p>Track latency before and after caching. A 10x improvement is common; if you're only seeing 2x, the bottleneck is elsewhere (network, compute, concurrency).</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Common Mistake</p><p>Don't cache everything. Cache keys that are accessed repeatedly. Caching rarely-accessed data wastes memory and adds complexity. Profile first, cache strategically.</p></div>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>REST API caching is essential at scale.</strong> Multi-layer caching (HTTP headers + Redis + CDN) can deliver 10x performance improvements with minimal code changes.</li>
+<li><strong>Redis is the industry standard for application-level caching.</strong> Both Node.js and Laravel have mature integrations; Node.js requires more setup, Laravel abstracts it beautifully.</li>
+<li><strong>Cache invalidation is harder than caching itself.</strong> Use event-based invalidation on writes + reasonable TTLs to keep data fresh without constant invalidation logic.</li>
+<li><strong>Monitor cache hit rates obsessively.</strong> A 60% hit rate is worse than no caching—it's adding latency and complexity. Aim for 80%+.</li>
+<li><strong>Start simple, measure, then optimize.</strong> Don't pre-mature-optimize with complex caching architectures. Cache the top 20% of endpoints first, see where it matters most.</li>
+</ul>
+`,
+  },
+
+  {
     slug: "technical-debt-senior-software-engineer",
     featured: false,
     icon: "⚖️",
