@@ -139,6 +139,254 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "android-dependency-injection-hilt-koin-production-1791218810420",
+    featured: false,
+    icon: "🔧",
+    cat: "android", catLabel: "Android",
+    date: "Oct 5, 2026", readTime: "6 min read",
+    title: "Mastering Dependency Injection in Android: Hilt vs Koin",
+    excerpt: "Learn why dependency injection transforms Android architecture. Compare Hilt and Koin through real production code—choose the right tool for your project.",
+    tags: ["Dependency Injection","Hilt","Koin","Android Architecture","Clean Code"],
+    tocItems: [
+      {"id":"why-di-matters","label":"Why Dependency Injection Matters in Android"},
+      {"id":"hilt-production","label":"Hilt in Production: Compile-Time Safety"},
+      {"id":"koin-flexibility","label":"Koin in Production: Runtime Flexibility"},
+      {"id":"hilt-vs-koin","label":"Hilt vs Koin: Head-to-Head Comparison"},
+      {"id":"choosing-framework","label":"How to Choose the Right DI Framework"},
+      {"id":"key-takeaways","label":"Key Takeaways"}
+    ],
+    content: `<p>When I started my career, I was manually instantiating dependencies scattered across Activities and Fragments. It worked, but scaling became a nightmare. Every screen change meant touching 10 files. Testing was impossible without extensive mocking boilerplate. That's when I discovered <strong>dependency injection</strong>—and it fundamentally changed how I structure Android apps.</p>
+
+<p>Over 8 years and 6+ production apps on the Play Store, I've used almost every Android dependency injection approach. Today, it's largely a choice between <strong>Hilt</strong> and <strong>Koin</strong>. Both are powerful. Both solve the same core problem. But they take very different philosophical approaches, and choosing wrong can cost you weeks of refactoring.</p>
+
+<p>In this post, I'll walk through real production patterns I've used at CodeBrew Labs and Raybit Technologies—and show you exactly how to decide which one fits your Android architecture.</p>
+
+<h2 id="why-di-matters">Why Dependency Injection Matters in Android</h2>
+
+<p>Let me start with a painful example from early in my career:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// BAD: Hard-coded dependencies
+class UserRepository {
+    private val database = FirebaseFirestore.getInstance()
+    private val apiService = RetrofitClient.getInstance().create(UserApi::class.java)
+    
+    fun getUser(id: String) = /* fetch logic */
+}
+
+class UserViewModel : ViewModel() {
+    private val repo = UserRepository() // Can't swap for test mock
+}
+</code></pre></div>
+
+<p>The problems stack quickly:</p>
+
+<ul>
+<li><strong>Testing is impossible</strong> — you can't inject a fake repository during unit tests.</li>
+<li><strong>Coupling is tight</strong> — changes to UserRepository force changes everywhere it's used.</li>
+<li><strong>Scaling breaks</strong> — after 50 screens, you're managing the same instances in 50 places.</li>
+<li><strong>Configuration becomes fragile</strong> — different build flavors (dev/prod) require duplicate setup code.</li>
+</ul>
+
+<p>Dependency injection solves this by <em>inverting control</em>: instead of your code creating dependencies, a framework provides them. Your class asks for what it needs, and doesn't care how it's made.</p>
+
+<blockquote><p>"Dependency injection isn't about writing less code. It's about writing code that grows without collapsing under its own weight."</p></blockquote>
+
+<h2 id="hilt-production">Hilt in Production: Compile-Time Safety</h2>
+
+<p><strong>Hilt</strong> is Google's official DI framework for Android. It's built on Dagger 2 and designed to eliminate boilerplate while maintaining compile-time safety.</p>
+
+<p>I used Hilt extensively at CodeBrew Labs for our Play Store apps. Here's what a clean Hilt setup looks like:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// Step 1: Define your DI modules
+@Module
+@InstallIn(SingletonComponent::class)
+object DataModule {
+    @Singleton
+    @Provides
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+    
+    @Singleton
+    @Provides
+    fun provideUserApi(): UserApi = RetrofitClient.create()
+}
+
+@Module
+@InstallIn(ViewModelComponent::class)
+object RepositoryModule {
+    @Provides
+    fun provideUserRepository(
+        firestore: FirebaseFirestore,
+        api: UserApi
+    ): UserRepository = UserRepository(firestore, api)
+}
+
+// Step 2: Annotate your app class
+@HiltAndroidApp
+class MyApp : Application()
+
+// Step 3: Use @Inject in ViewModels
+class UserViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
+    fun loadUser(id: String) = userRepository.getUser(id)
+}
+
+// Step 4: Inject into Activities/Fragments
+@AndroidEntryPoint
+class UserActivity : AppCompatActivity() {
+    private val viewModel: UserViewModel by viewModels()
+}
+</code></pre></div>
+
+<p><strong>Why I prefer Hilt for large teams:</strong></p>
+
+<ul>
+<li><strong>Compile-time verification</strong> — if a dependency is missing, your build fails immediately. No runtime surprises in production.</li>
+<li><strong>Built-in Android scopes</strong> — Hilt understands Activity, Fragment, and ViewModel lifecycles out of the box.</li>
+<li><strong>Official support</strong> — Google maintains it. Most new Android libraries (Compose, WorkManager) integrate seamlessly.</li>
+<li><strong>Smaller binary size</strong> — everything is generated at compile time; no reflection overhead.</li>
+<li><strong>Team standardization</strong> — when your team has 4 engineers, enforcing one pattern prevents chaos.</li>
+</ul>
+
+<p>The trade-off? Hilt has a steeper learning curve, and setup boilerplate is higher upfront.</p>
+
+<h2 id="koin-flexibility">Koin in Production: Runtime Flexibility</h2>
+
+<p><strong>Koin</strong> is a lightweight, Kotlin-first DI library that uses runtime service location instead of compile-time generation. I've used it for smaller projects and freelance work where rapid iteration matters more than strict type safety.</p>
+
+<p>Here's the equivalent Koin setup:</p>
+
+<div class="code-block" data-lang="Kotlin"><pre><code>// Step 1: Define your modules (DSL-based, very readable)
+val dataModule = module {
+    single { FirebaseFirestore.getInstance() }
+    single { RetrofitClient.create() as UserApi }
+}
+
+val repositoryModule = module {
+    single { UserRepository(get(), get()) }
+}
+
+// Step 2: Start Koin in your Application class
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@MyApp)
+            modules(dataModule, repositoryModule)
+        }
+    }
+}
+
+// Step 3: Inject using by inject() delegate (no boilerplate annotations)
+class UserViewModel : ViewModel() {
+    private val userRepository: UserRepository by inject()
+    
+    fun loadUser(id: String) = userRepository.getUser(id)
+}
+
+// Step 4: Activities/Fragments just work (no @AndroidEntryPoint needed)
+class UserActivity : AppCompatActivity() {
+    private val viewModel: UserViewModel by viewModels()
+}
+</code></pre></div>
+
+<p><strong>Why I chose Koin for rapid prototyping:</strong></p>
+
+<ul>
+<li><strong>Zero boilerplate</strong> — no annotations, no generated code, no build times increase.</li>
+<li><strong>Runtime flexibility</strong> — swap implementations on the fly (helpful for feature flags, A/B testing).</li>
+<li><strong>Kotlin-first DSL</strong> — module definitions read like plain Kotlin, easier to learn.</li>
+<li><strong>Faster iteration</strong> — no compilation step means quick experiments during development.</li>
+<li><strong>Lighter for small teams</strong> — 1-2 person projects don't need Hilt's overhead.</li>
+</ul>
+
+<p>The trade-off? Runtime errors aren't caught at compile time. If you wire up a missing dependency, you'll discover it when a user taps that button.</p>
+
+<div class="callout-warn"><p class="callout-label">⚠️ Important</p><p>Koin's runtime nature means you must have robust error handling and QA testing. A misconfigured module won't fail your build—it'll fail in production.</p></div>
+
+<h2 id="hilt-vs-koin">Hilt vs Koin: Head-to-Head Comparison</h2>
+
+<table style="width:100%; border-collapse:collapse; margin:20px 0;">
+<tr style="background:#f5f5f5; border-bottom:2px solid #ddd;">
+<th style="text-align:left; padding:12px; border:1px solid #ddd;"><strong>Aspect</strong></th>
+<th style="text-align:left; padding:12px; border:1px solid #ddd;"><strong>Hilt</strong></th>
+<th style="text-align:left; padding:12px; border:1px solid #ddd;"><strong>Koin</strong></th>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:12px; border:1px solid #ddd;">Verification</td>
+<td style="padding:12px; border:1px solid #ddd;">Compile-time (safe)</td>
+<td style="padding:12px; border:1px solid #ddd;">Runtime (flexible)</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:12px; border:1px solid #ddd;">Setup Complexity</td>
+<td style="padding:12px; border:1px solid #ddd;">Higher (annotations)</td>
+<td style="padding:12px; border:1px solid #ddd;">Lower (DSL)</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:12px; border:1px solid #ddd;">Build Impact</td>
+<td style="padding:12px; border:1px solid #ddd;">+200–500ms (code gen)</td>
+<td style="padding:12px; border:1px solid #ddd;">Negligible</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:12px; border:1px solid #ddd;">Lifecycle Awareness</td>
+<td style="padding:12px; border:1px solid #ddd;">Built-in scopes</td>
+<td style="padding:12px; border:1px solid #ddd;">Manual (viewModelScope)</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:12px; border:1px solid #ddd;">Learning Curve</td>
+<td style="padding:12px; border:1px solid #ddd;">Steep</td>
+<td style="padding:12px; border:1px solid #ddd;">Shallow</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:12px; border:1px solid #ddd;">Android Integration</td>
+<td style="padding:12px; border:1px solid #ddd;">Official, first-class</td>
+<td style="padding:12px; border:1px solid #ddd;">Community-driven</td>
+</tr>
+<tr style="border-bottom:1px solid #ddd;">
+<td style="padding:12px; border:1px solid #ddd;">Best For</td>
+<td style="padding:12px; border:1px solid #ddd;">Large teams, production apps</td>
+<td style="padding:12px; border:1px solid #ddd;">Startups, freelancers, MVPs</td>
+</tr>
+</table>
+
+<h2 id="choosing-framework">How to Choose the Right DI Framework</h2>
+
+<h3>Choose Hilt if:</h3>
+
+<ul>
+<li>You're building a production app with 3+ engineers on the team.</li>
+<li>You need strict compile-time safety and can't afford runtime surprises.</li>
+<li>You're already using Jetpack components (Compose, WorkManager, Navigation).</li>
+<li>Your app will scale to 50+ screens over 18+ months.</li>
+<li>You're open to build time increasing by 3–5 seconds.</li>
+</ul>
+
+<h3>Choose Koin if:</h3>
+
+<ul>
+<li>You're a solo developer or small 2-person team.</li>
+<li>You need rapid iteration (MVP, prototyping, freelance work).</li>
+<li>Build speed is critical (you're iterating 20+ times per day).</li>
+<li>You want minimal setup overhead and maximum Kotlin idiom usage.</li>
+<li>You have strong QA/testing discipline to catch wiring errors.</li>
+</ul>
+
+<div class="callout-info"><p class="callout-label">📖 My Personal Take</p><p>At Raybit, I lead a 4-engineer squad. We use <strong>Hilt</strong> because compile-time safety prevents the "who broke the build" meetings. At Upwork, for client MVPs? <strong>Koin</strong> every time. I can ship features 3 days faster without the annotation overhead.</p></div>
+
+<p>One more consideration: <strong>mixing both is possible but not recommended</strong>. If you start with Koin and later need Hilt's safety, migration is painful. Start with Hilt if you think you'll ever need it. Start with Koin if you're confident you won't.</p>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+<li><strong>Dependency injection eliminates tight coupling</strong> — your code becomes testable, maintainable, and scales without refactoring every time a dependency changes.</li>
+<li><strong>Hilt = compile-time safety + team standardization</strong> — ideal for production Android apps with teams. Accept the build time cost for production confidence.</li>
+<li><strong>Koin = flexibility + speed</strong> — perfect for startups, freelancers, and MVPs where iteration velocity beats strict type safety.</li>
+<li><strong>Choose early, migrate late</strong> — switching DI frameworks mid-project is expensive. Make the call based on team size and timeline, not on technical preference alone.</li>
+<li><strong>MVVM architecture + proper DI = code that survives growth</strong> — I've maintained codebases that started at 10K LOC and scaled to 500K+. This pattern is why.</li>
+</ul>`,
+  },
+
+  {
     slug: "rest-api-caching-strategies-node-laravel",
     featured: false,
     icon: "⚡",
