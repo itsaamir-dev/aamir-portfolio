@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
-import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import Cursor from "@/components/Cursor";
 import Navbar from "@/components/Navbar";
+import StickyMobileCTA from "@/components/StickyMobileCTA";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -10,11 +10,11 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   display: "swap",
 });
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
-  display: "swap",
-});
+
+export const viewport: Viewport = {
+  themeColor:  "#0B0D10",
+  viewportFit: "cover", // enables env(safe-area-inset-*) for the sticky CTA
+};
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://buildwithaamir.com";
 
@@ -78,17 +78,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrains.variable}`}>
+    <html lang="en" className={spaceGrotesk.variable}>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
         />
       </head>
-      <body>
-        <Cursor />
+      <body className="font-sans">
         <Navbar />
         {children}
+        {/* Keeps the sticky mobile CTA from covering the end of the page */}
+        <div aria-hidden="true" className="h-[calc(76px+env(safe-area-inset-bottom))] bg-bg md:hidden" />
+        <StickyMobileCTA />
       </body>
     </html>
   );

@@ -51,7 +51,7 @@ ${blogList}
 
 ## Contact
 
-For project inquiries, collaborations, or freelance engagements, visit ${SITE_URL}#contact.
+For project inquiries, collaborations, or freelance engagements, email aamirbashir.ahangar@gmail.com or join the free community at ${SITE_URL}#community.
 `;
 
   return new Response(body, {

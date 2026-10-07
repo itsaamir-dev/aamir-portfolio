@@ -2,124 +2,135 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
+import { WHATSAPP_URL } from "@/lib/site";
 
 const links = [
-  { href: "/#about",      label: "About" },
-  { href: "/#skills",     label: "Skills" },
-  { href: "/#experience", label: "Experience" },
-  { href: "/#projects",   label: "Projects" },
-  { href: "/#freelance",  label: "Freelance" },
-  { href: "/blog",        label: "Blog" },
-  { href: "/#contact",    label: "Contact" },
+  { href: "/",           label: "Home" },
+  { href: "/#story",     label: "My Story" },
+  { href: "/#learn",     label: "Learn" },
+  { href: "/#community", label: "Community" },
+  { href: "/#challenge", label: "30-Day Challenge" },
+  { href: "/blog",       label: "Blog" },
 ];
 
+function isActive(href: string, pathname: string) {
+  if (href === "/") return pathname === "/";
+  if (href === "/blog") return pathname.startsWith("/blog");
+  return false;
+}
+
+function Logo({ onClick }: { onClick?: () => void }) {
+  return (
+    <Link href="/" onClick={onClick} className="text-xl font-bold tracking-tight text-ink">
+      AB<span className="text-accent">.</span>
+    </Link>
+  );
+}
+
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", handler);
-    return () => window.removeEventListener("scroll", handler);
-  }, []);
-
-  // Lock body scroll when drawer is open
+  // Lock body scroll and allow Escape to close while the drawer is open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    if (open) window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   return (
     <>
-      <nav
-        className={`fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-6 md:px-16 py-5 transition-all duration-300 ${
-          scrolled ? "bg-[rgba(13,27,42,0.97)] backdrop-blur-xl border-b border-[rgba(201,168,76,0.12)]"
-                   : "bg-gradient-to-b from-[rgba(13,27,42,0.98)] to-transparent"
-        }`}
-      >
-        <Link href="/" className="font-display text-xl font-bold text-gold">AB.</Link>
+      <header className="fixed inset-x-0 top-0 z-[100] border-b border-line bg-[rgba(11,13,16,0.92)] backdrop-blur-md">
+        <nav aria-label="Main" className="container-x flex h-16 items-center justify-between gap-6">
+          <Logo />
 
-        {/* Desktop links */}
-        <ul className="hidden md:flex gap-9 list-none">
-          {links.map(({ href, label }) => {
-            const active = pathname === href || (href === "/blog" && pathname.startsWith("/blog"));
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className={`font-mono text-[0.7rem] tracking-[0.12em] uppercase relative transition-colors duration-200
-                    after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-px after:bg-gold
-                    after:transition-transform after:duration-300 after:origin-left
-                    ${active ? "text-gold after:scale-x-100" : "text-light-blue hover:text-gold after:scale-x-0 hover:after:scale-x-100"}`}
-                >
-                  {label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+          <ul className="hidden items-center gap-7 lg:flex">
+            {links.map(({ href, label }) => {
+              const active = isActive(href, pathname);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={`relative py-1 text-[0.95rem] font-medium transition-colors duration-200
+                      after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:rounded-full after:bg-accent
+                      after:transition-transform after:duration-300
+                      ${active ? "text-ink after:scale-x-100" : "text-muted after:scale-x-0 hover:text-ink hover:after:scale-x-100"}`}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
 
-        {/* Hamburger — mobile only */}
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          className="md:hidden flex flex-col justify-center gap-[5px] w-8 h-8"
-        >
-          <span className="block w-6 h-px bg-gold" />
-          <span className="block w-4 h-px bg-gold" />
-          <span className="block w-6 h-px bg-gold" />
-        </button>
-      </nav>
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-wa hidden !min-h-[44px] !rounded-[10px] !px-4 !py-0 !text-sm lg:inline-flex"
+          >
+            <Icon name="chat" size={16} />
+            Join Free Community
+          </a>
+
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-lg text-ink lg:hidden"
+          >
+            <Icon name="menu" size={22} />
+          </button>
+        </nav>
+      </header>
 
       {/* Backdrop */}
       <div
         onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        className={`fixed inset-0 z-[110] bg-black/60 transition-opacity duration-300 lg:hidden ${
+          open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
 
       {/* Drawer */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-[120] w-72 bg-[#0D1B2A] border-r border-[rgba(201,168,76,0.15)]
-                    flex flex-col transition-transform duration-300 ease-in-out md:hidden ${
-          open ? "translate-x-0" : "-translate-x-full"
+        id="mobile-menu"
+        aria-label="Menu"
+        className={`fixed inset-y-0 right-0 z-[120] flex w-[min(20rem,85vw)] flex-col border-l border-line bg-bg
+                    transition-[transform,visibility] duration-300 ease-out lg:hidden ${
+          open ? "visible translate-x-0" : "invisible translate-x-full"
         }`}
       >
-        {/* Drawer header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[rgba(201,168,76,0.1)]">
-          <Link href="/" onClick={() => setOpen(false)} className="font-display text-xl font-bold text-gold">AB.</Link>
+        <div className="flex h-16 items-center justify-between border-b border-line px-5">
+          <Logo onClick={() => setOpen(false)} />
           <button
             onClick={() => setOpen(false)}
             aria-label="Close menu"
-            className="w-8 h-8 flex items-center justify-center text-light-blue hover:text-gold transition-colors"
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:text-ink"
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <line x1="1" y1="1" x2="17" y2="17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="17" y1="1" x2="1" y2="17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
+            <Icon name="x" size={22} />
           </button>
         </div>
 
-        {/* Nav links */}
-        <ul className="flex flex-col gap-1 px-4 py-6 flex-1 list-none">
-          {links.map(({ href, label }, i) => {
-            const active = pathname === href || (href === "/blog" && pathname.startsWith("/blog"));
+        <ul className="flex flex-1 flex-col gap-1 px-3 py-4">
+          {links.map(({ href, label }) => {
+            const active = isActive(href, pathname);
             return (
               <li key={href}>
                 <Link
                   href={href}
                   onClick={() => setOpen(false)}
-                  style={{ transitionDelay: open ? `${i * 40}ms` : "0ms" }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded font-mono text-[0.72rem] tracking-[0.14em] uppercase
-                              transition-all duration-200
-                              ${active
-                                ? "text-gold bg-[rgba(201,168,76,0.08)]"
-                                : "text-light-blue hover:text-gold hover:bg-[rgba(201,168,76,0.05)]"
-                              }`}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex min-h-[48px] items-center rounded-lg px-4 text-base font-medium transition-colors
+                    ${active ? "bg-surface text-ink" : "text-muted hover:bg-surface hover:text-ink"}`}
                 >
-                  {active && <span className="block w-1 h-1 rounded-full bg-gold flex-shrink-0" />}
                   {label}
                 </Link>
               </li>
@@ -127,9 +138,16 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Drawer footer accent */}
-        <div className="px-6 py-5 border-t border-[rgba(201,168,76,0.1)]">
-          <span className="font-mono text-[0.6rem] tracking-[0.14em] uppercase text-mid-gray">Senior Software Engineer</span>
+        <div className="border-t border-line p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-wa w-full"
+          >
+            <Icon name="chat" size={18} />
+            Join Free Community
+          </a>
         </div>
       </aside>
     </>

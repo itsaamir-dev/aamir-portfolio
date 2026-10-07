@@ -9,35 +9,42 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        navy:  "#0D1B2A",
-        navy2: "#1B2D42",
-        gold:  "#C9A84C",
-        gold2: "#E8C97A",
-        cream: "#F5EFE0",
-        "off-white": "#FAFAF8",
-        "mid-gray": "#8A9BB0",
-        "light-blue": "#D4E1F0",
-        accent: "#2A6496",
+        // Dark UI
+        bg:      "#0B0D10",
+        surface: "#12161C",
+        ink:     "#F5F7FA",
+        muted:   "#A7AFBA",
+        line:    "#252A33",
+        // Brand accent — use sparingly
+        accent: {
+          DEFAULT: "#7C5CFF",
+          light:   "#A78BFA",
+          dark:    "#5B3FE0", // accent text on light sections (AA contrast)
+        },
+        // WhatsApp action only
+        wa: {
+          DEFAULT: "#25D366",
+          ink:     "#07120A",
+        },
+        // Light sections
+        paper:        "#F7F8FA",
+        "ink-dark":   "#111827",
+        "muted-dark": "#4B5563",
+        "line-light": "#E5E7EB",
       },
       fontFamily: {
-        display: ["var(--font-space-grotesk)", "sans-serif"],
-        body:    ["var(--font-space-grotesk)", "sans-serif"],
-        mono:    ["var(--font-jetbrains)", "monospace"],
+        sans: ["var(--font-space-grotesk)", "system-ui", "sans-serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+      maxWidth: {
+        content: "1200px",
+        prose:   "760px",
       },
       keyframes: {
-        fadeUp:   { "0%": { opacity: "0", transform: "translateY(24px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },
-        fadeIn:   { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
-        scrollPulse: { "0%,100%": { opacity: "0.4", transform: "scaleY(1)" }, "50%": { opacity: "1", transform: "scaleY(1.15)" } },
+        fadeUp: { "0%": { opacity: "0", transform: "translateY(16px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },
       },
       animation: {
-        "fade-up":      "fadeUp 0.8s ease forwards",
-        "fade-up-d1":   "fadeUp 0.8s 0.2s ease forwards",
-        "fade-up-d2":   "fadeUp 0.8s 0.35s ease forwards",
-        "fade-up-d3":   "fadeUp 0.8s 0.5s ease forwards",
-        "fade-up-d4":   "fadeUp 0.8s 0.65s ease forwards",
-        "fade-up-d5":   "fadeUp 0.8s 0.8s ease forwards",
-        "fade-in":      "fadeIn 1s 1.2s ease forwards",
-        "scroll-pulse": "scrollPulse 2s ease-in-out infinite",
+        "fade-up": "fadeUp 0.5s ease-out both",
       },
     },
   },

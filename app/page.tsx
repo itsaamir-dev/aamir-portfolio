@@ -1,22 +1,26 @@
-import Hero       from "@/components/sections/Hero";
-import About      from "@/components/sections/About";
-import Skills     from "@/components/sections/Skills";
-import Experience from "@/components/sections/Experience";
-import Projects   from "@/components/sections/Projects";
-import Freelance  from "@/components/sections/Freelance";
-import Contact    from "@/components/sections/Contact";
-import Footer     from "@/components/Footer";
+import Hero          from "@/components/sections/Hero";
+import Proof         from "@/components/sections/Proof";
+import Story         from "@/components/sections/Story";
+import Learn         from "@/components/sections/Learn";
+import Community     from "@/components/sections/Community";
+import Challenge     from "@/components/sections/Challenge";
+import WhoShouldJoin from "@/components/sections/WhoShouldJoin";
+import FAQ           from "@/components/sections/FAQ";
+import FinalCTA      from "@/components/sections/FinalCTA";
+import Footer        from "@/components/Footer";
 
 export default function Home() {
   return (
     <main>
       <Hero />
-      <About />
-      <Skills />
-      <Experience />
-      <Projects />
-      <Freelance />
-      <Contact />
+      <Proof />
+      <Story />
+      <Learn />
+      <Community />
+      <Challenge />
+      <WhoShouldJoin />
+      <FAQ />
+      <FinalCTA />
       <Footer />
     </main>
   );

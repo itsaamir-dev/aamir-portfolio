@@ -24,22 +24,21 @@ export default function BlogFilters({ posts }: { posts: BlogPost[] }) {
 
   return (
     <>
-      <Reveal>
-        <div className="flex flex-wrap gap-2 mb-10">
-          {filters.map(f => (
-            <button
-              key={f.value}
-              onClick={() => setActive(f.value)}
-              className={`px-5 py-2 font-mono text-[0.62rem] tracking-[0.1em] uppercase border transition-all duration-200
-                ${active === f.value
-                  ? "bg-[rgba(201,168,76,0.12)] text-gold border-gold"
-                  : "bg-transparent text-mid-gray border-[rgba(201,168,76,0.18)] hover:text-gold2 hover:border-[rgba(201,168,76,0.4)]"
-                }`}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </Reveal>
+      <div role="group" aria-label="Filter posts by category" className="mb-10 flex flex-wrap gap-2">
+        {filters.map(f => (
+          <button
+            key={f.value}
+            onClick={() => setActive(f.value)}
+            aria-pressed={active === f.value}
+            className={`min-h-[44px] rounded-[10px] border px-4 text-[0.95rem] font-medium transition-colors duration-200
+              ${active === f.value
+                ? "border-accent bg-[rgba(124,92,255,0.12)] text-ink"
+                : "border-line text-muted hover:border-[#3A414D] hover:text-ink"
+              }`}>
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       {visibleFeatured && (
         <Reveal>
@@ -48,19 +47,15 @@ export default function BlogFilters({ posts }: { posts: BlogPost[] }) {
       )}
 
       {visibleRest.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
-          {visibleRest.map((post, i) => (
-            <Reveal key={post.slug} delay={(i % 3) * 100}>
-              <BlogCardItem post={post} delay={i} />
-            </Reveal>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {visibleRest.map(post => (
+            <BlogCardItem key={post.slug} post={post} />
           ))}
         </div>
       )}
 
       {!visibleFeatured && visibleRest.length === 0 && (
-        <div className="text-center py-20 text-mid-gray font-mono text-[0.8rem] tracking-widest uppercase">
-          No posts in this category yet.
-        </div>
+        <p className="py-20 text-center text-muted">No posts in this category yet.</p>
       )}
     </>
   );
