@@ -3,14 +3,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import { BlogPost } from "@/lib/data";
+import type { BlogPost } from "@/lib/data";
+import type { BlogSummary } from "@/lib/posts";
 import { PROMISE } from "@/lib/site";
 
 const chip = "inline-flex min-h-[40px] items-center rounded-[10px] border border-line px-4 text-sm font-medium text-muted transition-colors duration-200 hover:border-[#3A414D] hover:text-ink";
 
 export default function BlogPostClient({
   post, prev, next, related,
-}: { post: BlogPost; prev: BlogPost | null; next: BlogPost | null; related: BlogPost[] }) {
+}: { post: BlogPost; prev: BlogSummary | null; next: BlogSummary | null; related: BlogSummary[] }) {
 
   const [progress, setProgress]   = useState(0);
   const [activeToc, setActiveToc] = useState(post.tocItems[0]?.id ?? "");

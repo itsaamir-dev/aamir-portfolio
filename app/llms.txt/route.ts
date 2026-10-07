@@ -1,17 +1,16 @@
-import { blogPosts } from "@/lib/data";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://buildwithaamir.com";
+import { getAllPosts } from "@/lib/posts";
+import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-static";
 
 export function GET() {
-  const blogList = blogPosts
+  const blogList = getAllPosts()
     .map(p => `- [${p.title}](${SITE_URL}/blog/${p.slug}): ${p.excerpt}`)
     .join("\n");
 
-  const body = `# Aamir Bashir — Senior Software Engineer
+  const body = `# Build With Aamir — Aamir Bashir
 
-> Personal portfolio and technical blog of Aamir Bashir, a Senior Software Engineer with 8+ years of experience building Android and full-stack applications.
+> Personal brand and free freelancing community of Aamir Bashir, a software engineer with 8+ years of experience who earned $70K+ on Upwork. He teaches freelancing, finding international clients and earning in USD, and writes about Android and full-stack engineering.
 
 ## About
 
@@ -19,7 +18,9 @@ Aamir Bashir is a Top Rated Plus freelancer on Upwork with $70K+ earned, based i
 
 - Website: ${SITE_URL}
 - Blog: ${SITE_URL}/blog
+- Community: ${SITE_URL}/#community (free WhatsApp community)
 - Sitemap: ${SITE_URL}/sitemap.xml
+- RSS: ${SITE_URL}/feed.xml
 
 ## Expertise
 

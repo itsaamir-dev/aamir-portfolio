@@ -6,7 +6,9 @@ const pageLinks = [
   { href: "/#story",      label: "My Story" },
   { href: "/#community",  label: "Community" },
   { href: "/blog",        label: "Blog" },
-  { href: "/sitemap.xml", label: "Sitemap" },
+  { href: "/sitemap",     label: "Sitemap" },
+  { href: "/sitemap.xml", label: "XML Sitemap" },
+  { href: "/feed.xml",    label: "RSS Feed" },
 ];
 
 const contactLinks = [

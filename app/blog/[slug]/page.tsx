@@ -1,98 +1,87 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { blogPosts } from "@/lib/data";
+import { getAllPosts, getPost, toSummary, isoDate } from "@/lib/posts";
+import { SITE_URL, AUTHOR, ogDefaults, personSchema, jsonLd } from "@/lib/seo";
 import BlogPostClient from "./BlogPostClient";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://buildwithaamir.com";
+// Every post is prerendered; unknown slugs 404 instead of rendering on demand.
+export const dynamicParams = false;
 
-export async function generateStaticParams() {
-  return blogPosts.map(p => ({ slug: p.slug }));
+export function generateStaticParams() {
+  return getAllPosts().map(p => ({ slug: p.slug }));
 }
 
-export async function generateMetadata(
-  { params }: { params: { slug: string } }
-): Promise<Metadata> {
-  const post = blogPosts.find(p => p.slug === params.slug);
+export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
+  const post = getPost(params.slug);
   if (!post) return {};
 
-  const postUrl   = `${SITE_URL}/blog/${post.slug}`;
-  const ogImage   = `${SITE_URL}/og-blog.png`;
-  const metaTitle = `${post.title} | Aamir Bashir`;
-  const isoDate   = new Date(post.date).toISOString().split("T")[0];
+  const path      = `/blog/${post.slug}`;
+  const published = isoDate(post);
 
   return {
-    title:       metaTitle,
+    title:       post.title,
     description: post.excerpt,
     keywords:    post.tags,
-    authors:     [{ name: "Aamir Bashir", url: SITE_URL }],
-    alternates:  { canonical: postUrl },
+    authors:     [{ name: AUTHOR, url: SITE_URL }],
+    alternates:  { canonical: path },
 
     openGraph: {
+      ...ogDefaults,
       type:          "article",
-      url:           postUrl,
+      url:           path,
       title:         post.title,
       description:   post.excerpt,
-      siteName:      "Aamir Bashir — Software Engineer",
-      publishedTime: isoDate,
-      authors:       ["Aamir Bashir"],
+      publishedTime: published,
+      modifiedTime:  published,
+      authors:       [AUTHOR],
+      section:       post.catLabel,
       tags:          post.tags,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
     },
 
     twitter: {
       card:        "summary_large_image",
       title:       post.title,
       description: post.excerpt,
-      images:      [ogImage],
-    },
-
-    robots: {
-      index: true, follow: true,
-      googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" },
     },
   };
 }
 
+function wordCount(html: string) {
+  return html.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+}
+
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post     = blogPosts.find(p => p.slug === params.slug);
+  const post = getPost(params.slug);
   if (!post) notFound();
 
-  const allPosts = blogPosts;
-  const idx      = allPosts.indexOf(post);
-  const prev     = allPosts[idx + 1] ?? null;
-  const next     = allPosts[idx - 1] ?? null;
-  const related  = allPosts.filter(p => p.slug !== post.slug && p.cat === post.cat).slice(0, 3);
+  const all     = getAllPosts();
+  const idx     = all.findIndex(p => p.slug === post.slug);
+  const prev    = all[idx + 1] ?? null;   // older
+  const next    = all[idx - 1] ?? null;   // newer
+  const related = all.filter(p => p.slug !== post.slug && p.cat === post.cat).slice(0, 3);
 
-  const postUrl = `${SITE_URL}/blog/${post.slug}`;
-  const isoDate = new Date(post.date).toISOString().split("T")[0];
-  const jsonLd = {
+  const postUrl   = `${SITE_URL}/blog/${post.slug}`;
+  const published = isoDate(post);
+
+  const schema = {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "BlogPosting",
-        "@id":           `${postUrl}#article`,
-        headline:        post.title,
-        description:     post.excerpt,
-        keywords:        post.tags.join(", "),
-        url:             postUrl,
-        image:           `${SITE_URL}/og-blog.png`,
-        datePublished:   isoDate,
-        dateModified:    isoDate,
-        inLanguage:      "en-US",
-        author: {
-          "@type": "Person",
-          name:   "Aamir Bashir",
-          url:    SITE_URL,
-          sameAs: [
-            "https://www.linkedin.com/in/aamirbashir",
-            "https://www.upwork.com/freelancers/aamirbashir",
-          ],
-        },
-        publisher: {
-          "@type": "Person",
-          name:    "Aamir Bashir",
-          url:     SITE_URL,
-        },
+        "@type":          "BlogPosting",
+        "@id":            `${postUrl}#article`,
+        headline:         post.title,
+        description:      post.excerpt,
+        keywords:         post.tags.join(", "),
+        articleSection:   post.catLabel,
+        wordCount:        wordCount(post.content),
+        url:              postUrl,
+        image:            `${postUrl}/opengraph-image`,
+        datePublished:    published,
+        dateModified:     published,
+        inLanguage:       "en-US",
+        author:           personSchema,
+        publisher:        { "@id": `${SITE_URL}/#person` },
+        isPartOf:         { "@id": `${SITE_URL}/blog#blog` },
         mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
       },
       {
@@ -109,11 +98,13 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
+      <BlogPostClient
+        post={post}
+        prev={prev && toSummary(prev)}
+        next={next && toSummary(next)}
+        related={related.map(toSummary)}
       />
-      <BlogPostClient post={post} prev={prev} next={next} related={related} />
     </>
   );
 }

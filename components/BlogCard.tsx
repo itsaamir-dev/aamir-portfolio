@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { blogPosts } from "@/lib/data";
-
-type Post = (typeof blogPosts)[number];
+import type { BlogSummary as Post } from "@/lib/posts";
 
 function Meta({ post }: { post: Post }) {
   return (

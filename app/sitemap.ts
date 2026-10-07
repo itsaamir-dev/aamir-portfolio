@@ -1,30 +1,20 @@
 import type { MetadataRoute } from "next";
-import { blogPosts } from "@/lib/data";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://buildwithaamir.com";
+import { getAllPosts, postTime } from "@/lib/posts";
+import { SITE_URL } from "@/lib/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticPages: MetadataRoute.Sitemap = [
-    {
-      url:             SITE_URL,
-      lastModified:    new Date(),
-      changeFrequency: "monthly",
-      priority:        1.0,
-    },
-    {
-      url:             `${SITE_URL}/blog`,
-      lastModified:    new Date(),
-      changeFrequency: "weekly",
-      priority:        0.9,
-    },
+  const posts  = getAllPosts();
+  const latest = posts.length ? new Date(postTime(posts[0])) : new Date();
+
+  return [
+    { url: SITE_URL,               lastModified: latest, changeFrequency: "weekly",  priority: 1.0 },
+    { url: `${SITE_URL}/blog`,     lastModified: latest, changeFrequency: "daily",   priority: 0.9 },
+    { url: `${SITE_URL}/sitemap`,  lastModified: latest, changeFrequency: "weekly",  priority: 0.3 },
+    ...posts.map(post => ({
+      url:             `${SITE_URL}/blog/${post.slug}`,
+      lastModified:    new Date(postTime(post) || Date.now()),
+      changeFrequency: "monthly" as const,
+      priority:        post.featured ? 0.8 : 0.7,
+    })),
   ];
-
-  const blogPages: MetadataRoute.Sitemap = blogPosts.map(post => ({
-    url:             `${SITE_URL}/blog/${post.slug}`,
-    lastModified:    new Date(post.date),
-    changeFrequency: "monthly" as const,
-    priority:        post.featured ? 0.9 : 0.7,
-  }));
-
-  return [...staticPages, ...blogPages];
 }

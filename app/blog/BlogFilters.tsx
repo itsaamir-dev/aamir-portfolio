@@ -2,7 +2,8 @@
 import { useState } from "react";
 import Reveal from "@/components/RevealOnScroll";
 import { FeaturedCard, BlogCardItem } from "@/components/BlogCard";
-import { BlogPost, BlogCat } from "@/lib/data";
+import type { BlogCat } from "@/lib/data";
+import type { BlogSummary } from "@/lib/posts";
 
 const filters: { label: string; value: BlogCat }[] = [
   { label: "All Posts",   value: "all" },
@@ -13,11 +14,11 @@ const filters: { label: string; value: BlogCat }[] = [
   { label: "Career",      value: "career" },
 ];
 
-export default function BlogFilters({ posts }: { posts: BlogPost[] }) {
+export default function BlogFilters({ posts }: { posts: BlogSummary[] }) {
   const [active, setActive] = useState<BlogCat>("all");
 
-  const featured = posts.find(p => p.featured)!;
-  const rest      = posts.filter(p => !p.featured);
+  const featured = posts.find(p => p.featured) ?? posts[0];
+  const rest      = posts.filter(p => p !== featured);
 
   const visibleFeatured = active === "all" || featured.cat === active;
   const visibleRest     = rest.filter(p => active === "all" || p.cat === active);
