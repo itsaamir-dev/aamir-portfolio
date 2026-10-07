@@ -129,7 +129,7 @@ export default function BlogPostClient({
             <div className="relative">
               <h2 className="text-xl font-bold text-ink">Build With Aamir Community</h2>
               <p className="mt-2 text-base text-muted">{PROMISE}</p>
-              <WhatsAppButton className="mt-5" />
+              <WhatsAppButton location="blog_post" className="mt-5" />
             </div>
           </div>
         </article>

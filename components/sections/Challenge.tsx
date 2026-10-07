@@ -31,7 +31,7 @@ export default function Challenge() {
             </div>
           </div>
 
-          <WhatsAppButton label="Follow the journey" className="mt-8" />
+          <WhatsAppButton label="Follow the journey" location="challenge" className="mt-8" />
         </Reveal>
 
         <Reveal delay={100}>

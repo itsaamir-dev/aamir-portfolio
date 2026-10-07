@@ -11,7 +11,7 @@ export default function FinalCTA() {
           Join the free community and learn from the journey as it happens.
         </p>
         <div className="mt-8 flex justify-center">
-          <WhatsAppButton primary />
+          <WhatsAppButton primary location="final_cta" />
         </div>
         <p className="mt-5 text-[0.95rem] text-muted">{PROMISE}</p>
       </Reveal>

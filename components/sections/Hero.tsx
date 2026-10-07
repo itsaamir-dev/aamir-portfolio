@@ -24,7 +24,7 @@ export default function Hero() {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <WhatsAppButton primary />
+            <WhatsAppButton primary location="hero" />
             <a href="#story" className="btn-ghost">Read my story</a>
           </div>
 

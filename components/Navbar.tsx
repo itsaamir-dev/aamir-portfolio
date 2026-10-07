@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import { WHATSAPP_URL } from "@/lib/site";
+import { trackJoinCommunity } from "@/lib/analytics";
 
 const links = [
   { href: "/",           label: "Home" },
@@ -73,6 +74,7 @@ export default function Navbar() {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackJoinCommunity("navbar")}
             className="btn-wa hidden !min-h-[44px] !rounded-[10px] !px-4 !py-0 !text-sm lg:inline-flex"
           >
             <Icon name="chat" size={16} />
@@ -143,6 +145,7 @@ export default function Navbar() {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackJoinCommunity("mobile_menu")}
             className="btn-wa w-full"
           >
             <Icon name="chat" size={18} />

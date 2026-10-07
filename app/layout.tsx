@@ -3,6 +3,8 @@ import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import { GA_ID } from "@/lib/analytics";
 import {
   SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION, AUTHOR, KEYWORDS, personSchema, ogDefaults, jsonLd,
 } from "@/lib/seo";
@@ -89,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div aria-hidden="true" className="h-[calc(76px+env(safe-area-inset-bottom))] bg-bg md:hidden" />
         <StickyMobileCTA />
       </body>
+      {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
     </html>
   );
 }

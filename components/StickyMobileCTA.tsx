@@ -28,7 +28,7 @@ export default function StickyMobileCTA() {
                   pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-[transform,visibility] duration-300 md:hidden
                   ${visible ? "visible translate-y-0" : "invisible translate-y-full"}`}
     >
-      <WhatsAppButton className="w-full" />
+      <WhatsAppButton location="sticky_mobile" className="w-full" />
     </div>
   );
 }

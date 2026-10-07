@@ -62,7 +62,7 @@ export default function BlogPage() {
               <h2 className="text-2xl font-bold text-ink">Learning to freelance?</h2>
               <p className="mt-2 text-base text-muted">{PROMISE} Join the free community.</p>
             </div>
-            <WhatsAppButton className="shrink-0" />
+            <WhatsAppButton location="blog_index" className="shrink-0" />
           </div>
         </Reveal>
       </main>

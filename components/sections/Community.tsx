@@ -22,7 +22,7 @@ export default function Community() {
                 30-day challenge and new articles as they&apos;re published.
               </p>
               <div className="mt-8 flex justify-center">
-                <WhatsAppButton />
+                <WhatsAppButton location="community" />
               </div>
               <p className="mt-4 text-sm text-muted">Free to join. Leave any time.</p>
             </div>
