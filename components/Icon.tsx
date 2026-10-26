@@ -9,6 +9,8 @@ const paths = {
   x:       <path d="M18 6 6 18M6 6l12 12" />,
   plus:    <path d="M12 5v14M5 12h14" />,
   arrow:   <path d="M5 12h14M12 5l7 7-7 7" />,
+  external:<path d="M7 17 17 7M8 7h9v9" />,
+  link:    <><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></>,
   menu:    <path d="M4 6h16M4 12h16M4 18h16" />,
 };
 

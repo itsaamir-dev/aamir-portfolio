@@ -19,6 +19,7 @@ const pages = [
   { href: "/#challenge", label: "30-Day Challenge" },
   { href: "/#faq",       label: "FAQ" },
   { href: "/blog",       label: "Blog" },
+  { href: "/resources/free-profile-websites", label: "Free Profile Websites" },
 ];
 
 export default function SitemapPage() {

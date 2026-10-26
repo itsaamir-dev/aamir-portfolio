@@ -6,6 +6,7 @@ const pageLinks = [
   { href: "/#story",      label: "My Story" },
   { href: "/#community",  label: "Community" },
   { href: "/blog",        label: "Blog" },
+  { href: "/resources/free-profile-websites", label: "Free Profile Sites" },
   { href: "/sitemap",     label: "Sitemap" },
   { href: "/sitemap.xml", label: "XML Sitemap" },
   { href: "/feed.xml",    label: "RSS Feed" },
