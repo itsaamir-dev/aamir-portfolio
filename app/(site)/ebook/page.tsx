@@ -82,7 +82,7 @@ export default function EbookPage() {
                 <ul className="mt-7 space-y-3">
                   {ebook.highlights.map(h => (
                     <li key={h} className="flex gap-3 text-base text-ink">
-                      <span aria-hidden="true" className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-accent">
+                      <span aria-hidden="true" className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-on-ink">
                         <Icon name="check" size={12} />
                       </span>
                       {h}
@@ -94,8 +94,8 @@ export default function EbookPage() {
 
             <div id="waitlist" className="sky scroll-mt-24 flex flex-col justify-center gap-8 rounded-panel px-3 py-10 sm:px-8 sm:py-14 lg:px-10">
               <div className="hidden lg:block"><EbookCover className="max-w-[13rem]" /></div>
-              <div className="rounded-[1.75rem] bg-white/60 p-2 backdrop-blur-md">
-                <div className="rounded-t-card bg-white px-5 pt-6 sm:px-7 sm:pt-8">
+              <div className="rounded-[1.75rem] bg-white/60 p-2 backdrop-blur-md dark:bg-black/45">
+                <div className="rounded-t-card bg-card px-5 pt-6 sm:px-7 sm:pt-8">
                   <h2 className="text-[1.75rem] font-medium tracking-[-0.045em] text-ink">Join the waiting list</h2>
                   <p className="mt-1 text-base text-muted">Free to join. No payment required.</p>
                 </div>
@@ -122,7 +122,7 @@ export default function EbookPage() {
             <ul className="tray mt-10 grid gap-2 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3">
               {covers.map((c, i) => (
                 <li key={c.title} className={`flex min-h-[190px] flex-col justify-end rounded-card p-6 sm:p-7
-                                             ${i === covers.length - 1 ? "bg-night text-white sm:col-span-2 lg:col-span-1" : "bg-white"}`}>
+                                             ${i === covers.length - 1 ? "bg-night text-white sm:col-span-2 lg:col-span-1" : "bg-card"}`}>
                   <h3 className="text-[1.3rem] font-medium tracking-[-0.04em]">{c.title}</h3>
                   <p className={`mt-2 text-base leading-relaxed ${i === covers.length - 1 ? "text-night-muted" : "text-muted"}`}>{c.text}</p>
                 </li>
@@ -154,8 +154,8 @@ export default function EbookPage() {
               <h2 className="mt-4 text-[1.85rem] font-medium leading-tight tracking-[-0.045em] text-ink sm:text-[2.25rem]">What happens next</h2>
               <ol className="mt-8 space-y-2">
                 {afterSteps.map((s, i) => (
-                  <li key={s.title} className="flex gap-4 rounded-2xl bg-white p-4 sm:p-5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink font-mono text-sm text-accent">{i + 1}</span>
+                  <li key={s.title} className="flex gap-4 rounded-2xl bg-card p-4 sm:p-5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink font-mono text-sm text-on-ink">{i + 1}</span>
                     <div>
                       <h3 className="text-lg font-medium tracking-[-0.03em] text-ink">{s.title}</h3>
                       <p className="mt-1 text-base leading-relaxed text-muted">{s.text}</p>

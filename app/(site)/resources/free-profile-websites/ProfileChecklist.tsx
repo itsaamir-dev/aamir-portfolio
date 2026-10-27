@@ -40,11 +40,11 @@ export default function ProfileChecklist({ sites, recommended }: { sites: Profil
           const checked = done.includes(site.name);
           return (
             <li key={site.name}
-                className={`flex flex-col gap-4 rounded-card p-6 transition-colors duration-200 sm:p-7 ${checked ? "bg-accent" : "bg-white"}`}>
+                className={`flex flex-col gap-4 rounded-card p-6 transition-colors duration-200 sm:p-7 ${checked ? "bg-accent" : "bg-card"}`}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-mono text-xs uppercase tracking-[0.1em] text-muted">#{i + 1}
-                    {recommended.includes(site.name) && <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-[0.65rem] text-accent">Start here</span>}
+                    {recommended.includes(site.name) && <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-[0.65rem] text-on-ink">Start here</span>}
                   </p>
                   <h3 className="mt-1.5 text-[1.375rem] font-medium tracking-[-0.04em] text-ink">{site.name}</h3>
                 </div>
@@ -54,7 +54,7 @@ export default function ProfileChecklist({ sites, recommended }: { sites: Profil
                          aria-label={`I've set up my ${site.name} profile`} />
                   <span className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition-colors
                                     peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink
-                                    ${checked ? "border-ink bg-ink text-accent" : "border-[#BDBDBD] bg-white text-transparent"}`}>
+                                    ${checked ? "border-ink bg-ink text-on-ink" : "border-line-strong bg-card text-transparent"}`}>
                     <Icon name="check" size={15} />
                   </span>
                 </label>
@@ -63,7 +63,7 @@ export default function ProfileChecklist({ sites, recommended }: { sites: Profil
               <a href={site.url} target="_blank" rel="noopener noreferrer"
                  className="group mt-auto inline-flex min-h-[44px] items-center gap-2 self-start font-semibold text-ink">
                 Open {site.name}
-                <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-accent transition-transform duration-200 group-hover:rotate-45">
+                <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-on-ink transition-transform duration-200 group-hover:rotate-45">
                   <Icon name="external" size={14} />
                 </span>
               </a>

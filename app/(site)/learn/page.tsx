@@ -50,7 +50,7 @@ export default function LearnPage() {
 
       <main>
         {/* Topic index */}
-        <nav aria-label="Topics" className="sticky top-16 z-30 bg-white/90 backdrop-blur-md lg:top-[72px]">
+        <nav aria-label="Topics" className="sticky top-16 z-30 bg-bg/90 backdrop-blur-md lg:top-[72px]">
           <ul className="container-x flex max-w-[960px] gap-2 overflow-x-auto py-4 [scrollbar-width:none] sm:flex-wrap">
             {topics.map(t => (
               <li key={t.id} className="shrink-0">
@@ -89,7 +89,7 @@ export default function LearnPage() {
                       <span className="mt-1.5 block text-xl font-medium tracking-[-0.035em]">17 free profile websites for backlinks &amp; social proof</span>
                       <span className="mt-1 block text-base text-ink/75">Where to have a profile, what to set up first, and a checklist to track it.</span>
                     </span>
-                    <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-accent transition-transform group-hover:rotate-45">
+                    <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-on-ink transition-transform group-hover:rotate-45">
                       <Icon name="external" size={18} />
                     </span>
                   </TrackedLink>
@@ -103,13 +103,13 @@ export default function LearnPage() {
                           href={`/blog/${p.slug}`}
                           event="learn_resource_click"
                           params={{ topic: topic.id, resource: p.slug }}
-                          className="group flex items-center justify-between gap-4 rounded-2xl bg-white px-5 py-4 transition-colors hover:bg-accent"
+                          className="group flex items-center justify-between gap-4 rounded-2xl bg-card px-5 py-4 transition-colors hover:bg-accent"
                         >
                           <span>
                             <span className="block text-base font-medium tracking-[-0.02em] text-ink sm:text-lg">{p.title}</span>
                             <span className="mt-1 block text-sm text-muted">{p.readTime}</span>
                           </span>
-                          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-ink transition-colors group-hover:bg-ink group-hover:text-accent">
+                          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-ink transition-colors group-hover:bg-ink group-hover:text-on-ink">
                             <Icon name="arrow" size={16} />
                           </span>
                         </TrackedLink>
@@ -117,7 +117,7 @@ export default function LearnPage() {
                     ))}
                   </ul>
                 ) : topic.id !== "profile" && (
-                  <p className="mt-8 rounded-panel border border-dashed border-[#CFCFCF] px-5 py-6 text-base text-muted">
+                  <p className="mt-8 rounded-panel border border-dashed border-line-strong px-5 py-6 text-base text-muted">
                     Articles on this topic are on the way. The latest lessons go to the community first.
                   </p>
                 )}

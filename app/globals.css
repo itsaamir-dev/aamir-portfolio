@@ -2,11 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme tokens (RGB channels; see tailwind.config.ts) ─────────────────── */
+:root {
+  --c-bg: 255 255 255;
+  --c-surface: 242 242 242;
+  --c-surface-2: 236 236 236;
+  --c-card: 255 255 255;
+  --c-ink: 19 19 19;
+  --c-on-ink: 214 253 112;
+  --c-muted: 88 88 88;
+  --c-line: 228 228 228;
+  --c-line-strong: 205 205 205;
+  --c-accent-text: 61 107 0;
+  --c-night: 19 19 19;
+  --c-night-2: 30 30 30;
+  --c-night-line: 47 47 47;
+  --c-prose: 58 58 58;
+  color-scheme: light;
+}
+.dark {
+  --c-bg: 13 13 13;
+  --c-surface: 23 23 23;
+  --c-surface-2: 33 33 33;
+  --c-card: 30 30 30;
+  --c-ink: 242 242 242;
+  --c-on-ink: 19 19 19;
+  --c-muted: 166 166 166;
+  --c-line: 44 44 44;
+  --c-line-strong: 66 66 66;
+  --c-accent-text: 196 244 63;
+  --c-night: 22 22 22;
+  --c-night-2: 34 34 34;
+  --c-night-line: 50 50 50;
+  --c-prose: 204 204 204;
+  color-scheme: dark;
+}
+/* Always-light islands: lime fills and white glass chips keep dark text in
+   both modes. */
+.dark :is(.bg-accent, .bg-wa, .btn-primary, .btn-wa, .mark, .scheme-light) {
+  --c-ink: 19 19 19;
+  --c-on-ink: 214 253 112;
+  --c-muted: 70 70 70;
+  --c-card: 255 255 255;
+  --c-surface: 242 242 242;
+  color: rgb(var(--c-ink)); /* inherited colour doesn't re-read the vars */
+}
+/* Dark panels need an edge to separate from the dark page */
+.dark .bg-night { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07); }
+
 html { scroll-behavior: smooth; scroll-padding-top: 88px; }
 
 body {
-  background: #FFFFFF;
-  color: #131313;
+  background: rgb(var(--c-bg));
+  color: rgb(var(--c-ink));
+  transition: background-color 0.25s ease, color 0.25s ease;
   overflow-x: hidden;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
@@ -20,9 +69,9 @@ body {
 
 ::selection { background: #D6FD70; color: #131313; }
 
-/* Visible keyboard focus everywhere — ink on light, lime on dark panels */
+/* Visible keyboard focus everywhere — ink on the page, lime on dark panels */
 :focus-visible {
-  outline: 2px solid #131313;
+  outline: 2px solid rgb(var(--c-ink));
   outline-offset: 3px;
   border-radius: 8px;
 }
@@ -53,7 +102,7 @@ body {
     @apply rounded-panel bg-surface p-2;
   }
   .tray-card {
-    @apply rounded-card bg-white p-6 sm:p-7;
+    @apply rounded-card bg-card p-6 sm:p-7;
   }
 
   /* Section label: mono, small, with a leading dot */
@@ -93,10 +142,10 @@ body {
     @apply btn bg-wa text-wa-ink hover:bg-accent-strong;
   }
   .btn-dark {
-    @apply btn bg-ink text-accent hover:bg-night-2;
+    @apply btn bg-ink text-on-ink hover:bg-ink/85;
   }
   .btn-ghost {
-    @apply btn border border-line bg-white text-ink hover:border-ink;
+    @apply btn border border-line bg-card text-ink hover:border-ink;
   }
   /* Translucent pill on sky / dark panels */
   .btn-glass {
@@ -114,11 +163,11 @@ body {
 
   /* Pill chip for filters / topic links */
   .chip {
-    @apply inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[0.95rem]
+    @apply inline-flex min-h-[44px] items-center rounded-full border border-line bg-card px-4 text-[0.95rem]
            font-medium text-muted transition-colors duration-200 hover:border-ink hover:text-ink;
   }
   .chip-active {
-    @apply border-ink bg-ink text-white hover:text-white;
+    @apply border-ink bg-ink text-bg hover:text-bg;
   }
 
   /* Lime highlighter behind a phrase */
@@ -191,7 +240,7 @@ body {
 .faq summary { list-style: none; }
 .faq summary::-webkit-details-marker { display: none; }
 .faq summary .faq-icon { transition: transform 0.25s ease, background-color 0.2s; }
-.faq details[open] summary .faq-icon { transform: rotate(45deg); background: #D6FD70; }
+.faq details[open] summary .faq-icon { transform: rotate(45deg); background: #D6FD70; color: #131313; }
 .faq details[open] .faq-answer { animation: faqIn 0.25s ease-out; }
 
 /* Reading progress bar */
@@ -199,7 +248,7 @@ body {
   position: fixed;
   top: 0; left: 0;
   height: 3px;
-  background: #131313;
+  background: rgb(var(--c-ink));
   z-index: 200;
   width: 0%;
 }
@@ -217,46 +266,46 @@ body {
 /* ── Dynamic blog post content ───────────────────────────────────────────── */
 .post-content { font-size: 1.0625rem; }
 .post-content p {
-  color: #3A3A3A; line-height: 1.8; margin-bottom: 1.5rem;
+  color: rgb(var(--c-prose)); line-height: 1.8; margin-bottom: 1.5rem;
 }
 .post-content h2 {
   font-size: 1.75rem; font-weight: 500; line-height: 1.2; letter-spacing: -0.035em;
-  color: #131313; margin-top: 3rem; margin-bottom: 1.25rem;
-  padding-bottom: 0.75rem; border-bottom: 1px solid #E4E4E4;
+  color: rgb(var(--c-ink)); margin-top: 3rem; margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem; border-bottom: 1px solid rgb(var(--c-line));
 }
 .post-content h3 {
   font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em;
-  color: #131313; margin-top: 2rem; margin-bottom: 0.75rem;
+  color: rgb(var(--c-ink)); margin-top: 2rem; margin-bottom: 0.75rem;
 }
 .post-content a {
-  color: #131313; font-weight: 600; text-decoration: underline;
-  text-decoration-color: rgba(61,107,0,0.5); text-decoration-thickness: 2px; text-underline-offset: 3px;
+  color: rgb(var(--c-ink)); font-weight: 600; text-decoration: underline;
+  text-decoration-color: rgb(var(--c-accent-text) / 0.55); text-decoration-thickness: 2px; text-underline-offset: 3px;
 }
-.post-content a:hover { text-decoration-color: #131313; }
+.post-content a:hover { text-decoration-color: rgb(var(--c-ink)); }
 .post-content ul { margin-left: 0.5rem; margin-bottom: 1.5rem; list-style: none; }
-.post-content ol { margin-left: 1.5rem; margin-bottom: 1.5rem; list-style: decimal; color: #3A3A3A; }
+.post-content ol { margin-left: 1.5rem; margin-bottom: 1.5rem; list-style: decimal; color: rgb(var(--c-prose)); }
 .post-content ol li { line-height: 1.75; margin-bottom: 0.5rem; padding-left: 0.25rem; }
 .post-content ul li {
-  position: relative; padding-left: 1.25rem; color: #3A3A3A;
+  position: relative; padding-left: 1.25rem; color: rgb(var(--c-prose));
   line-height: 1.75; margin-bottom: 0.5rem;
 }
 .post-content ul li::before {
   content: ''; position: absolute; left: 0; top: 0.65em;
-  width: 7px; height: 7px; border-radius: 9999px; background: #131313;
+  width: 7px; height: 7px; border-radius: 9999px; background: rgb(var(--c-ink));
   box-shadow: 0 0 0 3px #D6FD70;
 }
-.post-content strong { color: #131313; font-weight: 600; }
-.post-content em     { color: #131313; font-style: italic; }
+.post-content strong { color: rgb(var(--c-ink)); font-weight: 600; }
+.post-content em     { color: rgb(var(--c-ink)); font-style: italic; }
 .post-content blockquote {
   margin: 2.5rem 0; padding: 1.5rem 1.75rem;
   border-left: 4px solid #D6FD70; border-radius: 0 16px 16px 0;
-  background: #F2F2F2;
-  font-size: 1.15rem; color: #131313; line-height: 1.6;
+  background: rgb(var(--c-surface));
+  font-size: 1.15rem; color: rgb(var(--c-ink)); line-height: 1.6;
 }
 .post-content .callout-info,
 .post-content .callout-warn {
   padding: 1.25rem 1.5rem; margin-bottom: 2rem; border-radius: 16px;
-  background: #F2F2F2;
+  background: rgb(var(--c-surface));
 }
 .post-content .callout-info { border-left: 4px solid #D6FD70; }
 .post-content .callout-warn { border-left: 4px solid #F0A35E; }
@@ -265,15 +314,16 @@ body {
   font-size: 0.75rem; letter-spacing: 0.12em;
   text-transform: uppercase; margin-bottom: 0.5rem;
 }
-.post-content .callout-info .callout-label { color: #3D6B00; }
+.post-content .callout-info .callout-label { color: rgb(var(--c-accent-text)); }
 .post-content .callout-warn .callout-label { color: #9A4A0B; }
+.dark .post-content .callout-warn .callout-label { color: #F0B98A; }
 .post-content .callout-info p:last-child,
 .post-content .callout-warn p:last-child {
   font-size: 1rem; line-height: 1.7; margin-bottom: 0;
 }
 .post-content .code-block {
   position: relative; background: #131313;
-  border-radius: 16px;
+  border-radius: 16px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
   padding: 1.5rem 1.75rem; margin: 1.75rem 0; overflow-x: auto;
 }
 .post-content .code-block::after {
@@ -288,7 +338,7 @@ body {
 .post-content .code-block code { font-family: inherit; }
 .post-content :not(pre) > code {
   font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 0.9em;
-  background: #F2F2F2; border-radius: 6px; padding: 0.1em 0.4em; color: #131313;
+  background: rgb(var(--c-surface)); border-radius: 6px; padding: 0.1em 0.4em; color: rgb(var(--c-ink));
 }
 
 /* Code syntax inside posts (on the dark code block) */

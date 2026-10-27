@@ -78,14 +78,14 @@ export default function BlogPostClient({
 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink font-mono text-sm text-accent">AB</div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink font-mono text-sm text-on-ink">AB</div>
                 <div>
                   <strong className="block text-[0.95rem] font-semibold text-ink">Aamir Bashir</strong>
                   <span>Senior Software Engineer</span>
                 </div>
               </div>
-              <span className="rounded-full bg-white px-3 py-1">{post.date}</span>
-              <span className="rounded-full bg-white px-3 py-1">{post.readTime}</span>
+              <span className="rounded-full bg-card px-3 py-1">{post.date}</span>
+              <span className="rounded-full bg-card px-3 py-1">{post.readTime}</span>
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function BlogPostClient({
 
           {/* Author card */}
           <div className="card mt-10 flex flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-ink font-mono text-lg text-accent">AB</div>
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-ink font-mono text-lg text-on-ink">AB</div>
             <div>
               <strong className="block text-lg font-semibold text-ink">Aamir Bashir</strong>
               <span className="mt-0.5 block text-sm font-medium text-accent-dark">Senior Software Engineer · Top Rated Plus on Upwork</span>
@@ -152,7 +152,7 @@ export default function BlogPostClient({
           {post.tocItems.length > 0 && (
             <nav aria-label="In this article" className="card p-5">
               <h2 className="font-mono text-xs uppercase tracking-[0.12em] text-ink">In This Article</h2>
-              <ul className="mt-4 space-y-1 border-l border-[#D6D6D6]">
+              <ul className="mt-4 space-y-1 border-l border-line-strong">
                 {post.tocItems.map(({ id, label }) => (
                   <li key={id}>
                     <a href={`#${id}`}
@@ -173,7 +173,7 @@ export default function BlogPostClient({
               <div className="mt-3">
                 {related.map(r => (
                   <Link key={r.slug} href={`/blog/${r.slug}`}
-                    className="group block border-b border-[#DEDEDE] py-3 last:border-none">
+                    className="group block border-b border-line py-3 last:border-none">
                     <span className="block font-mono text-[0.7rem] uppercase tracking-[0.1em] text-muted">{r.catLabel}</span>
                     <span className="mt-1 block text-[0.9rem] font-medium leading-snug text-ink group-hover:underline">{r.title}</span>
                   </Link>
@@ -189,7 +189,7 @@ export default function BlogPostClient({
         {prev ? (
           <Link href={`/blog/${prev.slug}`}
             className="group card flex items-center gap-4 transition-colors duration-200 hover:bg-surface-2">
-            <span aria-hidden="true" className="flex h-11 w-11 shrink-0 rotate-180 items-center justify-center rounded-full bg-white transition-colors group-hover:bg-accent">
+            <span aria-hidden="true" className="flex h-11 w-11 shrink-0 rotate-180 items-center justify-center rounded-full bg-card transition-colors group-hover:bg-accent">
               <Icon name="arrow" size={18} />
             </span>
             <span className="flex flex-col gap-1">
@@ -201,7 +201,7 @@ export default function BlogPostClient({
         {next && (
           <Link href={`/blog/${next.slug}`}
             className="group card flex flex-row-reverse items-center gap-4 text-right transition-colors duration-200 hover:bg-surface-2">
-            <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white transition-colors group-hover:bg-accent">
+            <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card transition-colors group-hover:bg-accent">
               <Icon name="arrow" size={18} />
             </span>
             <span className="flex flex-col gap-1">

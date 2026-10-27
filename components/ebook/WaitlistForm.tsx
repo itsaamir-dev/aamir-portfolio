@@ -20,9 +20,9 @@ function attribution() {
 }
 
 const inputCls = (invalid: boolean) =>
-  `mt-2 block w-full min-h-[48px] rounded-xl border bg-white px-4 text-base text-ink placeholder:text-[#8A8A8A]
+  `mt-2 block w-full min-h-[48px] rounded-xl border bg-card px-4 text-base text-ink placeholder:text-muted/70
    outline-none transition-[border-color,box-shadow] focus:border-ink focus:shadow-[0_0_0_4px_#D6FD70]
-   ${invalid ? "border-[#C62828]" : "border-[#D9D9D9] hover:border-[#BDBDBD]"}`;
+   ${invalid ? "border-[#C62828] dark:border-[#FF8A80]" : "border-line-strong hover:border-line-strong"}`;
 
 export default function WaitlistForm({ source, className = "" }: { source: string; className?: string }) {
   const [status, setStatus]   = useState<Status>("idle");
@@ -102,7 +102,7 @@ export default function WaitlistForm({ source, className = "" }: { source: strin
 
   if (status === "success") {
     return (
-      <div ref={successRef} tabIndex={-1} role="status" className={`rounded-card bg-white p-5 outline-none sm:p-7 ${className}`}>
+      <div ref={successRef} tabIndex={-1} role="status" className={`rounded-card bg-card p-5 outline-none sm:p-7 ${className}`}>
         <p className="text-[1.75rem] font-medium tracking-[-0.045em] text-ink">You&apos;re on the list!</p>
         <p className="mt-3 text-base leading-relaxed text-muted">
           Thanks for joining. You&apos;ll receive updates when the Freelancing Playbook is ready and when the
@@ -116,14 +116,14 @@ export default function WaitlistForm({ source, className = "" }: { source: strin
 
   const submitting = status === "submitting";
   const err = (id: keyof FieldErrors) => errors[id] && (
-    <p id={`${source}-${id}-error`} className="mt-2 text-sm font-medium text-[#C62828]">{errors[id]}</p>
+    <p id={`${source}-${id}-error`} className="mt-2 text-sm font-medium text-[#C62828] dark:text-[#FF8A80]">{errors[id]}</p>
   );
   const describedBy = (id: keyof FieldErrors, extra?: string) =>
     [errors[id] ? `${source}-${id}-error` : "", extra ?? ""].filter(Boolean).join(" ") || undefined;
 
   return (
     <form noValidate onSubmit={onSubmit} onFocus={onStart} aria-busy={submitting}
-          className={`relative rounded-card bg-white p-5 sm:p-7 ${className}`}>
+          className={`relative rounded-card bg-card p-5 sm:p-7 ${className}`}>
       <p className="text-base text-muted">Get updates about the e-book launch and early-access offer.</p>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -160,16 +160,16 @@ export default function WaitlistForm({ source, className = "" }: { source: strin
       <fieldset className="mt-6 space-y-3">
         <legend className="sr-only">Optional updates</legend>
         <label className="flex cursor-pointer items-start gap-3 text-sm text-muted">
-          <input type="checkbox" name="marketingConsent" className="mt-0.5 h-5 w-5 shrink-0 accent-[#131313]" />
-          <span>Also email me other Build With Aamir freelancing tips. <span className="text-[#767676]">(Optional)</span></span>
+          <input type="checkbox" name="marketingConsent" className="mt-0.5 h-5 w-5 shrink-0 accent-ink" />
+          <span>Also email me other Build With Aamir freelancing tips. <span className="text-muted">(Optional)</span></span>
         </label>
         {hasPhone && (
           <div>
             <label className="flex cursor-pointer items-start gap-3 text-sm text-muted">
               <input type="checkbox" name="whatsappConsent"
                      aria-describedby={describedBy("whatsappConsent")}
-                     className="mt-0.5 h-5 w-5 shrink-0 accent-[#131313]" />
-              <span>Send me e-book launch updates on WhatsApp too. <span className="text-[#767676]">(Optional)</span></span>
+                     className="mt-0.5 h-5 w-5 shrink-0 accent-ink" />
+              <span>Send me e-book launch updates on WhatsApp too. <span className="text-muted">(Optional)</span></span>
             </label>
             {err("whatsappConsent")}
           </div>
@@ -183,7 +183,7 @@ export default function WaitlistForm({ source, className = "" }: { source: strin
 
       {status === "error" && message && (
         <p ref={errorRef} tabIndex={-1} role="alert"
-           className="mt-6 rounded-xl border border-[#F3B7B7] bg-[#FDECEC] px-4 py-3 text-sm font-medium text-[#B71C1C] outline-none">
+           className="mt-6 rounded-xl border border-[#F3B7B7] bg-[#FDECEC] dark:border-[#5C2B2B] dark:bg-[#2A1515] px-4 py-3 text-sm font-medium text-[#B71C1C] dark:text-[#FFB4AB] outline-none">
           {message}
         </p>
       )}

@@ -15,7 +15,7 @@ export default function WhoShouldJoin() {
           <div className="tray mt-10 grid gap-2 lg:mt-14 lg:grid-cols-[1.4fr_1fr]">
             <div className="rounded-card bg-accent p-6 sm:p-8">
               <div className="flex items-center gap-3">
-                <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-accent">
+                <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-on-ink">
                   <Icon name="check" size={18} />
                 </span>
                 <h3 className="text-[1.375rem] font-medium tracking-[-0.04em] text-ink">It&apos;s for you if you&apos;re…</h3>
@@ -39,7 +39,7 @@ export default function WhoShouldJoin() {
               <ul className="stagger mt-6 space-y-3">
                 {audienceNotFor.map(t => (
                   <li key={t} className="flex gap-3 text-base leading-relaxed text-muted">
-                    <Icon name="x" size={20} className="mt-0.5 shrink-0 text-[#9A9A9A]" />
+                    <Icon name="x" size={20} className="mt-0.5 shrink-0 text-muted/70" />
                     {t}
                   </li>
                 ))}

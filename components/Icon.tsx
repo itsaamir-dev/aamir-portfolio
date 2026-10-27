@@ -12,6 +12,8 @@ const paths = {
   external:<path d="M7 17 17 7M8 7h9v9" />,
   link:    <><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></>,
   menu:    <path d="M4 6h16M4 12h16M4 18h16" />,
+  sun:     <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></>,
+  moon:    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />,
 };
 
 export type IconName = keyof typeof paths;

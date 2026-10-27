@@ -30,7 +30,7 @@ export function FeaturedCard({ post }: { post: Post }) {
       className="group mb-12 grid gap-6 md:grid-cols-[1fr_1fr] md:items-center md:gap-10">
 
       <div className="sky relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-panel">
-        <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-ink backdrop-blur">
+        <span className="scheme-light absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-ink backdrop-blur">
           Featured
         </span>
         <span aria-hidden="true" className="text-[5.5rem] transition-transform duration-500 group-hover:scale-110">{post.icon}</span>

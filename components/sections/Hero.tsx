@@ -63,7 +63,7 @@ export default function Hero() {
             />
             {chips.map(c => (
               <div key={c.k}
-                   className={`absolute hidden rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-ink
+                   className={`scheme-light absolute hidden rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-ink
                                shadow-[0_12px_40px_rgba(19,40,90,0.25)] backdrop-blur-md sm:block motion-safe:animate-float ${c.pos}`}>
                 <p className="text-xl font-medium leading-none tracking-[-0.04em]">{c.k}</p>
                 <p className="mt-1 text-xs text-muted">{c.v}</p>

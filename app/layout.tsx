@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Bricolage_Grotesque } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import { themeBootScript } from "@/lib/theme";
 import {
   SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION, AUTHOR, KEYWORDS, ogDefaults,
 } from "@/lib/seo";
@@ -30,7 +31,10 @@ const geistMono = localFont({
 });
 
 export const viewport: Viewport = {
-  themeColor:  "#FFFFFF",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)",  color: "#0D0D0D" },
+  ],
   viewportFit: "cover", // enables env(safe-area-inset-*) for the sticky CTA
 };
 
@@ -75,7 +79,11 @@ export const metadata: Metadata = {
 // Shared shell for the public site — app/(site) — and the admin panel — app/admin.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${bricolage.variable} ${geistMono.variable}`}>
+    // suppressHydrationWarning: the boot script may add `dark` before React hydrates
+    <html lang="en" suppressHydrationWarning className={`${jakarta.variable} ${bricolage.variable} ${geistMono.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className="font-sans">{children}</body>
     </html>
   );

@@ -19,7 +19,7 @@ export default function FAQ({ items = faqs, title = "Questions, Answered Honestl
             <details key={q} className="group rounded-card bg-surface transition-colors open:bg-surface-2">
               <summary className="flex min-h-[64px] cursor-pointer items-center justify-between gap-6 rounded-card px-5 py-4 text-lg font-medium tracking-[-0.03em] sm:px-6">
                 {q}
-                <span className="faq-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink">
+                <span className="faq-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card text-ink">
                   <Icon name="plus" size={18} />
                 </span>
               </summary>

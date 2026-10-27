@@ -28,7 +28,7 @@ export default function StickyMobileCTA() {
 
   return (
     <div
-      className={`fixed inset-x-2 bottom-2 z-[90] rounded-full bg-white/90 p-1.5 shadow-[0_10px_40px_rgba(19,19,19,0.18)]
+      className={`fixed inset-x-2 bottom-2 z-[90] rounded-full bg-bg/90 p-1.5 shadow-[0_10px_40px_rgba(19,19,19,0.18)]
                   backdrop-blur-md mb-[env(safe-area-inset-bottom)] transition-[transform,visibility,opacity] duration-300 md:hidden
                   ${visible ? "visible translate-y-0 opacity-100" : "invisible translate-y-[150%] opacity-0"}`}
     >

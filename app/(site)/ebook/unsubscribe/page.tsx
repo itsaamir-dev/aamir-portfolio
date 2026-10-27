@@ -35,7 +35,7 @@ export default function UnsubscribePage({ searchParams }: { searchParams: { toke
     <>
       <main className="pt-[72px] lg:pt-[80px]">
         <div className="panel flex min-h-[70vh] items-center bg-surface px-5 py-16">
-          <div className="mx-auto w-full max-w-xl rounded-panel bg-white p-7 sm:p-10">
+          <div className="mx-auto w-full max-w-xl rounded-panel bg-card p-7 sm:p-10">
             <h1 className="text-[2rem] font-medium tracking-[-0.045em] text-ink sm:text-[2.5rem]">E-book updates</h1>
             {status === "done" ? (
               <p className="lead mt-4 text-muted" role="status">

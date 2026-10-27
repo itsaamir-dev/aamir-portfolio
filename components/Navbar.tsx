@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 import { WHATSAPP_URL, CTA_LABEL } from "@/lib/site";
 import { trackJoinCommunity } from "@/lib/analytics";
 
@@ -49,13 +50,13 @@ export default function Navbar() {
   return (
     <>
       <a href="#main"
-         className="sr-only z-[130] rounded-full bg-ink px-4 py-2 font-mono text-sm uppercase tracking-[0.1em] text-accent focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
+         className="sr-only z-[130] rounded-full bg-ink px-4 py-2 font-mono text-sm uppercase tracking-[0.1em] text-on-ink focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
         Skip to content
       </a>
 
-      <header className={`fixed inset-x-0 top-0 z-[100] bg-white/85 backdrop-blur-md transition-shadow duration-300
-                          ${scrolled ? "shadow-[0_1px_0_#E4E4E4]" : ""}`}>
-        <nav aria-label="Main" className="container-x flex h-16 items-center justify-between gap-3 lg:h-[72px]">
+      <header className={`fixed inset-x-0 top-0 z-[100] bg-bg/85 backdrop-blur-md transition-shadow duration-300
+                          ${scrolled ? "shadow-[0_1px_0_rgb(var(--c-line))]" : ""}`}>
+        <nav aria-label="Main" className="container-x flex h-16 max-w-[1360px] items-center justify-between gap-3 lg:h-[72px]">
           <Logo />
 
           <ul className="hidden items-center gap-0.5 xl:flex">
@@ -77,26 +78,28 @@ export default function Navbar() {
             })}
           </ul>
 
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackJoinCommunity("navbar")}
-            className="btn-wa hidden !min-h-[42px] whitespace-nowrap !px-4 font-display !text-[0.94rem] font-semibold !normal-case !tracking-[-0.01em] xl:inline-flex"
-          >
-            <Icon name="chat" size={16} />
-            {CTA_LABEL}
-          </a>
-
-          <button
-            onClick={() => setOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={open}
-            aria-controls="mobile-menu"
-            className="-mr-1 flex h-11 w-11 items-center justify-center rounded-full bg-surface text-ink transition-colors hover:bg-surface-2 xl:hidden"
-          >
-            <Icon name="menu" size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackJoinCommunity("navbar")}
+              className="btn-wa hidden !min-h-[42px] whitespace-nowrap !px-4 font-display !text-[0.94rem] font-semibold !normal-case !tracking-[-0.01em] xl:inline-flex"
+            >
+              <Icon name="chat" size={16} />
+              {CTA_LABEL}
+            </a>
+            <ThemeToggle />
+            <button
+              onClick={() => setOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              className="-mr-1 flex h-11 w-11 items-center justify-center rounded-full bg-surface text-ink transition-colors hover:bg-surface-2 xl:hidden"
+            >
+              <Icon name="menu" size={20} />
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -112,7 +115,7 @@ export default function Navbar() {
       <aside
         id="mobile-menu"
         aria-label="Menu"
-        className={`fixed bottom-2 right-2 top-2 z-[120] flex w-[min(21rem,calc(100vw-1rem))] flex-col rounded-panel bg-white
+        className={`fixed bottom-2 right-2 top-2 z-[120] flex w-[min(21rem,calc(100vw-1rem))] flex-col rounded-panel bg-card
                     shadow-[0_20px_60px_rgba(19,19,19,0.18)] transition-[transform,visibility] duration-300 ease-out xl:hidden ${
           open ? "visible translate-x-0" : "invisible translate-x-[110%]"
         }`}

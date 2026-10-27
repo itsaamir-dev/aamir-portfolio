@@ -17,7 +17,7 @@ export default function EbookBanner({ location, className = "" }: { location: st
         <span className="mt-1.5 block text-xl font-medium tracking-[-0.04em]">{ebook.title}</span>
         <span className="mt-1 block text-sm text-ink/75">Join the free waiting list for launch updates and the planned early-bird offer.</span>
       </span>
-      <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-accent transition-transform group-hover:rotate-45">
+      <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-on-ink transition-transform group-hover:rotate-45">
         <Icon name="external" size={18} />
       </span>
     </TrackedLink>

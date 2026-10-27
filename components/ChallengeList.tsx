@@ -18,7 +18,7 @@ export function ChallengeProgress() {
            aria-label="30-day journey progress">
         {Array.from({ length: CHALLENGE_TOTAL }, (_, i) => (
           <span key={i} aria-hidden="true"
-                className={`h-3 flex-1 rounded-full ${i < current ? (i === current - 1 ? "bg-ink" : "bg-accent") : "bg-white"}`} />
+                className={`h-3 flex-1 rounded-full ${i < current ? (i === current - 1 ? "bg-ink" : "bg-accent") : "bg-card"}`} />
         ))}
       </div>
     </div>
@@ -39,7 +39,7 @@ export function LatestDay({ day = latestChallengeDay }: { day?: ChallengeDay }) 
           <ol className="mt-6 space-y-2">
             {day.points.map((p, i) => (
               <li key={p} className="flex gap-3 rounded-2xl bg-surface p-3.5 text-base">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink font-mono text-xs text-accent">{i + 1}</span>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink font-mono text-xs text-on-ink">{i + 1}</span>
                 <span className="pt-0.5">{p}</span>
               </li>
             ))}
@@ -85,17 +85,17 @@ export function ChallengeDayList({ limit }: { limit?: number }) {
           <li key={day}>
             {href ? (
               <TrackedLink href={href} event="challenge_click" params={{ day, target: "post" }}
-                           className="flex min-h-[60px] items-center gap-4 rounded-2xl bg-white px-5 py-4 transition-colors duration-200 hover:bg-accent sm:px-6">
+                           className="flex min-h-[60px] items-center gap-4 rounded-2xl bg-card px-5 py-4 transition-colors duration-200 hover:bg-accent sm:px-6">
                 {body}
               </TrackedLink>
             ) : (
-              <div className="flex min-h-[60px] items-center gap-4 rounded-2xl bg-white px-5 py-4 sm:px-6">{body}</div>
+              <div className="flex min-h-[60px] items-center gap-4 rounded-2xl bg-card px-5 py-4 sm:px-6">{body}</div>
             )}
           </li>
         );
       })}
       {remaining > 0 && (
-        <li className="flex min-h-[60px] items-center gap-4 rounded-2xl border border-dashed border-[#CFCFCF] px-5 py-4 text-muted sm:px-6">
+        <li className="flex min-h-[60px] items-center gap-4 rounded-2xl border border-dashed border-line-strong px-5 py-4 text-muted sm:px-6">
           <span className="w-16 shrink-0 font-mono text-xs uppercase tracking-[0.1em]">Next</span>
           <span className="text-base">Days {latestChallengeDay.day + 1}–{CHALLENGE_TOTAL} are still to come.</span>
         </li>

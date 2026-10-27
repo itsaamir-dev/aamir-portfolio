@@ -1,7 +1,7 @@
 import Icon from "@/components/Icon";
 
 const tones = {
-  ink:  "bg-ink text-accent",   // on lime / white pills
+  ink:  "bg-ink text-on-ink",   // on lime / light pills
   lime: "bg-accent text-ink",   // on ink pills
 };
 

@@ -9,7 +9,7 @@ export function Breadcrumb({ items, className = "" }: { items: { href?: string; 
         const last = i === items.length - 1;
         return (
           <span key={label} className="flex items-center gap-2">
-            <span aria-hidden="true" className="text-[#B5B5B5]">/</span>
+            <span aria-hidden="true" className="text-muted/50">/</span>
             {href && !last
               ? <Link href={href} className="transition-colors hover:text-ink">{label}</Link>
               : <span aria-current={last ? "page" : undefined} className="font-medium text-ink">{label}</span>}

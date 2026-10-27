@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,25 +10,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Light UI — white canvas, grey trays, near-black ink
-        bg:      "#FFFFFF",
-        surface: "#F2F2F2", // tray / card grey
-        "surface-2": "#ECECEC",
-        ink:     "#131313",
-        muted:   "#585858", // secondary text (7:1 on white)
-        line:    "#E4E4E4",
-        // Dark panels (community, footer, code)
+        // Themeable UI — values are RGB channels in app/globals.css
+        // (:root = light, .dark = dark), so one class works in both modes.
+        bg:            "rgb(var(--c-bg) / <alpha-value>)",
+        surface:       "rgb(var(--c-surface) / <alpha-value>)",   // tray / card grey
+        "surface-2":   "rgb(var(--c-surface-2) / <alpha-value>)",
+        card:          "rgb(var(--c-card) / <alpha-value>)",      // cards inside trays
+        ink:           "rgb(var(--c-ink) / <alpha-value>)",       // text + strong fills
+        "on-ink":      "rgb(var(--c-on-ink) / <alpha-value>)",    // text on an ink fill
+        muted:         "rgb(var(--c-muted) / <alpha-value>)",     // secondary text
+        line:          "rgb(var(--c-line) / <alpha-value>)",
+        "line-strong": "rgb(var(--c-line-strong) / <alpha-value>)",
+        // Dark panels (community, footer, code) — dark in both modes
         night: {
-          DEFAULT: "#131313",
-          2:       "#1E1E1E",
-          line:    "#2F2F2F",
+          DEFAULT: "rgb(var(--c-night) / <alpha-value>)",
+          2:       "rgb(var(--c-night-2) / <alpha-value>)",
+          line:    "rgb(var(--c-night-line) / <alpha-value>)",
           muted:   "#A3A3A3",
         },
         // Brand lime — fills only (never text on white)
         accent: {
           DEFAULT: "#D6FD70",
           strong:  "#C4F43F", // hover
-          dark:    "#3D6B00", // green text on white (AA)
+          dark:    "rgb(var(--c-accent-text) / <alpha-value>)", // green text on the page (AA both modes)
         },
         // Hero / CTA sky panels
         sky: {

@@ -30,7 +30,7 @@ export default function EbookOffer() {
             <ul className="mt-7 grid gap-3 sm:grid-cols-2">
               {ebook.highlights.map(h => (
                 <li key={h} className="flex gap-3 text-base text-ink">
-                  <span aria-hidden="true" className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-accent">
+                  <span aria-hidden="true" className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-on-ink">
                     <Icon name="check" size={12} />
                   </span>
                   {h}

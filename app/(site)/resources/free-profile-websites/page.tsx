@@ -88,8 +88,8 @@ export default function FreeProfileWebsitesPage() {
             <p className="mt-2 text-base text-ink/75">These matter most for software engineers. Add Product Hunt when you have something to launch.</p>
             <ol className="mt-6 flex flex-wrap gap-2">
               {startingOrder.map((name, i) => (
-                <li key={name} className="inline-flex items-center gap-2.5 rounded-full bg-white py-1.5 pl-1.5 pr-4 text-[0.95rem] font-medium text-ink">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink font-mono text-xs text-accent">{i + 1}</span>{name}
+                <li key={name} className="inline-flex items-center gap-2.5 rounded-full bg-card py-1.5 pl-1.5 pr-4 text-[0.95rem] font-medium text-ink">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink font-mono text-xs text-on-ink">{i + 1}</span>{name}
                 </li>
               ))}
             </ol>
@@ -110,9 +110,9 @@ export default function FreeProfileWebsitesPage() {
           <p className="eyebrow">More free platforms</p>
           <h2 id="more" className="h2 mt-4 text-ink">Worth adding next</h2>
           <div className="tray mt-8">
-            <div className="overflow-hidden rounded-card bg-white">
+            <div className="overflow-hidden rounded-card bg-card">
               <table className="w-full text-left">
-                <thead className="bg-white font-mono text-xs uppercase tracking-[0.1em] text-muted">
+                <thead className="bg-card font-mono text-xs uppercase tracking-[0.1em] text-muted">
                   <tr>
                     <th scope="col" className="px-4 py-4 font-medium sm:px-5">Website</th>
                     <th scope="col" className="px-2 py-4 font-medium sm:px-5">Best for</th>
@@ -146,7 +146,7 @@ export default function FreeProfileWebsitesPage() {
           <ul className="mt-8 grid gap-2 sm:grid-cols-2">
             {profileTips.map(t => (
               <li key={t.title} className="flex gap-3 rounded-card bg-surface p-5 sm:p-6">
-                <span aria-hidden="true" className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-accent">
+                <span aria-hidden="true" className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-on-ink">
                   <Icon name="check" size={14} />
                 </span>
                 <div>
