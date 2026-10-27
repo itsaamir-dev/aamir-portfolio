@@ -7,19 +7,23 @@ export default function FAQ({ items = faqs, title = "Questions, Answered Honestl
   title?: string;
 }) {
   return (
-    <section id="faq" className="section bg-paper text-ink-dark">
-      <div className="container-x max-w-[860px]">
-        <p className="eyebrow-light">FAQ</p>
-        <h2 className="h2 mt-4">{title}</h2>
+    <section id="faq" className="section">
+      <div className="container-x grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <p className="eyebrow">FAQ</p>
+          <h2 className="h2 mt-4">{title}</h2>
+        </div>
 
-        <div className="faq mt-10 border-t border-line-light">
+        <div className="faq space-y-2">
           {items.map(({ q, a }) => (
-            <details key={q} className="group border-b border-line-light">
-              <summary className="flex min-h-[64px] cursor-pointer items-center justify-between gap-6 py-5 text-lg font-semibold transition-colors duration-200 hover:text-accent-dark">
+            <details key={q} className="group rounded-card bg-surface transition-colors open:bg-surface-2">
+              <summary className="flex min-h-[64px] cursor-pointer items-center justify-between gap-6 rounded-card px-5 py-4 text-lg font-medium tracking-[-0.03em] sm:px-6">
                 {q}
-                <Icon name="plus" size={22} className="faq-icon shrink-0 text-muted-dark" />
+                <span className="faq-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink">
+                  <Icon name="plus" size={18} />
+                </span>
               </summary>
-              <p className="faq-answer max-w-prose pb-6 text-base leading-relaxed text-muted-dark sm:text-[1.0625rem]">{a}</p>
+              <p className="faq-answer max-w-prose px-5 pb-6 text-base leading-relaxed text-muted sm:px-6 sm:text-[1.0625rem]">{a}</p>
             </details>
           ))}
         </div>

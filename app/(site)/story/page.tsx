@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Footer from "@/components/Footer";
 import PageHeader from "@/components/PageHeader";
 import Timeline from "@/components/Timeline";
@@ -62,6 +63,17 @@ export default function StoryPage() {
         eyebrow="My Story"
         title="From Developer to Freelancer: The Real Journey"
         actions={<WhatsAppButton primary location="story_header" />}
+        visual={
+          <Image
+            src="/hero-portrait.png"
+            alt="Portrait of Aamir Bashir"
+            width={1099}
+            height={1348}
+            priority
+            sizes="(min-width: 1024px) 26rem, 18rem"
+            className="img-reveal absolute bottom-0 left-1/2 h-[92%] w-auto max-w-none -translate-x-1/2"
+          />
+        }
       >
         <p>
           I&apos;m Aamir Bashir, a software engineer with 8+ years of experience. In September 2024 I started taking
@@ -72,10 +84,11 @@ export default function StoryPage() {
 
       <main>
         {/* Narrative + timeline */}
-        <section aria-labelledby="journey" className="section bg-paper text-ink-dark">
-          <div className="container-x grid gap-12 lg:grid-cols-2 lg:gap-20">
-            <div className="max-w-prose space-y-5 text-[1.0625rem] leading-relaxed text-muted-dark">
-              <h2 id="journey" className="h2 text-ink-dark">The timeline</h2>
+        <section aria-labelledby="journey" className="section">
+          <div className="container-x grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <div className="max-w-prose space-y-5 text-[1.0625rem] leading-relaxed text-muted lg:sticky lg:top-28 lg:self-start">
+              <p className="eyebrow">The Journey</p>
+              <h2 id="journey" className="h2 text-ink">The timeline</h2>
               <p>
                 Before freelancing, I had already spent years building Android, web and backend software. The
                 engineering side wasn&apos;t new. Freelancing was.
@@ -102,27 +115,29 @@ export default function StoryPage() {
         <Proof />
 
         {/* Lessons */}
-        <section aria-labelledby="lessons" className="section bg-bg">
+        <section aria-labelledby="lessons" className="section">
           <div className="container-x">
-            <p className="eyebrow">What I Learned</p>
-            <h2 id="lessons" className="h2 mt-4 max-w-prose text-ink">The lessons I keep coming back to</h2>
-            <ul className="mt-10 grid gap-4 sm:grid-cols-2">
+            <div className="mx-auto max-w-prose text-center">
+              <p className="eyebrow">What I Learned</p>
+              <h2 id="lessons" className="h2 mt-4 text-ink">The lessons I keep coming back to</h2>
+            </div>
+            <ul className="tray mt-10 grid gap-2 sm:grid-cols-2 lg:mt-14">
               {lessons.map(l => (
-                <li key={l.title} className="card">
-                  <h3 className="text-xl font-semibold text-ink">{l.title}</h3>
+                <li key={l.title} className="tray-card flex min-h-[200px] flex-col justify-end">
+                  <h3 className="text-[1.375rem] font-medium tracking-[-0.04em] text-ink">{l.title}</h3>
                   <p className="mt-2 text-base leading-relaxed text-muted">{l.text}</p>
                 </li>
               ))}
             </ul>
-            <p className="mt-8 max-w-prose text-base text-muted">
+            <p className="mx-auto mt-8 max-w-prose text-center text-base text-muted">
               I&apos;m sharing these one day at a time in the{" "}
               <TrackedLink href="/challenge" event="challenge_click" params={{ target: "journey", location: "story" }}
-                           className="font-semibold text-accent-light underline underline-offset-4">
+                           className="link">
                 30-day journey
               </TrackedLink>{" "}
               and in more depth in the{" "}
               <TrackedLink href="/learn" event="learn_resource_click" params={{ topic: "all", location: "story" }}
-                           className="font-semibold text-accent-light underline underline-offset-4">
+                           className="link">
                 learning resources
               </TrackedLink>.
             </p>
@@ -130,18 +145,21 @@ export default function StoryPage() {
         </section>
 
         {/* Why now */}
-        <section aria-labelledby="now" className="section border-t border-line bg-bg">
-          <div className="container-x max-w-prose">
-            <h2 id="now" className="h2 text-ink">Why I&apos;m documenting it now</h2>
-            <div className="lead mt-5 space-y-5 text-muted">
-              <p>
-                Many skilled developers, designers and other professionals could work with international clients but
-                don&apos;t know where to start, or send proposals that get no replies.
-              </p>
-              <p>
-                So I&apos;m documenting what I&apos;ve learned — the practical side of profiles, proposals, client
-                communication and pricing — and sharing it for free in the Build With Aamir community.
-              </p>
+        <section aria-labelledby="now" className="pb-16 sm:pb-20 lg:pb-28">
+          <div className="container-x">
+            <div className="mx-auto max-w-[56rem] rounded-panel bg-surface px-6 py-12 sm:px-12 sm:py-16">
+              <p className="eyebrow">Why Now</p>
+              <h2 id="now" className="h2 mt-4 text-ink">Why I&apos;m documenting it now</h2>
+              <div className="lead mt-5 space-y-5 text-muted">
+                <p>
+                  Many skilled developers, designers and other professionals could work with international clients but
+                  don&apos;t know where to start, or send proposals that get no replies.
+                </p>
+                <p>
+                  So I&apos;m documenting what I&apos;ve learned — the practical side of profiles, proposals, client
+                  communication and pricing — and sharing it for free in the Build With Aamir community.
+                </p>
+              </div>
             </div>
           </div>
         </section>

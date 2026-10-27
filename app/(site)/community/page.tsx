@@ -58,23 +58,25 @@ export default function CommunityPage() {
 
       <main>
         {/* What to expect */}
-        <section aria-labelledby="expect" className="section bg-bg">
-          <div className="container-x grid gap-10 lg:grid-cols-2 lg:gap-16">
+        <section aria-labelledby="expect" className="section">
+          <div className="container-x grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
             <div>
               <p className="eyebrow">What to Expect</p>
               <h2 id="expect" className="h2 mt-4 text-ink">What members get</h2>
-              <ul className="mt-8 space-y-4">
+              <ul className="tray mt-8 space-y-1">
                 {communityBenefits.map(b => (
-                  <li key={b} className="flex gap-3 text-lg text-ink">
-                    <Icon name="check" size={22} className="mt-0.5 shrink-0 text-accent-light" />
+                  <li key={b} className="flex gap-3 rounded-2xl bg-white p-4 text-lg tracking-[-0.02em] text-ink sm:p-5">
+                    <span aria-hidden="true" className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-ink">
+                      <Icon name="check" size={14} />
+                    </span>
                     {b}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="card self-start">
-              <h3 className="text-xl font-semibold text-ink">What it isn&apos;t</h3>
-              <p className="mt-3 text-base leading-relaxed text-muted">
+            <div className="on-dark self-end rounded-panel bg-night p-7 text-white sm:p-9">
+              <h3 className="text-[1.5rem] font-medium tracking-[-0.04em]">What it isn&apos;t</h3>
+              <p className="mt-3 text-base leading-relaxed text-night-muted">
                 It&apos;s a place to learn, not a shortcut. Joining doesn&apos;t guarantee clients, earnings or
                 employment — the lessons are only useful if you apply them and keep improving.
               </p>
@@ -83,16 +85,19 @@ export default function CommunityPage() {
         </section>
 
         {/* How to join */}
-        <section aria-labelledby="how" className="section border-t border-line bg-bg">
+        <section aria-labelledby="how" className="pb-16 sm:pb-20 lg:pb-28">
           <div className="container-x">
-            <p className="eyebrow">How to Join</p>
-            <h2 id="how" className="h2 mt-4 text-ink">Three steps, about a minute</h2>
-            <ol className="mt-10 grid gap-4 md:grid-cols-3">
+            <div className="mx-auto max-w-prose text-center">
+              <p className="eyebrow">How to Join</p>
+              <h2 id="how" className="h2 mt-4 text-ink">Three steps, about a minute</h2>
+            </div>
+            <ol className="tray mt-10 grid gap-2 md:grid-cols-3 lg:mt-14">
               {steps.map((s, i) => (
-                <li key={s.title} className="card">
-                  <span className="text-[2rem] font-bold leading-none text-highlight">{i + 1}</span>
-                  <h3 className="mt-4 text-xl font-semibold text-ink">{s.title}</h3>
-                  <p className="mt-2 text-base leading-relaxed text-muted">{s.text}</p>
+                <li key={s.title} className={`flex min-h-[230px] flex-col rounded-card p-6 sm:p-7 ${i === 2 ? "bg-accent" : "bg-white"}`}>
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-full font-mono text-sm
+                                    ${i === 2 ? "bg-ink text-accent" : "bg-surface text-ink"}`}>{i + 1}</span>
+                  <h3 className="mt-auto pt-8 text-[1.375rem] font-medium tracking-[-0.04em] text-ink">{s.title}</h3>
+                  <p className={`mt-2 text-base leading-relaxed ${i === 2 ? "text-ink/75" : "text-muted"}`}>{s.text}</p>
                 </li>
               ))}
             </ol>

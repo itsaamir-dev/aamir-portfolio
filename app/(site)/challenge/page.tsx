@@ -41,16 +41,16 @@ export default function ChallengePage() {
       </PageHeader>
 
       <main>
-      <section aria-label="Journey" className="section bg-paper text-ink-dark">
+      <section aria-label="Journey" className="section">
         <div className="container-x grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
-          <div>
+          <div className="lg:sticky lg:top-28 lg:self-start">
             <h2 className="sr-only">Latest day</h2>
             <LatestDay />
           </div>
           <div>
             <ChallengeProgress />
-            <h2 className="mt-10 text-2xl font-bold">The journey so far</h2>
-            <p className="mt-2 text-base text-muted-dark">
+            <h2 className="mt-10 text-[1.75rem] font-medium tracking-[-0.045em]">The journey so far</h2>
+            <p className="mt-2 text-base text-muted">
               New days are shared in the free community as they go out.
             </p>
             <div className="mt-6">

@@ -33,24 +33,28 @@ export default function UnsubscribePage({ searchParams }: { searchParams: { toke
 
   return (
     <>
-      <main className="container-x flex min-h-[70vh] max-w-xl flex-col justify-center pb-16 pt-32">
-        <h1 className="text-3xl font-bold text-ink sm:text-4xl">E-book updates</h1>
-        {status === "done" ? (
-          <p className="lead mt-4 text-muted" role="status">
-            You&apos;ve been unsubscribed. You won&apos;t receive any more e-book or marketing emails from Build With Aamir.
-          </p>
-        ) : status === "invalid" || !TOKEN_RE.test(token) ? (
-          <p className="lead mt-4 text-muted" role="alert">
-            This unsubscribe link isn&apos;t valid. Please use the link from your most recent email, or reply to it and
-            ask to be removed.
-          </p>
-        ) : (
-          <form action={unsubscribe} className="mt-6">
-            <p className="lead text-muted">Stop receiving e-book launch updates and marketing emails?</p>
-            <input type="hidden" name="token" value={token} />
-            <button type="submit" className="btn-ghost mt-6">Unsubscribe</button>
-          </form>
-        )}
+      <main className="pt-[72px] lg:pt-[80px]">
+        <div className="panel flex min-h-[70vh] items-center bg-surface px-5 py-16">
+          <div className="mx-auto w-full max-w-xl rounded-panel bg-white p-7 sm:p-10">
+            <h1 className="text-[2rem] font-medium tracking-[-0.045em] text-ink sm:text-[2.5rem]">E-book updates</h1>
+            {status === "done" ? (
+              <p className="lead mt-4 text-muted" role="status">
+                You&apos;ve been unsubscribed. You won&apos;t receive any more e-book or marketing emails from Build With Aamir.
+              </p>
+            ) : status === "invalid" || !TOKEN_RE.test(token) ? (
+              <p className="lead mt-4 text-muted" role="alert">
+                This unsubscribe link isn&apos;t valid. Please use the link from your most recent email, or reply to it and
+                ask to be removed.
+              </p>
+            ) : (
+              <form action={unsubscribe} className="mt-6">
+                <p className="lead text-muted">Stop receiving e-book launch updates and marketing emails?</p>
+                <input type="hidden" name="token" value={token} />
+                <button type="submit" className="btn-dark mt-6">Unsubscribe</button>
+              </form>
+            )}
+          </div>
+        </div>
       </main>
       <Footer />
     </>

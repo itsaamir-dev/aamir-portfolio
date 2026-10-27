@@ -42,13 +42,15 @@ export default function BlogPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
 
-      <header className="border-b border-line bg-bg pb-12 pt-32 sm:pb-16 sm:pt-36">
-        <div className="container-x">
-          <p className="eyebrow">Writing &amp; Insights</p>
-          <h1 className="mt-4 text-[2.25rem] font-extrabold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-6xl">
-            The Blog
-          </h1>
-          <p className="lead mt-5 max-w-2xl text-muted">{BLOG_DESCRIPTION}</p>
+      <header className="pt-[72px] lg:pt-[80px]">
+        <div className="panel bg-surface py-14 sm:py-20">
+          <div className="container-x hero-stagger">
+            <p className="eyebrow">Writing &amp; Insights</p>
+            <h1 className="mt-4 text-[2.75rem] font-medium leading-[1.02] tracking-[-0.055em] text-ink sm:text-6xl lg:text-[5rem]">
+              The Blog
+            </h1>
+            <p className="lead mt-5 max-w-2xl text-muted">{BLOG_DESCRIPTION}</p>
+          </div>
         </div>
       </header>
 
@@ -56,11 +58,11 @@ export default function BlogPage() {
         <BlogFilters posts={posts.map(toSummary)} />
 
         <Reveal>
-          <div className="relative mt-16 overflow-hidden rounded-2xl border border-line bg-surface px-6 py-10 sm:px-10
-                          flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="on-dark relative mt-20 flex flex-col gap-6 overflow-hidden rounded-panel bg-night px-6 py-10 text-white
+                          sm:px-10 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-ink">Learning to freelance?</h2>
-              <p className="mt-2 text-base text-muted">{PROMISE} Join the free community.</p>
+              <h2 className="text-[1.75rem] font-medium tracking-[-0.045em]">Learning to freelance?</h2>
+              <p className="mt-2 text-base text-night-muted">{PROMISE} Join the free community.</p>
             </div>
             <WhatsAppButton location="blog_index" className="shrink-0" />
           </div>

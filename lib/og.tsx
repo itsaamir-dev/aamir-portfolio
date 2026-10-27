@@ -22,20 +22,20 @@ export function ogCard({ eyebrow, title, footer }: { eyebrow: string; title: str
       <div
         style={{
           width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between",
-          padding: "72px 80px", background: "#080A09", color: "#FFFFFF", fontFamily: "Space Grotesk", fontWeight: 500,
-          backgroundImage: "radial-gradient(ellipse 70% 60% at 100% 0%, rgba(57,245,106,0.16), transparent 70%)",
+          padding: "72px 80px", background: "#131313", color: "#FFFFFF", fontFamily: "Space Grotesk", fontWeight: 500,
+          backgroundImage: "radial-gradient(ellipse 70% 60% at 100% 0%, rgba(214,253,112,0.14), transparent 70%)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 14, height: 14, borderRadius: 999, background: "#39F56A" }} />
-          <div style={{ fontSize: 26, letterSpacing: 4, textTransform: "uppercase", color: "#39F56A", fontWeight: 700 }}>
+          <div style={{ width: 14, height: 14, borderRadius: 999, background: "#D6FD70" }} />
+          <div style={{ fontSize: 26, letterSpacing: 4, textTransform: "uppercase", color: "#D6FD70", fontWeight: 700 }}>
             {eyebrow}
           </div>
         </div>
         <div style={{ display: "flex", fontSize: titleSize, fontWeight: 700, lineHeight: 1.08, letterSpacing: -1.5, maxWidth: 1040 }}>
           {title}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 28, color: "#A7ADB4" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 28, color: "#A3A3A3" }}>
           <div style={{ display: "flex" }}>{footer}</div>
           <div style={{ display: "flex", color: "#FFFFFF", fontWeight: 700 }}>buildwithaamir.com</div>
         </div>

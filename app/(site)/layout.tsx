@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
+import { ArrowOverlay } from "@/components/ui/arrow-cta";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { GA_ID } from "@/lib/analytics";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, personSchema, jsonLd } from "@/lib/seo";
@@ -26,10 +27,12 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(siteSchema) }} />
       <Navbar />
-      {children}
+      <div id="main">{children}</div>
       {/* Keeps the sticky mobile CTA from covering the end of the page */}
-      <div aria-hidden="true" className="h-[calc(76px+env(safe-area-inset-bottom))] bg-bg md:hidden" />
+      <div aria-hidden="true" className="h-[calc(72px+env(safe-area-inset-bottom))] md:hidden" />
       <StickyMobileCTA />
+      {/* Cursor-to-nearest-button arrow (desktop pointers only) */}
+      <ArrowOverlay />
       {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
     </>
   );

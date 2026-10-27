@@ -20,41 +20,52 @@ export default function ProfileChecklist({ sites, recommended }: { sites: Profil
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* private mode */ }
   };
 
+  const count = done.filter(n => sites.some(s => s.name === n)).length;
+
   return (
     <>
-      <p className="mb-5 text-sm font-medium text-muted" aria-live="polite">
-        <strong className="text-ink">{done.filter(n => sites.some(s => s.name === n)).length}</strong> of {sites.length} set up
-        <span className="text-muted"> · tick each one as you finish it</span>
-      </p>
-      <ol className="grid gap-4 sm:grid-cols-2">
+      <div className="mb-5 flex flex-wrap items-center gap-4">
+        <p className="text-sm font-medium text-muted" aria-live="polite">
+          <strong className="text-ink">{count}</strong> of {sites.length} set up
+          <span className="text-muted"> · tick each one as you finish it</span>
+        </p>
+        <div aria-hidden="true" className="flex flex-1 gap-[3px]">
+          {sites.map((s, i) => (
+            <span key={s.name} className={`h-2 min-w-[8px] flex-1 rounded-full ${i < count ? "bg-ink" : "bg-surface"}`} />
+          ))}
+        </div>
+      </div>
+      <ol className="tray grid gap-2 sm:grid-cols-2">
         {sites.map((site, i) => {
           const checked = done.includes(site.name);
           return (
             <li key={site.name}
-                className={`card flex flex-col gap-4 transition-colors duration-200 ${checked ? "border-[rgba(37,211,102,0.45)]" : ""}`}>
+                className={`flex flex-col gap-4 rounded-card p-6 transition-colors duration-200 sm:p-7 ${checked ? "bg-accent" : "bg-white"}`}>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-muted">#{i + 1}
-                    {recommended.includes(site.name) && <span className="ml-2 rounded-md bg-[rgba(57,245,106,0.12)] px-2 py-0.5 text-xs font-semibold text-accent-light">Start here</span>}
+                  <p className="font-mono text-xs uppercase tracking-[0.1em] text-muted">#{i + 1}
+                    {recommended.includes(site.name) && <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-[0.65rem] text-accent">Start here</span>}
                   </p>
-                  <h3 className="mt-1 text-xl font-semibold text-ink">{site.name}</h3>
+                  <h3 className="mt-1.5 text-[1.375rem] font-medium tracking-[-0.04em] text-ink">{site.name}</h3>
                 </div>
-                <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-line
-                                  hover:border-[#3A4047]" title={checked ? "Mark as not done" : "Mark as done"}>
+                <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full
+                                  hover:bg-surface" title={checked ? "Mark as not done" : "Mark as done"}>
                   <input type="checkbox" className="peer sr-only" checked={checked} onChange={() => toggle(site.name)}
                          aria-label={`I've set up my ${site.name} profile`} />
-                  <span className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors
-                                    peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-light
-                                    ${checked ? "border-wa bg-wa text-wa-ink" : "border-[#3A4047] text-transparent"}`}>
-                    <Icon name="check" size={16} />
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition-colors
+                                    peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink
+                                    ${checked ? "border-ink bg-ink text-accent" : "border-[#BDBDBD] bg-white text-transparent"}`}>
+                    <Icon name="check" size={15} />
                   </span>
                 </label>
               </div>
-              <p className="text-base leading-relaxed text-muted">{site.use}</p>
+              <p className={`text-base leading-relaxed ${checked ? "text-ink/75" : "text-muted"}`}>{site.use}</p>
               <a href={site.url} target="_blank" rel="noopener noreferrer"
-                 className="group mt-auto inline-flex min-h-[44px] items-center gap-2 self-start font-semibold text-accent-light hover:text-ink">
+                 className="group mt-auto inline-flex min-h-[44px] items-center gap-2 self-start font-semibold text-ink">
                 Open {site.name}
-                <Icon name="external" size={16} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-accent transition-transform duration-200 group-hover:rotate-45">
+                  <Icon name="external" size={14} />
+                </span>
               </a>
             </li>
           );

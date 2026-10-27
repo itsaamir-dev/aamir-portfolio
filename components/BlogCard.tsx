@@ -1,11 +1,12 @@
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import type { BlogSummary as Post } from "@/lib/posts";
 
-function Meta({ post }: { post: Post }) {
+function Meta({ post, onDark = false }: { post: Post; onDark?: boolean }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-      <span className="font-semibold text-accent-light">{post.catLabel}</span>
-      <span aria-hidden="true">·</span>
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-sm ${onDark ? "text-night-muted" : "text-muted"}`}>
+      <span className={`rounded-full px-2.5 py-0.5 font-mono text-[0.7rem] uppercase tracking-[0.1em]
+                        ${onDark ? "bg-accent text-ink" : "bg-surface text-ink"}`}>{post.catLabel}</span>
       <span>{post.date}</span>
       <span aria-hidden="true">·</span>
       <span>{post.readTime}</span>
@@ -13,25 +14,36 @@ function Meta({ post }: { post: Post }) {
   );
 }
 
+function ArrowDot({ size = "h-11 w-11" }: { size?: string }) {
+  return (
+    <span aria-hidden="true"
+          className={`absolute bottom-4 right-4 flex ${size} items-center justify-center rounded-full bg-accent text-ink
+                      transition-transform duration-300 group-hover:rotate-45`}>
+      <Icon name="external" size={18} />
+    </span>
+  );
+}
+
 export function FeaturedCard({ post }: { post: Post }) {
   return (
     <Link href={`/blog/${post.slug}`}
-      className="group mb-10 grid overflow-hidden rounded-2xl border border-line bg-surface
-                 transition-colors duration-200 hover:border-[#3A4047] md:grid-cols-[0.9fr_1.1fr]">
+      className="group mb-12 grid gap-6 md:grid-cols-[1fr_1fr] md:items-center md:gap-10">
 
-      <div className="relative flex min-h-[200px] items-center justify-center bg-[#0F1217] md:min-h-[320px]">
-        <span className="absolute left-5 top-5 rounded-md bg-accent px-2.5 py-1 text-xs font-bold uppercase tracking-[0.1em] text-wa-ink">
+      <div className="sky relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-panel">
+        <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-ink backdrop-blur">
           Featured
         </span>
-        <span aria-hidden="true" className="text-[5rem] opacity-50">{post.icon}</span>
+        <span aria-hidden="true" className="text-[5.5rem] transition-transform duration-500 group-hover:scale-110">{post.icon}</span>
+        <ArrowDot size="h-12 w-12" />
       </div>
 
-      <div className="flex flex-col justify-center p-6 sm:p-10">
+      <div>
         <Meta post={post} />
-        <h2 className="mt-4 text-2xl font-bold leading-tight text-ink sm:text-3xl">{post.title}</h2>
+        <h2 className="mt-4 text-[1.85rem] font-medium leading-[1.12] tracking-[-0.045em] text-ink sm:text-[2.25rem]">{post.title}</h2>
         <p className="mt-4 text-base leading-relaxed text-muted">{post.excerpt}</p>
-        <span className="mt-6 inline-flex items-center gap-2 font-semibold text-accent-light">
-          Read article <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">→</span>
+        <span className="btn-dark pointer-events-none mt-6">
+          Read article
+          <span aria-hidden="true" className="btn-arrow bg-accent text-ink"><Icon name="external" size={14} /></span>
         </span>
       </div>
     </Link>
@@ -40,18 +52,17 @@ export function FeaturedCard({ post }: { post: Post }) {
 
 export function BlogCardItem({ post }: { post: Post }) {
   return (
-    <Link href={`/blog/${post.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-surface
-                 transition-[border-color,transform] duration-200 hover:-translate-y-1 hover:border-[#3A4047]">
-
-      <div className="flex h-36 items-center justify-center bg-[#0F1217]">
-        <span aria-hidden="true" className="text-5xl opacity-60">{post.icon}</span>
+    <Link href={`/blog/${post.slug}`} className="group flex flex-col">
+      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-panel bg-surface
+                      transition-colors duration-300 group-hover:bg-surface-2">
+        <span aria-hidden="true" className="text-6xl transition-transform duration-500 group-hover:scale-110">{post.icon}</span>
+        <ArrowDot />
       </div>
 
-      <div className="flex flex-1 flex-col p-6">
+      <div className="flex flex-1 flex-col pt-4">
         <Meta post={post} />
-        <h3 className="mt-3 text-xl font-semibold leading-snug text-ink">{post.title}</h3>
-        <p className="mt-3 line-clamp-3 flex-1 text-base leading-relaxed text-muted">{post.excerpt}</p>
+        <h3 className="mt-3 text-xl font-medium leading-snug tracking-[-0.035em] text-ink underline-offset-4 group-hover:underline">{post.title}</h3>
+        <p className="mt-2 line-clamp-3 flex-1 text-base leading-relaxed text-muted">{post.excerpt}</p>
       </div>
     </Link>
   );

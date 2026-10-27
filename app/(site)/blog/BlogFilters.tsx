@@ -25,17 +25,13 @@ export default function BlogFilters({ posts }: { posts: BlogSummary[] }) {
 
   return (
     <>
-      <div role="group" aria-label="Filter posts by category" className="mb-10 flex flex-wrap gap-2">
+      <div role="group" aria-label="Filter posts by category" className="mb-12 flex flex-wrap gap-2">
         {filters.map(f => (
           <button
             key={f.value}
             onClick={() => setActive(f.value)}
             aria-pressed={active === f.value}
-            className={`min-h-[44px] rounded-[10px] border px-4 text-[0.95rem] font-medium transition-colors duration-200
-              ${active === f.value
-                ? "border-accent bg-[rgba(57,245,106,0.10)] text-ink"
-                : "border-line text-muted hover:border-[#3A4047] hover:text-ink"
-              }`}>
+            className={`chip font-mono !text-[0.8125rem] uppercase tracking-[0.08em] ${active === f.value ? "chip-active" : ""}`}>
             {f.label}
           </button>
         ))}
@@ -48,7 +44,7 @@ export default function BlogFilters({ posts }: { posts: BlogSummary[] }) {
       )}
 
       {visibleRest.length > 0 && (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-5 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
           {visibleRest.map(post => (
             <BlogCardItem key={post.slug} post={post} />
           ))}
@@ -56,7 +52,7 @@ export default function BlogFilters({ posts }: { posts: BlogSummary[] }) {
       )}
 
       {!visibleFeatured && visibleRest.length === 0 && (
-        <p className="py-20 text-center text-muted">No posts in this category yet.</p>
+        <p className="rounded-panel bg-surface py-20 text-center text-muted">No posts in this category yet.</p>
       )}
     </>
   );

@@ -32,32 +32,42 @@ export default function SitemapPage() {
 
   return (
     <>
-      <main className="container-x pb-20 pt-32 sm:pt-36">
-        <p className="eyebrow">Sitemap</p>
-        <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Everything on this site</h1>
-        <p className="lead mt-4 text-muted">
-          {posts.length} articles. Also available as <a href="/sitemap.xml" className="text-accent-light underline underline-offset-4">XML</a>{" "}
-          and an <a href="/feed.xml" className="text-accent-light underline underline-offset-4">RSS feed</a>.
-        </p>
+      <header className="pt-[72px] lg:pt-[80px]">
+        <div className="panel bg-surface py-12 sm:py-16">
+          <div className="container-x hero-stagger">
+            <p className="eyebrow">Sitemap</p>
+            <h1 className="h1 mt-4 text-ink">Everything on this site</h1>
+            <p className="lead mt-4 text-muted">
+              {posts.length} articles. Also available as <a href="/sitemap.xml" className="link">XML</a>{" "}
+              and an <a href="/feed.xml" className="link">RSS feed</a>.
+            </p>
+          </div>
+        </div>
+      </header>
 
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold text-ink">Pages</h2>
-          <ul className="mt-4 grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
-            {pages.map(p => (
-              <li key={p.href}>
-                <Link href={p.href} className="inline-flex min-h-[40px] items-center text-muted hover:text-ink">{p.label}</Link>
-              </li>
-            ))}
-          </ul>
+      <main className="container-x pb-20 pt-12 sm:pt-16">
+        <section className="tray">
+          <div className="tray-card">
+            <h2 className="text-[1.75rem] font-medium tracking-[-0.045em] text-ink">Pages</h2>
+            <ul className="mt-4 grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+              {pages.map(p => (
+                <li key={p.href}>
+                  <Link href={p.href} className="inline-flex min-h-[40px] items-center text-muted transition-colors hover:text-ink hover:underline">{p.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
 
         {Object.entries(byCategory).map(([cat, list]) => (
           <section key={cat} className="mt-12">
-            <h2 className="text-2xl font-bold text-ink">{cat} <span className="text-base font-medium text-muted">({list.length})</span></h2>
-            <ul className="mt-4 grid gap-x-8 gap-y-1 lg:grid-cols-2">
+            <h2 className="flex items-center gap-3 text-[1.75rem] font-medium tracking-[-0.045em] text-ink">
+              {cat} <span className="rounded-full bg-surface px-2.5 py-0.5 font-mono text-sm font-normal text-muted">({list.length})</span>
+            </h2>
+            <ul className="mt-4 grid gap-x-8 gap-y-1 border-t border-line pt-3 lg:grid-cols-2">
               {list.map(p => (
                 <li key={p.slug}>
-                  <Link href={`/blog/${p.slug}`} className="inline-flex min-h-[40px] items-center py-1 text-muted hover:text-ink">
+                  <Link href={`/blog/${p.slug}`} className="inline-flex min-h-[40px] items-center py-1 text-muted transition-colors hover:text-ink hover:underline">
                     {p.title}
                   </Link>
                 </li>

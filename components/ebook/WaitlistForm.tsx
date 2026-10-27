@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import BtnArrow from "@/components/BtnArrow";
 import { trackEvent } from "@/lib/analytics";
 import { validateWaitlist, type FieldErrors } from "@/lib/waitlist";
 
@@ -19,10 +20,11 @@ function attribution() {
 }
 
 const inputCls = (invalid: boolean) =>
-  `mt-2 block w-full min-h-[48px] rounded-xl border bg-bg px-4 text-base text-ink placeholder:text-[#6B7178]
-   outline-none transition-colors focus:border-accent ${invalid ? "border-[#FF6B6B]" : "border-line"}`;
+  `mt-2 block w-full min-h-[48px] rounded-xl border bg-white px-4 text-base text-ink placeholder:text-[#8A8A8A]
+   outline-none transition-[border-color,box-shadow] focus:border-ink focus:shadow-[0_0_0_4px_#D6FD70]
+   ${invalid ? "border-[#C62828]" : "border-[#D9D9D9] hover:border-[#BDBDBD]"}`;
 
-export default function WaitlistForm({ source }: { source: string }) {
+export default function WaitlistForm({ source, className = "" }: { source: string; className?: string }) {
   const [status, setStatus]   = useState<Status>("idle");
   const [errors, setErrors]   = useState<FieldErrors>({});
   const [message, setMessage] = useState("");
@@ -100,8 +102,8 @@ export default function WaitlistForm({ source }: { source: string }) {
 
   if (status === "success") {
     return (
-      <div ref={successRef} tabIndex={-1} role="status" className="rounded-2xl border border-[rgba(57,245,106,0.4)] bg-surface p-6 outline-none sm:p-8">
-        <p className="text-2xl font-bold text-ink">You&apos;re on the list!</p>
+      <div ref={successRef} tabIndex={-1} role="status" className={`rounded-card bg-white p-5 outline-none sm:p-7 ${className}`}>
+        <p className="text-[1.75rem] font-medium tracking-[-0.045em] text-ink">You&apos;re on the list!</p>
         <p className="mt-3 text-base leading-relaxed text-muted">
           Thanks for joining. You&apos;ll receive updates when the Freelancing Playbook is ready and when the
           early-access offer is announced.
@@ -114,14 +116,14 @@ export default function WaitlistForm({ source }: { source: string }) {
 
   const submitting = status === "submitting";
   const err = (id: keyof FieldErrors) => errors[id] && (
-    <p id={`${source}-${id}-error`} className="mt-2 text-sm font-medium text-[#FF8A8A]">{errors[id]}</p>
+    <p id={`${source}-${id}-error`} className="mt-2 text-sm font-medium text-[#C62828]">{errors[id]}</p>
   );
   const describedBy = (id: keyof FieldErrors, extra?: string) =>
     [errors[id] ? `${source}-${id}-error` : "", extra ?? ""].filter(Boolean).join(" ") || undefined;
 
   return (
     <form noValidate onSubmit={onSubmit} onFocus={onStart} aria-busy={submitting}
-          className="relative rounded-2xl border border-line bg-surface p-6 sm:p-8">
+          className={`relative rounded-card bg-white p-5 sm:p-7 ${className}`}>
       <p className="text-base text-muted">Get updates about the e-book launch and early-access offer.</p>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -158,16 +160,16 @@ export default function WaitlistForm({ source }: { source: string }) {
       <fieldset className="mt-6 space-y-3">
         <legend className="sr-only">Optional updates</legend>
         <label className="flex cursor-pointer items-start gap-3 text-sm text-muted">
-          <input type="checkbox" name="marketingConsent" className="mt-0.5 h-5 w-5 shrink-0 accent-[#39F56A]" />
-          <span>Also email me other Build With Aamir freelancing tips. <span className="text-[#6B7178]">(Optional)</span></span>
+          <input type="checkbox" name="marketingConsent" className="mt-0.5 h-5 w-5 shrink-0 accent-[#131313]" />
+          <span>Also email me other Build With Aamir freelancing tips. <span className="text-[#767676]">(Optional)</span></span>
         </label>
         {hasPhone && (
           <div>
             <label className="flex cursor-pointer items-start gap-3 text-sm text-muted">
               <input type="checkbox" name="whatsappConsent"
                      aria-describedby={describedBy("whatsappConsent")}
-                     className="mt-0.5 h-5 w-5 shrink-0 accent-[#39F56A]" />
-              <span>Send me e-book launch updates on WhatsApp too. <span className="text-[#6B7178]">(Optional)</span></span>
+                     className="mt-0.5 h-5 w-5 shrink-0 accent-[#131313]" />
+              <span>Send me e-book launch updates on WhatsApp too. <span className="text-[#767676]">(Optional)</span></span>
             </label>
             {err("whatsappConsent")}
           </div>
@@ -181,13 +183,14 @@ export default function WaitlistForm({ source }: { source: string }) {
 
       {status === "error" && message && (
         <p ref={errorRef} tabIndex={-1} role="alert"
-           className="mt-6 rounded-xl border border-[rgba(255,107,107,0.4)] bg-[rgba(255,107,107,0.08)] px-4 py-3 text-sm font-medium text-[#FF8A8A] outline-none">
+           className="mt-6 rounded-xl border border-[#F3B7B7] bg-[#FDECEC] px-4 py-3 text-sm font-medium text-[#B71C1C] outline-none">
           {message}
         </p>
       )}
 
-      <button type="submit" disabled={submitting} className="btn-wa mt-6 w-full disabled:cursor-wait disabled:opacity-70 sm:w-auto">
+      <button type="submit" disabled={submitting} className="btn-dark mt-6 w-full disabled:cursor-wait disabled:opacity-70 sm:w-auto">
         {submitting ? "Saving…" : "Get on the waiting list"}
+        <BtnArrow tone="lime" />
       </button>
 
       <p className="mt-4 text-xs leading-relaxed text-muted">

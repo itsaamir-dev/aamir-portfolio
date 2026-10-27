@@ -28,9 +28,9 @@ export default function StickyMobileCTA() {
 
   return (
     <div
-      className={`fixed inset-x-0 bottom-0 z-[90] border-t border-line bg-[rgba(8,10,9,0.96)] px-4 pt-3
-                  pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-[transform,visibility] duration-300 md:hidden
-                  ${visible ? "visible translate-y-0" : "invisible translate-y-full"}`}
+      className={`fixed inset-x-2 bottom-2 z-[90] rounded-full bg-white/90 p-1.5 shadow-[0_10px_40px_rgba(19,19,19,0.18)]
+                  backdrop-blur-md mb-[env(safe-area-inset-bottom)] transition-[transform,visibility,opacity] duration-300 md:hidden
+                  ${visible ? "visible translate-y-0 opacity-100" : "invisible translate-y-[150%] opacity-0"}`}
     >
       <WhatsAppButton location="sticky_mobile" className="w-full" />
     </div>

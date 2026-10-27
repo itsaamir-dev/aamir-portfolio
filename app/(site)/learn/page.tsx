@@ -50,12 +50,11 @@ export default function LearnPage() {
 
       <main>
         {/* Topic index */}
-        <nav aria-label="Topics" className="border-b border-line bg-bg">
-          <ul className="container-x flex max-w-[880px] flex-wrap gap-2 py-6">
+        <nav aria-label="Topics" className="sticky top-16 z-30 bg-white/90 backdrop-blur-md lg:top-[72px]">
+          <ul className="container-x flex max-w-[960px] gap-2 overflow-x-auto py-4 [scrollbar-width:none] sm:flex-wrap">
             {topics.map(t => (
-              <li key={t.id}>
-                <a href={`#${t.id}`}
-                   className="inline-flex min-h-[44px] items-center rounded-[10px] border border-line px-4 text-[0.95rem] font-medium text-muted hover:border-[#3A4047] hover:text-ink">
+              <li key={t.id} className="shrink-0">
+                <a href={`#${t.id}`} className="chip">
                   {t.title}
                 </a>
               </li>
@@ -63,17 +62,17 @@ export default function LearnPage() {
           </ul>
         </nav>
 
-        <div className="container-x max-w-[880px] divide-y divide-line">
+        <div className="container-x max-w-[960px] divide-y divide-line">
           {topics.map(topic => {
             const posts = groups[topic.id];
             return (
-              <section key={topic.id} id={topic.id} aria-labelledby={`${topic.id}-h`} className="scroll-mt-24 py-14 sm:py-16">
+              <section key={topic.id} id={topic.id} aria-labelledby={`${topic.id}-h`} className="scroll-mt-40 py-14 sm:py-16">
                 <div className="flex items-start gap-4">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(57,245,106,0.10)] text-accent-light">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-ink">
                     <Icon name={topic.icon as IconName} size={22} />
                   </span>
                   <div>
-                    <h2 id={`${topic.id}-h`} className="text-2xl font-bold text-ink sm:text-3xl">{topic.title}</h2>
+                    <h2 id={`${topic.id}-h`} className="text-[1.75rem] font-medium leading-tight tracking-[-0.045em] text-ink sm:text-[2.25rem]">{topic.title}</h2>
                     <p className="mt-2 text-base leading-relaxed text-muted">{topic.desc}</p>
                   </div>
                 </div>
@@ -83,38 +82,42 @@ export default function LearnPage() {
                     href="/resources/free-profile-websites"
                     event="learn_resource_click"
                     params={{ topic: topic.id, resource: "free_profile_websites" }}
-                    className="card group mt-8 flex items-center justify-between gap-4 border-[rgba(57,245,106,0.35)] transition-colors hover:border-accent"
+                    className="group mt-8 flex items-center justify-between gap-4 rounded-panel bg-accent p-6 text-ink transition-colors hover:bg-accent-strong sm:p-7"
                   >
                     <span>
-                      <span className="text-sm font-semibold uppercase tracking-[0.1em] text-accent-light">Free resource</span>
-                      <span className="mt-1 block text-lg font-semibold text-ink">17 free profile websites for backlinks &amp; social proof</span>
-                      <span className="mt-1 block text-base text-muted">Where to have a profile, what to set up first, and a checklist to track it.</span>
+                      <span className="font-mono text-xs uppercase tracking-[0.12em]">Free resource</span>
+                      <span className="mt-1.5 block text-xl font-medium tracking-[-0.035em]">17 free profile websites for backlinks &amp; social proof</span>
+                      <span className="mt-1 block text-base text-ink/75">Where to have a profile, what to set up first, and a checklist to track it.</span>
                     </span>
-                    <Icon name="arrow" size={20} className="shrink-0 text-accent-light transition-transform group-hover:translate-x-1" />
+                    <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-accent transition-transform group-hover:rotate-45">
+                      <Icon name="external" size={18} />
+                    </span>
                   </TrackedLink>
                 )}
 
                 {posts.length > 0 ? (
-                  <ul className="mt-8 divide-y divide-line rounded-2xl border border-line">
+                  <ul className="tray mt-8 space-y-1">
                     {posts.slice(0, PER_TOPIC).map(p => (
                       <li key={p.slug}>
                         <TrackedLink
                           href={`/blog/${p.slug}`}
                           event="learn_resource_click"
                           params={{ topic: topic.id, resource: p.slug }}
-                          className="group flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-surface"
+                          className="group flex items-center justify-between gap-4 rounded-2xl bg-white px-5 py-4 transition-colors hover:bg-accent"
                         >
                           <span>
-                            <span className="block text-base font-semibold text-ink sm:text-lg">{p.title}</span>
+                            <span className="block text-base font-medium tracking-[-0.02em] text-ink sm:text-lg">{p.title}</span>
                             <span className="mt-1 block text-sm text-muted">{p.readTime}</span>
                           </span>
-                          <Icon name="arrow" size={18} className="shrink-0 text-muted transition-transform group-hover:translate-x-1 group-hover:text-accent-light" />
+                          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-ink transition-colors group-hover:bg-ink group-hover:text-accent">
+                            <Icon name="arrow" size={16} />
+                          </span>
                         </TrackedLink>
                       </li>
                     ))}
                   </ul>
                 ) : topic.id !== "profile" && (
-                  <p className="mt-8 rounded-2xl border border-dashed border-line px-5 py-6 text-base text-muted">
+                  <p className="mt-8 rounded-panel border border-dashed border-[#CFCFCF] px-5 py-6 text-base text-muted">
                     Articles on this topic are on the way. The latest lessons go to the community first.
                   </p>
                 )}
@@ -123,7 +126,7 @@ export default function LearnPage() {
                   <p className="mt-4 text-sm text-muted">
                     Showing {PER_TOPIC} of {posts.length}.{" "}
                     <TrackedLink href="/blog" event="learn_resource_click" params={{ topic: topic.id, resource: "blog" }}
-                                 className="font-semibold text-accent-light underline underline-offset-4">
+                                 className="link">
                       Browse all articles
                     </TrackedLink>
                   </p>
@@ -133,11 +136,11 @@ export default function LearnPage() {
           })}
         </div>
 
-        <section aria-label="About these resources" className="border-t border-line bg-bg">
-          <div className="container-x max-w-[880px] pt-10">
+        <section aria-label="About these resources">
+          <div className="container-x max-w-[960px] pt-6">
             <EbookBanner location="learn" />
           </div>
-          <p className="container-x max-w-[880px] py-8 text-sm text-muted">
+          <p className="container-x max-w-[960px] pb-14 pt-6 text-sm text-muted">
             Everything on this page is free. The upcoming e-book is the only paid product planned, and its waiting list is free to join.
           </p>
         </section>
