@@ -17,6 +17,7 @@ const pages = [
   { href: "/learn",      label: "Learn Freelancing" },
   { href: "/community",  label: "Free WhatsApp Community" },
   { href: "/challenge",  label: "30-Day Challenge" },
+  { href: "/ebook",      label: "The Freelancing Playbook (E-book Waiting List)" },
   { href: "/#faq",       label: "FAQ" },
   { href: "/blog",       label: "Blog" },
   { href: "/resources/free-profile-websites", label: "Free Profile Websites" },

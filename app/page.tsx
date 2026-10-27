@@ -8,6 +8,7 @@ import Challenge     from "@/components/sections/Challenge";
 import WhoShouldJoin from "@/components/sections/WhoShouldJoin";
 import FAQ           from "@/components/sections/FAQ";
 import FinalCTA      from "@/components/sections/FinalCTA";
+import EbookOffer    from "@/components/sections/EbookOffer";
 import Footer        from "@/components/Footer";
 import { faqs } from "@/lib/site";
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, ogDefaults, jsonLd } from "@/lib/seo";
@@ -51,6 +52,7 @@ export default function Home() {
       <Proof />
       <Story />
       <Learn />
+      <EbookOffer />
       <Community />
       <Challenge />
       <WhoShouldJoin />

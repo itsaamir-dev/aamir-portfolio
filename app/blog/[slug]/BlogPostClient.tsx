@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import EbookBanner from "@/components/ebook/EbookBanner";
 import type { BlogPost } from "@/lib/data";
 import type { BlogSummary } from "@/lib/posts";
 import { PROMISE } from "@/lib/site";
@@ -132,6 +133,11 @@ export default function BlogPostClient({
               <WhatsAppButton location="blog_post" className="mt-5" />
             </div>
           </div>
+
+          {/* E-book waiting list — only on freelancing/career articles */}
+          {(post.cat === "freelance" || post.cat === "career") && (
+            <EbookBanner location="blog_post" className="mt-4" />
+          )}
         </article>
 
         {/* Sidebar */}

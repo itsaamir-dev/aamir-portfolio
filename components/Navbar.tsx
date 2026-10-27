@@ -13,6 +13,7 @@ const links = [
   { href: "/community",  label: "Community" },
   { href: "/challenge",  label: "30-Day Challenge" },
   { href: "/blog",       label: "Blog" },
+  { href: "/ebook",      label: "E-book" },
 ];
 
 function isActive(href: string, pathname: string) {

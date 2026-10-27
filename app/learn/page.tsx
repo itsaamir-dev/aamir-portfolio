@@ -4,6 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import Icon, { IconName } from "@/components/Icon";
 import TrackedLink from "@/components/TrackedLink";
 import FinalCTA from "@/components/sections/FinalCTA";
+import EbookBanner from "@/components/ebook/EbookBanner";
 import { learnTopics, learnTopicOrder } from "@/lib/site";
 import { postsByTopic } from "@/lib/learn";
 import { SITE_URL, pageMetadata, breadcrumb, jsonLd } from "@/lib/seo";
@@ -133,8 +134,11 @@ export default function LearnPage() {
         </div>
 
         <section aria-label="About these resources" className="border-t border-line bg-bg">
+          <div className="container-x max-w-[880px] pt-10">
+            <EbookBanner location="learn" />
+          </div>
           <p className="container-x max-w-[880px] py-8 text-sm text-muted">
-            Everything on this page is free. There are no paid courses or products right now.
+            Everything on this page is free. The upcoming e-book is the only paid product planned, and its waiting list is free to join.
           </p>
         </section>
 

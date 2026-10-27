@@ -8,6 +8,7 @@ const pageLinks = [
   { href: "/community",   label: "Community" },
   { href: "/challenge",   label: "30-Day Challenge" },
   { href: "/blog",        label: "Blog" },
+  { href: "/ebook",       label: "E-book Waiting List" },
   { href: "/resources/free-profile-websites", label: "Free Profile Sites" },
   { href: "/sitemap",     label: "Sitemap" },
   { href: "/sitemap.xml", label: "XML Sitemap" },

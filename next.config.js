@@ -19,6 +19,9 @@ const nextConfig = {
       "/api/cron/index-now":          POSTS,
       "/blog/[slug]/opengraph-image": OG,
       "/blog/[slug]/twitter-image":   OG,
+      // Applies db/schema.sql on first request.
+      "/api/waitlist":                ["./db/schema.sql"],
+      "/ebook/unsubscribe":           ["./db/schema.sql"],
     },
   },
   async redirects() {
