@@ -17,10 +17,10 @@ export function FeaturedCard({ post }: { post: Post }) {
   return (
     <Link href={`/blog/${post.slug}`}
       className="group mb-10 grid overflow-hidden rounded-2xl border border-line bg-surface
-                 transition-colors duration-200 hover:border-[#3A414D] md:grid-cols-[0.9fr_1.1fr]">
+                 transition-colors duration-200 hover:border-[#3A4047] md:grid-cols-[0.9fr_1.1fr]">
 
       <div className="relative flex min-h-[200px] items-center justify-center bg-[#0F1217] md:min-h-[320px]">
-        <span className="absolute left-5 top-5 rounded-md bg-accent px-2.5 py-1 text-xs font-bold uppercase tracking-[0.1em] text-white">
+        <span className="absolute left-5 top-5 rounded-md bg-accent px-2.5 py-1 text-xs font-bold uppercase tracking-[0.1em] text-wa-ink">
           Featured
         </span>
         <span aria-hidden="true" className="text-[5rem] opacity-50">{post.icon}</span>
@@ -42,7 +42,7 @@ export function BlogCardItem({ post }: { post: Post }) {
   return (
     <Link href={`/blog/${post.slug}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-surface
-                 transition-[border-color,transform] duration-200 hover:-translate-y-1 hover:border-[#3A414D]">
+                 transition-[border-color,transform] duration-200 hover:-translate-y-1 hover:border-[#3A4047]">
 
       <div className="flex h-36 items-center justify-center bg-[#0F1217]">
         <span aria-hidden="true" className="text-5xl opacity-60">{post.icon}</span>

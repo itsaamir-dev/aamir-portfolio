@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { PROMISE } from "@/lib/site";
+import { PROMISE, EARNINGS } from "@/lib/site";
 
 const pageLinks = [
   { href: "/",            label: "Home" },
-  { href: "/#story",      label: "My Story" },
-  { href: "/#community",  label: "Community" },
+  { href: "/story",       label: "My Story" },
+  { href: "/learn",       label: "Learn" },
+  { href: "/community",   label: "Community" },
+  { href: "/challenge",   label: "30-Day Challenge" },
   { href: "/blog",        label: "Blog" },
   { href: "/resources/free-profile-websites", label: "Free Profile Sites" },
   { href: "/sitemap",     label: "Sitemap" },
@@ -27,7 +29,7 @@ export default function Footer() {
             AB<span className="text-accent">.</span>
           </Link>
           <p className="mt-3 max-w-xs text-[0.95rem] leading-relaxed text-muted">
-            Aamir Bashir · Software engineer and Top Rated Plus freelancer, documenting the journey.
+            Aamir Bashir · Software engineer and Top Rated Plus Upwork freelancer ({EARNINGS} earned), documenting the journey.
           </p>
           <p className="mt-3 text-sm text-muted">{PROMISE}</p>
         </div>

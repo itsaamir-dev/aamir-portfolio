@@ -86,7 +86,7 @@ export default function FreeProfileWebsitesPage() {
         <section aria-labelledby="start" className="pt-14 sm:pt-16">
           <div className="card relative overflow-hidden">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0"
-                 style={{ background: "radial-gradient(ellipse 70% 90% at 0% 0%, rgba(124,92,255,0.14), transparent 70%)" }} />
+                 style={{ background: "radial-gradient(ellipse 70% 90% at 0% 0%, rgba(57,245,106,0.08), transparent 70%)" }} />
             <div className="relative">
               <h2 id="start" className="text-xl font-bold text-ink">Short on time? Start with these 5</h2>
               <p className="mt-2 text-base text-muted">These matter most for software engineers. Add Product Hunt when you have something to launch.</p>

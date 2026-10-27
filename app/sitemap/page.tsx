@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 
 const pages = [
   { href: "/",           label: "Home" },
-  { href: "/#story",     label: "My Story" },
-  { href: "/#learn",     label: "What You’ll Learn" },
-  { href: "/#community", label: "Community" },
-  { href: "/#challenge", label: "30-Day Challenge" },
+  { href: "/story",      label: "My Story" },
+  { href: "/learn",      label: "Learn Freelancing" },
+  { href: "/community",  label: "Free WhatsApp Community" },
+  { href: "/challenge",  label: "30-Day Challenge" },
   { href: "/#faq",       label: "FAQ" },
   { href: "/blog",       label: "Blog" },
   { href: "/resources/free-profile-websites", label: "Free Profile Websites" },

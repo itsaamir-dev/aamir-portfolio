@@ -1,6 +1,6 @@
 "use client";
 import Icon from "@/components/Icon";
-import { WHATSAPP_URL } from "@/lib/site";
+import { WHATSAPP_URL, CTA_LABEL } from "@/lib/site";
 import { trackJoinCommunity } from "@/lib/analytics";
 
 /**
@@ -9,7 +9,7 @@ import { trackJoinCommunity } from "@/lib/analytics";
  * analytics so you can see which button people use.
  */
 export default function WhatsAppButton({
-  label = "Join the free WhatsApp community",
+  label = CTA_LABEL,
   primary = false,
   location,
   className = "",

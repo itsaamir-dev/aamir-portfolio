@@ -10,7 +10,7 @@ const MODEL = "claude-opus-5-5";
 const AUTHOR_FACTS = `
 Aamir Bashir, software engineer with 8+ years of experience (Android/Kotlin, React, Next.js, Node.js, Laravel, Firebase).
 Runs "Build With Aamir", a free WhatsApp community teaching freelancing, finding international clients and earning in USD.
-Upwork: Top Rated Plus, $70K+ earned in about 1.5 years, ~18 jobs, ~70% of clients in the US.
+Upwork: Top Rated Plus, $80K+ earned in about 1.5 years, ~18 completed jobs, ~70% of clients in the US.
 Started taking Upwork seriously in September 2024. First project: a MERN stack Jiu Jitsu platform (~$3,000 first payment).
 Major breakthrough January 2025. Roughly ~$1K+/month in year 1 and ~$4K+/month in year 2.
 Senior Software Engineer at Raybit Technologies (Jul 2023–present, remote); Senior Android Engineer at CodeBrew Labs (2020–2023).

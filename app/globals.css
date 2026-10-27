@@ -5,20 +5,22 @@
 html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 
 body {
-  background: #0B0D10;
-  color: #F5F7FA;
+  background: #080A09;
+  color: #FFFFFF;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-::selection { background: rgba(124, 92, 255, 0.35); color: #F5F7FA; }
+::selection { background: rgba(57,245,106,0.35); color: #FFFFFF; }
 
 /* Visible keyboard focus everywhere */
 :focus-visible {
-  outline: 2px solid #A78BFA;
+  outline: 2px solid #39F56A;
   outline-offset: 3px;
   border-radius: 6px;
 }
+/* Neon green is too faint on light sections — use deep green there */
+.bg-paper :focus-visible, .bg-white :focus-visible { outline-color: #0B6B35; }
 
 @layer components {
   .container-x {
@@ -44,17 +46,18 @@ body {
   /* Buttons — min 44px touch height */
   .btn {
     @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-center
-           text-[0.95rem] font-semibold sm:px-[22px] sm:text-base transition-[filter,background-color,border-color,color,transform] duration-200
+           text-[0.8125rem] font-bold uppercase leading-tight tracking-[0.04em] sm:px-[22px] sm:text-[0.9375rem]
+           transition-[filter,background-color,border-color,color,transform] duration-200
            hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98];
   }
   .btn-primary {
-    @apply btn bg-accent text-white hover:brightness-110;
+    @apply btn bg-accent text-wa-ink hover:brightness-110;
   }
   .btn-wa {
     @apply btn bg-wa font-bold text-wa-ink hover:brightness-110;
   }
   .btn-ghost {
-    @apply btn border border-line text-ink hover:border-[#3A414D] hover:bg-surface;
+    @apply btn border border-line text-ink hover:border-[#3A4047] hover:bg-surface;
   }
 
   .card {
@@ -121,7 +124,7 @@ body {
   position: fixed;
   top: 0; left: 0;
   height: 3px;
-  background: #7C5CFF;
+  background: #39F56A;
   z-index: 200;
   width: 0%;
 }
@@ -143,14 +146,14 @@ body {
 }
 .post-content h2 {
   font-size: 1.75rem; font-weight: 700; line-height: 1.25;
-  color: #F5F7FA; margin-top: 3rem; margin-bottom: 1.25rem;
-  padding-bottom: 0.75rem; border-bottom: 1px solid #252A33;
+  color: #FFFFFF; margin-top: 3rem; margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem; border-bottom: 1px solid #292E33;
 }
 .post-content h3 {
   font-size: 1.3rem; font-weight: 600;
-  color: #F5F7FA; margin-top: 2rem; margin-bottom: 0.75rem;
+  color: #FFFFFF; margin-top: 2rem; margin-bottom: 0.75rem;
 }
-.post-content a { color: #A78BFA; text-decoration: underline; text-underline-offset: 3px; }
+.post-content a { color: #39F56A; text-decoration: underline; text-underline-offset: 3px; }
 .post-content ul { margin-left: 0.5rem; margin-bottom: 1.5rem; list-style: none; }
 .post-content ul li {
   position: relative; padding-left: 1.25rem; color: #C9D1DC;
@@ -158,28 +161,28 @@ body {
 }
 .post-content ul li::before {
   content: ''; position: absolute; left: 0; top: 0.7em;
-  width: 6px; height: 6px; border-radius: 9999px; background: #7C5CFF;
+  width: 6px; height: 6px; border-radius: 9999px; background: #39F56A;
 }
-.post-content strong { color: #F5F7FA; font-weight: 600; }
-.post-content em     { color: #F5F7FA; font-style: italic; }
+.post-content strong { color: #FFFFFF; font-weight: 600; }
+.post-content em     { color: #FFFFFF; font-style: italic; }
 .post-content blockquote {
   margin: 2.5rem 0; padding: 1.5rem 1.75rem;
-  border-left: 3px solid #7C5CFF; border-radius: 0 12px 12px 0;
-  background: #12161C;
-  font-size: 1.15rem; color: #F5F7FA; line-height: 1.6;
+  border-left: 3px solid #39F56A; border-radius: 0 12px 12px 0;
+  background: #111315;
+  font-size: 1.15rem; color: #FFFFFF; line-height: 1.6;
 }
 .post-content .callout-info,
 .post-content .callout-warn {
   padding: 1.25rem 1.5rem; margin-bottom: 2rem; border-radius: 12px;
-  border: 1px solid #252A33; background: #12161C;
+  border: 1px solid #292E33; background: #111315;
 }
-.post-content .callout-info { border-left: 3px solid #7C5CFF; }
+.post-content .callout-info { border-left: 3px solid #39F56A; }
 .post-content .callout-warn { border-left: 3px solid #E8A87A; }
 .post-content .callout-label {
   font-size: 0.8rem; letter-spacing: 0.12em;
   text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 600;
 }
-.post-content .callout-info .callout-label { color: #A78BFA; }
+.post-content .callout-info .callout-label { color: #39F56A; }
 .post-content .callout-warn .callout-label { color: #E8A87A; }
 .post-content .callout-info p:last-child,
 .post-content .callout-warn p:last-child {
@@ -187,13 +190,13 @@ body {
 }
 .post-content .code-block {
   position: relative; background: #0F1217;
-  border: 1px solid #252A33; border-radius: 12px;
+  border: 1px solid #292E33; border-radius: 12px;
   padding: 1.5rem 1.75rem; margin: 1.75rem 0; overflow-x: auto;
 }
 .post-content .code-block::after {
   content: attr(data-lang); position: absolute; top: 0.625rem; right: 1rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.7rem;
-  letter-spacing: 0.1em; text-transform: uppercase; color: #A7AFBA;
+  letter-spacing: 0.1em; text-transform: uppercase; color: #A7ADB4;
 }
 .post-content .code-block pre {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875rem;
@@ -202,7 +205,7 @@ body {
 .post-content .code-block code { font-family: inherit; }
 
 /* Code syntax inside posts */
-.code-kw  { color: #C4B5FD; }
+.code-kw  { color: #FFD83D; }
 .code-fn  { color: #7AB3D0; }
 .code-st  { color: #A8D88A; }
 .code-cm  { color: #6B7480; font-style: italic; }

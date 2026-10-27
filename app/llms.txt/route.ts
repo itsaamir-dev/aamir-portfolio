@@ -10,15 +10,18 @@ export function GET() {
 
   const body = `# Build With Aamir — Aamir Bashir
 
-> Personal brand and free freelancing community of Aamir Bashir, a software engineer with 8+ years of experience who earned $70K+ on Upwork. He teaches freelancing, finding international clients and earning in USD, and writes about Android and full-stack engineering.
+> Personal brand and free freelancing community of Aamir Bashir, a software engineer with 8+ years of experience who has earned $80K+ on Upwork in approximately 1.5 years. He teaches freelancing, Upwork proposals, finding international clients and earning in USD, and writes about Android and full-stack engineering. Figures are his personal results, not a promise of anyone else's.
 
 ## About
 
-Aamir Bashir is a Top Rated Plus freelancer on Upwork with $70K+ earned, based in India and open to remote work with US/EU clients. He specialises in Android development (Kotlin, Jetpack Compose, MVVM, Clean Architecture), full-stack web development (React, Next.js, Node.js, Laravel), and AI/LLM integration in mobile apps.
+Aamir Bashir is a Top Rated Plus freelancer on Upwork with $80K+ earned (~18 completed jobs, ~70% US clients), based in India and open to remote work with US/EU clients. He specialises in Android development (Kotlin, Jetpack Compose, MVVM, Clean Architecture), full-stack web development (React, Next.js, Node.js, Laravel), and AI/LLM integration in mobile apps.
 
 - Website: ${SITE_URL}
 - Blog: ${SITE_URL}/blog
-- Community: ${SITE_URL}/#community (free WhatsApp community)
+- My Story: ${SITE_URL}/story
+- Learn freelancing: ${SITE_URL}/learn
+- Free WhatsApp community: ${SITE_URL}/community
+- 30-day journey: ${SITE_URL}/challenge
 - Sitemap: ${SITE_URL}/sitemap.xml
 - RSS: ${SITE_URL}/feed.xml
 

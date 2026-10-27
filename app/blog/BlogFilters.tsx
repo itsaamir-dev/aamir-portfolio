@@ -33,8 +33,8 @@ export default function BlogFilters({ posts }: { posts: BlogSummary[] }) {
             aria-pressed={active === f.value}
             className={`min-h-[44px] rounded-[10px] border px-4 text-[0.95rem] font-medium transition-colors duration-200
               ${active === f.value
-                ? "border-accent bg-[rgba(124,92,255,0.12)] text-ink"
-                : "border-line text-muted hover:border-[#3A414D] hover:text-ink"
+                ? "border-accent bg-[rgba(57,245,106,0.10)] text-ink"
+                : "border-line text-muted hover:border-[#3A4047] hover:text-ink"
               }`}>
             {f.label}
           </button>

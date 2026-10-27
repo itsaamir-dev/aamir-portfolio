@@ -8,17 +8,16 @@ import { trackJoinCommunity } from "@/lib/analytics";
 
 const links = [
   { href: "/",           label: "Home" },
-  { href: "/#story",     label: "My Story" },
-  { href: "/#learn",     label: "Learn" },
-  { href: "/#community", label: "Community" },
-  { href: "/#challenge", label: "30-Day Challenge" },
+  { href: "/story",      label: "My Story" },
+  { href: "/learn",      label: "Learn" },
+  { href: "/community",  label: "Community" },
+  { href: "/challenge",  label: "30-Day Challenge" },
   { href: "/blog",       label: "Blog" },
 ];
 
 function isActive(href: string, pathname: string) {
   if (href === "/") return pathname === "/";
-  if (href === "/blog") return pathname.startsWith("/blog");
-  return false;
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function Logo({ onClick }: { onClick?: () => void }) {

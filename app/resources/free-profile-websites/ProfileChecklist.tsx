@@ -35,17 +35,17 @@ export default function ProfileChecklist({ sites, recommended }: { sites: Profil
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-muted">#{i + 1}
-                    {recommended.includes(site.name) && <span className="ml-2 rounded-md bg-[rgba(124,92,255,0.15)] px-2 py-0.5 text-xs font-semibold text-accent-light">Start here</span>}
+                    {recommended.includes(site.name) && <span className="ml-2 rounded-md bg-[rgba(57,245,106,0.12)] px-2 py-0.5 text-xs font-semibold text-accent-light">Start here</span>}
                   </p>
                   <h3 className="mt-1 text-xl font-semibold text-ink">{site.name}</h3>
                 </div>
                 <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-line
-                                  hover:border-[#3A414D]" title={checked ? "Mark as not done" : "Mark as done"}>
+                                  hover:border-[#3A4047]" title={checked ? "Mark as not done" : "Mark as done"}>
                   <input type="checkbox" className="peer sr-only" checked={checked} onChange={() => toggle(site.name)}
                          aria-label={`I've set up my ${site.name} profile`} />
                   <span className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors
                                     peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-light
-                                    ${checked ? "border-wa bg-wa text-wa-ink" : "border-[#3A414D] text-transparent"}`}>
+                                    ${checked ? "border-wa bg-wa text-wa-ink" : "border-[#3A4047] text-transparent"}`}>
                     <Icon name="check" size={16} />
                   </span>
                 </label>

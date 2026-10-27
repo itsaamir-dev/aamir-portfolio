@@ -17,7 +17,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const viewport: Viewport = {
-  themeColor:  "#0B0D10",
+  themeColor:  "#080A09",
   viewportFit: "cover", // enables env(safe-area-inset-*) for the sticky CTA
 };
 

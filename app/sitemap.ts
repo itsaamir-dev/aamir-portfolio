@@ -9,6 +9,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: SITE_URL,               lastModified: latest, changeFrequency: "weekly",  priority: 1.0 },
     { url: `${SITE_URL}/blog`,     lastModified: latest, changeFrequency: "daily",   priority: 0.9 },
+    { url: `${SITE_URL}/story`,     lastModified: new Date("2026-10-27"), changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE_URL}/learn`,     lastModified: latest,                 changeFrequency: "weekly",  priority: 0.9 },
+    { url: `${SITE_URL}/community`, lastModified: new Date("2026-10-27"), changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE_URL}/challenge`, lastModified: new Date("2026-10-27"), changeFrequency: "weekly",  priority: 0.8 },
     { url: `${SITE_URL}/resources/free-profile-websites`, lastModified: new Date("2026-10-26"), changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/sitemap`,  lastModified: latest, changeFrequency: "weekly",  priority: 0.3 },
     ...posts.map(post => ({

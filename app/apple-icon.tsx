@@ -7,8 +7,8 @@ export default function AppleIcon() {
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-                    background: "#0B0D10", color: "#F5F7FA", fontSize: 84, fontWeight: 800 }}>
-        AB<span style={{ color: "#7C5CFF" }}>.</span>
+                    background: "#080A09", color: "#FFFFFF", fontSize: 84, fontWeight: 800 }}>
+        AB<span style={{ color: "#39F56A" }}>.</span>
       </div>
     ),
     size,

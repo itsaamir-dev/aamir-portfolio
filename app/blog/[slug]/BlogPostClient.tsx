@@ -7,7 +7,7 @@ import type { BlogPost } from "@/lib/data";
 import type { BlogSummary } from "@/lib/posts";
 import { PROMISE } from "@/lib/site";
 
-const chip = "inline-flex min-h-[40px] items-center rounded-[10px] border border-line px-4 text-sm font-medium text-muted transition-colors duration-200 hover:border-[#3A414D] hover:text-ink";
+const chip = "inline-flex min-h-[40px] items-center rounded-[10px] border border-line px-4 text-sm font-medium text-muted transition-colors duration-200 hover:border-[#3A4047] hover:text-ink";
 
 export default function BlogPostClient({
   post, prev, next, related,
@@ -69,7 +69,7 @@ export default function BlogPostClient({
 
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent font-bold text-white">AB</div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent font-bold text-wa-ink">AB</div>
               <div>
                 <strong className="block text-[0.95rem] font-semibold text-ink">Aamir Bashir</strong>
                 <span>Senior Software Engineer</span>
@@ -111,7 +111,7 @@ export default function BlogPostClient({
 
           {/* Author card */}
           <div className="card mt-10 flex flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-xl font-bold text-white">AB</div>
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-xl font-bold text-wa-ink">AB</div>
             <div>
               <strong className="block text-lg font-semibold text-ink">Aamir Bashir</strong>
               <span className="mt-0.5 block text-sm text-accent-light">Senior Software Engineer · Top Rated Plus on Upwork</span>
@@ -125,7 +125,7 @@ export default function BlogPostClient({
           {/* Community CTA */}
           <div className="relative mt-6 overflow-hidden rounded-2xl border border-line bg-surface p-6 sm:p-8">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0"
-                 style={{ background: "radial-gradient(ellipse 70% 80% at 0% 0%, rgba(124,92,255,0.14), transparent 70%)" }} />
+                 style={{ background: "radial-gradient(ellipse 70% 80% at 0% 0%, rgba(57,245,106,0.08), transparent 70%)" }} />
             <div className="relative">
               <h2 className="text-xl font-bold text-ink">Build With Aamir Community</h2>
               <p className="mt-2 text-base text-muted">{PROMISE}</p>
@@ -174,14 +174,14 @@ export default function BlogPostClient({
       <nav aria-label="More posts" className="container-x grid grid-cols-1 gap-4 pb-16 md:grid-cols-2">
         {prev ? (
           <Link href={`/blog/${prev.slug}`}
-            className="card flex flex-col gap-2 transition-colors duration-200 hover:border-[#3A414D]">
+            className="card flex flex-col gap-2 transition-colors duration-200 hover:border-[#3A4047]">
             <span className="text-sm font-semibold text-accent-light">← Previous</span>
             <span className="text-base font-medium leading-snug text-ink">{prev.title}</span>
           </Link>
         ) : <div />}
         {next && (
           <Link href={`/blog/${next.slug}`}
-            className="card flex flex-col gap-2 text-right transition-colors duration-200 hover:border-[#3A414D]">
+            className="card flex flex-col gap-2 text-right transition-colors duration-200 hover:border-[#3A4047]">
             <span className="text-sm font-semibold text-accent-light">Next →</span>
             <span className="text-base font-medium leading-snug text-ink">{next.title}</span>
           </Link>
