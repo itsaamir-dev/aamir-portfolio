@@ -1,12 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import StickyMobileCTA from "@/components/StickyMobileCTA";
-import { GoogleAnalytics } from "@next/third-parties/google";
-import { GA_ID } from "@/lib/analytics";
 import {
-  SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION, AUTHOR, KEYWORDS, personSchema, ogDefaults, jsonLd,
+  SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION, AUTHOR, KEYWORDS, ogDefaults,
 } from "@/lib/seo";
 
 const spaceGrotesk = Space_Grotesk({
@@ -59,39 +55,11 @@ export const metadata: Metadata = {
   },
 };
 
+// Shared shell for the public site — app/(site) — and the admin panel — app/admin.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const siteSchema = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type":     "WebSite",
-        "@id":       `${SITE_URL}/#website`,
-        url:         SITE_URL,
-        name:        SITE_NAME,
-        description: SITE_DESCRIPTION,
-        inLanguage:  "en-US",
-        publisher:   { "@id": `${SITE_URL}/#person` },
-      },
-      personSchema,
-    ],
-  };
-
   return (
     <html lang="en" className={spaceGrotesk.variable}>
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: jsonLd(siteSchema) }}
-        />
-      </head>
-      <body className="font-sans">
-        <Navbar />
-        {children}
-        {/* Keeps the sticky mobile CTA from covering the end of the page */}
-        <div aria-hidden="true" className="h-[calc(76px+env(safe-area-inset-bottom))] bg-bg md:hidden" />
-        <StickyMobileCTA />
-      </body>
-      {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
+      <body className="font-sans">{children}</body>
     </html>
   );
 }

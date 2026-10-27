@@ -1,0 +1,90 @@
+/* Material 3 colour roles, generated with @material/material-color-utilities
+   (SchemeTonalSpot) from the brand seed #39F56A. Dark is the default; light
+   follows the OS or the in-app toggle. */
+
+.admin-root {
+  --md-primary: #38693c;            --md-on-primary: #ffffff;
+  --md-primary-container: #b9f0b7;  --md-on-primary-container: #205026;
+  --md-secondary-container: #d4e8d0; --md-on-secondary-container: #3a4b39;
+  --md-tertiary: #39656c;
+  --md-tertiary-container: #bcebf2; --md-on-tertiary-container: #1f4d53;
+  --md-error: #ba1a1a;              --md-on-error: #ffffff;
+  --md-error-container: #ffdad6;    --md-on-error-container: #93000a;
+  --md-surface: #f7fbf2;            --md-on-surface: #181d18;
+  --md-on-surface-variant: #424940;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f1f5ec;
+  --md-surface-container: #ebefe6;
+  --md-surface-container-high: #e6e9e1;
+  --md-surface-container-highest: #e0e4db;
+  --md-outline: #72796f;            --md-outline-variant: #c2c9bd;
+  --md-inverse-surface: #2d322c;    --md-inverse-on-surface: #eef2e9;
+  --md-inverse-primary: #9ed49d;
+  /* Chart categorical slots (validated: dataviz validate_palette, light) */
+  --md-series-1: #2a78d6;           --md-series-2: #eb6834;
+  color-scheme: light;
+}
+
+.admin-root[data-theme="dark"] {
+  --md-primary: #9ed49d;            --md-on-primary: #043912;
+  --md-primary-container: #205026;  --md-on-primary-container: #b9f0b7;
+  --md-secondary-container: #3a4b39; --md-on-secondary-container: #d4e8d0;
+  --md-tertiary: #a1ced6;
+  --md-tertiary-container: #1f4d53; --md-on-tertiary-container: #bcebf2;
+  --md-error: #ffb4ab;              --md-on-error: #690005;
+  --md-error-container: #93000a;    --md-on-error-container: #ffdad6;
+  --md-surface: #101410;            --md-on-surface: #e0e4db;
+  --md-on-surface-variant: #c2c9bd;
+  --md-surface-container-lowest: #0b0f0b;
+  --md-surface-container-low: #181d18;
+  --md-surface-container: #1c211b;
+  --md-surface-container-high: #272b26;
+  --md-surface-container-highest: #313630;
+  --md-outline: #8c9389;            --md-outline-variant: #424940;
+  --md-inverse-surface: #e0e4db;    --md-inverse-on-surface: #2d322c;
+  --md-inverse-primary: #38693c;
+  /* Chart categorical slots (validated: dataviz validate_palette, dark) */
+  --md-series-1: #3987e5;           --md-series-2: #d95926;
+  color-scheme: dark;
+}
+
+.admin-root {
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  font-family: var(--font-roboto-flex), system-ui, sans-serif;
+  font-feature-settings: "tnum" 1; /* tabular figures for data */
+}
+.admin-root :focus-visible {
+  outline: 2px solid var(--md-primary);
+  outline-offset: 2px;
+}
+
+/* M3 state layers: hover 8%, focus/pressed 10% of the content colour */
+.state-layer { position: relative; isolation: isolate; }
+.state-layer::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: currentColor; opacity: 0; z-index: -1;
+  transition: opacity 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+.state-layer:hover::before         { opacity: 0.08; }
+.state-layer:focus-visible::before,
+.state-layer:active::before        { opacity: 0.10; }
+
+/* Material Symbols (subset loaded in the admin layout) */
+.msr {
+  font-family: "Material Symbols Rounded";
+  font-weight: normal; font-style: normal; line-height: 1;
+  letter-spacing: normal; text-transform: none; white-space: nowrap;
+  direction: ltr; -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  display: inline-block; width: 1em; overflow: hidden; user-select: none;
+}
+.msr.fill { font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24; }
+
+/* Load-in choreography is driven by anime.js; this is the pre-animation state.
+   Without JS, or with reduced motion, everything shows immediately. */
+.admin-root.js-motion [data-anim] { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .admin-root.js-motion [data-anim] { opacity: 1; }
+  .state-layer::before { transition: none; }
+}
