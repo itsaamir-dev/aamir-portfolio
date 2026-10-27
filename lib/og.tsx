@@ -4,11 +4,14 @@ import { ImageResponse } from "next/og";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
+// Read lazily: this module is pulled into shared chunks, and dynamic pages that
+// never draw an image don't have the font files in their deployment bundle.
 const font = (file: string) => fs.readFileSync(path.join(process.cwd(), "assets", "fonts", file));
-const FONTS = [
-  { name: "Space Grotesk", data: font("space-grotesk-500.woff"), weight: 500 as const, style: "normal" as const },
-  { name: "Space Grotesk", data: font("space-grotesk-700.woff"), weight: 700 as const, style: "normal" as const },
-];
+let fonts: { name: string; data: Buffer; weight: 500 | 700; style: "normal" }[] | null = null;
+const getFonts = () => (fonts ??= [
+  { name: "Space Grotesk", data: font("space-grotesk-500.woff"), weight: 500, style: "normal" },
+  { name: "Space Grotesk", data: font("space-grotesk-700.woff"), weight: 700, style: "normal" },
+]);
 
 /** Shared 1200×630 social card in the site's visual style. */
 export function ogCard({ eyebrow, title, footer }: { eyebrow: string; title: string; footer: string }) {
@@ -38,6 +41,6 @@ export function ogCard({ eyebrow, title, footer }: { eyebrow: string; title: str
         </div>
       </div>
     ),
-    { ...OG_SIZE, fonts: FONTS },
+    { ...OG_SIZE, fonts: getFonts() },
   );
 }
