@@ -1,6 +1,6 @@
 import { isDbConfigured } from "@/lib/db";
 import { isCashfreeConfigured, verifyCashfreeWebhook } from "@/lib/cashfree";
-import { markFailedByOrder, markPaidByOrder } from "@/lib/jobs-data";
+import { markFailedByOrder, confirmPaidByOrder } from "@/lib/jobs-data";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const payment = evt.data?.payment;
   try {
     if (orderId && evt.type === "PAYMENT_SUCCESS_WEBHOOK" && payment?.payment_status === "SUCCESS") {
-      await markPaidByOrder(orderId, String(payment.cf_payment_id ?? ""));
+      await confirmPaidByOrder(orderId, String(payment.cf_payment_id ?? ""));
     } else if (orderId && evt.type === "PAYMENT_FAILED_WEBHOOK") {
       await markFailedByOrder(orderId);
     }

@@ -1,6 +1,6 @@
 import { isDbConfigured } from "@/lib/db";
 import { isRazorpayWebhookConfigured, verifyWebhookSignature } from "@/lib/razorpay";
-import { markFailedByOrder, markPaidByOrder } from "@/lib/jobs-data";
+import { markFailedByOrder, confirmPaidByOrder } from "@/lib/jobs-data";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const payment = evt.payload?.payment?.entity;
   try {
     if ((evt.event === "payment.captured" || evt.event === "order.paid") && payment?.id && payment.order_id) {
-      await markPaidByOrder(payment.order_id, payment.id);
+      await confirmPaidByOrder(payment.order_id, payment.id);
     } else if (evt.event === "payment.failed" && payment?.order_id) {
       await markFailedByOrder(payment.order_id);
     }

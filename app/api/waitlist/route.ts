@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { getPool, ensureSchema, isDbConfigured } from "@/lib/db";
+import { sendWaitlistConfirmation } from "@/lib/email";
 import { validateWaitlist, normalizeEmail, normalizeWhatsapp, clip, type WaitlistInput } from "@/lib/waitlist";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
 
     // Unique on email. A repeat sign-up keeps the original row and only adds
     // newly given details or consent — it never removes consent.
-    await db.query(
+    const saved = await db.query<{ isNew: boolean; token: string }>(
       `INSERT INTO ebook_waitlist
          (first_name, email, whatsapp_number, source, campaign,
           utm_source, utm_medium, utm_campaign, landing_page, referrer,
@@ -68,7 +69,8 @@ export async function POST(req: Request) {
          marketing_consent = ebook_waitlist.marketing_consent OR EXCLUDED.marketing_consent,
          whatsapp_consent  = ebook_waitlist.whatsapp_consent  OR EXCLUDED.whatsapp_consent,
          unsubscribed_at   = NULL,
-         updated_at        = now()`,
+         updated_at        = now()
+       RETURNING (xmax = 0) AS "isNew", unsubscribe_token AS token`,
       [
         input.firstName.trim(),
         normalizeEmail(input.email),
@@ -83,6 +85,12 @@ export async function POST(req: Request) {
         input.whatsappConsent === true && Boolean(whatsapp),
       ],
     );
+
+    // Confirmation email for new sign-ups only, so repeat submissions can't be
+    // used to send someone mail over and over.
+    if (saved.rows[0]?.isNew) {
+      await sendWaitlistConfirmation({ to: normalizeEmail(input.email), firstName: input.firstName.trim(), unsubscribeToken: saved.rows[0].token });
+    }
 
     // Same response for new and existing emails, so the form can't be used to
     // check whether someone is on the list.

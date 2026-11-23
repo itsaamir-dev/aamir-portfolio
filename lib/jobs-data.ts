@@ -1,5 +1,6 @@
 import "server-only";
 import { getPool, ensureSchema, isDbConfigured } from "@/lib/db";
+import { sendApplicationConfirmation } from "@/lib/email";
 import type { EmploymentType, Job, JobStatus, PaymentStatus, ReviewStatus } from "@/lib/jobs";
 
 export { isDbConfigured };
@@ -250,7 +251,10 @@ export async function discardApplication(id: number) {
   await getPool().query(`DELETE FROM job_applications WHERE id = $1 AND payment_status = 'pending'`, [id]);
 }
 
-export type PaidResult = { publicId: string; jobSlug: string; jobTitle: string; feePaise: number; orderId: string };
+export type PaidResult = {
+  publicId: string; jobSlug: string; jobTitle: string; feePaise: number; orderId: string;
+  email: string; fullName: string; paymentId: string | null; justPaid: boolean;
+};
 
 /**
  * Marks the application for this gateway order as paid. Idempotent: the
@@ -265,12 +269,29 @@ export async function markPaidByOrder(orderId: string, paymentId: string, public
     `WITH target AS (SELECT a.id FROM job_applications a WHERE ${match}),
           upd AS (UPDATE job_applications a SET payment_status = 'paid', payment_id = $2, paid_at = now(), updated_at = now()
                    WHERE a.id IN (SELECT id FROM target) AND a.payment_status IN ('pending', 'failed') RETURNING a.id)
-     SELECT a.public_id AS "publicId", j.slug AS "jobSlug", j.title AS "jobTitle", a.fee_paise AS "feePaise", a.payment_order_id AS "orderId"
+     SELECT a.public_id AS "publicId", j.slug AS "jobSlug", j.title AS "jobTitle", a.fee_paise AS "feePaise", a.payment_order_id AS "orderId",
+            a.email, a.full_name AS "fullName", COALESCE(NULLIF($2, ''), a.payment_id) AS "paymentId",
+            a.id IN (SELECT id FROM upd) AS "justPaid"
        FROM job_applications a JOIN jobs j ON j.id = a.job_id
       WHERE a.id IN (SELECT id FROM target) AND (a.payment_status = 'paid' OR a.id IN (SELECT id FROM upd))`,
     params,
   );
   return rows[0] ?? null;
+}
+
+/**
+ * markPaidByOrder + the applicant's confirmation email, sent only on the
+ * transition to paid (the browser check and the webhook can both arrive).
+ */
+export async function confirmPaidByOrder(orderId: string, paymentId: string, publicId?: string): Promise<PaidResult | null> {
+  const paid = await markPaidByOrder(orderId, paymentId, publicId);
+  if (paid?.justPaid) {
+    await sendApplicationConfirmation({
+      to: paid.email, fullName: paid.fullName, jobTitle: paid.jobTitle, jobSlug: paid.jobSlug,
+      feePaise: paid.feePaise, reference: paid.publicId.slice(0, 8).toUpperCase(), paymentId: paid.paymentId,
+    });
+  }
+  return paid;
 }
 
 export async function markFailedByOrder(orderId: string) {

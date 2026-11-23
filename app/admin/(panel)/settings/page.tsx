@@ -9,6 +9,7 @@ import { GA_ID } from "@/lib/analytics";
 import { WHATSAPP_URL } from "@/lib/site";
 import { isRazorpayConfigured, isRazorpayWebhookConfigured, razorpayMode } from "@/lib/razorpay";
 import { cashfreeMode, isCashfreeConfigured } from "@/lib/cashfree";
+import { EMAIL_FROM, EMAIL_REPLY_TO, isEmailConfigured } from "@/lib/email";
 import { activeProvider, PROVIDER_LABEL } from "@/lib/payments";
 
 export const metadata: Metadata = { title: "Setup" };
@@ -51,7 +52,10 @@ export default async function SettingsPage() {
           <Row ok={db.ok} title="Database (Neon Postgres)" text={db.text} />
           <Row ok title="Admin sign-in" text="Protected by ADMIN_PASSWORD. Sessions last 7 days." />
           <Row ok={Boolean(GA_ID)} warn title="Google Analytics" text={GA_ID ? `Tracking with ${GA_ID}. E-book events: ebook_waitlist_success and others.` : "NEXT_PUBLIC_GA_ID isn’t set — sign-ups still save, but aren’t tracked."} />
-          <Row ok={false} warn title="Confirmation emails" text="Not set up. Sign-ups are saved and see an on-page confirmation. Add an email provider (e.g. Resend) to send emails." />
+          <Row ok={isEmailConfigured} warn title="Confirmation emails"
+               text={isEmailConfigured
+                 ? `Sending from ${EMAIL_FROM} (replies go to ${EMAIL_REPLY_TO}) for paid job applications and new e-book sign-ups. The domain must be verified in Resend.`
+                 : "Not set up — add the Resend integration in Vercel (it sets RESEND_API_KEY) and verify buildwithaamir.com in Resend. Until then, applicants and sign-ups only see the on-page confirmation."} />
           <Row ok title="WhatsApp community link" text={WHATSAPP_URL} />
           <Row ok={Boolean(activeProvider())} title="Job referral payments"
                text={activeProvider()

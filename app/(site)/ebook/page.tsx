@@ -29,7 +29,7 @@ const covers = [
 ];
 
 const afterSteps = [
-  { title: "You’re added to the list", text: "Your details are saved and you’ll see a confirmation straight away." },
+  { title: "You’re added to the list", text: "Your details are saved, you’ll see a confirmation straight away, and a welcome email follows." },
   { title: "Launch updates",           text: "When the price, launch date and offer terms are confirmed, the list hears first." },
   { title: "Early-access offer",       text: `Once the terms are confirmed, the list gets early access to the planned ${ebook.discountPercent}% launch discount.` },
 ];

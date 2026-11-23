@@ -276,7 +276,8 @@ export default function ApplyForm({ jobSlug, jobTitle, feePaise, gateway = "our 
           <h3 className="mt-5 text-[1.75rem] font-medium tracking-[-0.04em] text-ink">Application submitted</h3>
           <p className="mt-2 text-base leading-relaxed text-muted">
             Your application for <strong className="font-semibold text-ink">{jobTitle}</strong> and the {fee} referral fee went through.
-            Your reference is <strong className="font-mono text-ink">{reference}</strong> — keep it for any questions.
+            Your reference is <strong className="font-mono text-ink">{reference}</strong> — keep it for any questions. A confirmation
+            email is on its way too.
           </p>
           <ol className="mt-6 space-y-2">
             {["Your résumé and proposal are reviewed against the role.",

@@ -1,7 +1,7 @@
 import { isDbConfigured } from "@/lib/db";
 import { verifyPaymentSignature } from "@/lib/razorpay";
 import { getCashfreePayment, isCashfreeConfigured } from "@/lib/cashfree";
-import { getApplicationOrder, markPaidByOrder } from "@/lib/jobs-data";
+import { getApplicationOrder, confirmPaidByOrder } from "@/lib/jobs-data";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,7 @@ async function verifyCashfree(application: string) {
       // ACTIVE = not paid yet (closed, failed, or the bank is still confirming).
       return json({ ok: false, pending: result.status === "ACTIVE", error: "We haven’t received your payment yet." }, 402);
     }
-    const paid = await markPaidByOrder(app.orderId, result.paymentId ?? "", application);
+    const paid = await confirmPaidByOrder(app.orderId, result.paymentId ?? "", application);
     if (!paid) return json({ ok: false, error: "We couldn’t find this application. Contact us with your reference." }, 404);
     return paidResponse(paid);
   } catch (err) {
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const paid = await markPaidByOrder(orderId, paymentId, application);
+    const paid = await confirmPaidByOrder(orderId, paymentId, application);
     if (!paid) return json({ ok: false, error: "We couldn’t find this application. Contact us with your payment ID." }, 404);
     return paidResponse(paid);
   } catch (err) {
