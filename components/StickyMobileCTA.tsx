@@ -5,12 +5,13 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 
 // Fixed WhatsApp CTA on mobile. Hidden while any primary CTA on the page
 // (hero, final CTA) is on screen, so the action never appears twice, and on
-// the e-book page, where the waiting-list form is the main action.
+// the e-book and job pages, where their own form is the main action.
 export default function StickyMobileCTA() {
   const [visible, setVisible] = useState(false);
   const pathname = usePathname();
 
-  const hidden = pathname.startsWith("/ebook");
+  // Pages whose own form is the main action: the e-book waiting list and job applications.
+  const hidden = pathname.startsWith("/ebook") || /^\/jobs\/[^/]+/.test(pathname);
 
   useEffect(() => {
     if (hidden) { setVisible(false); return; }

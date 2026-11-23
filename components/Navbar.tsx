@@ -14,6 +14,7 @@ const links = [
   { href: "/learn",      label: "Learn" },
   { href: "/community",  label: "Community" },
   { href: "/challenge",  label: "30-Day Challenge" },
+  { href: "/jobs",       label: "Jobs" },
   { href: "/blog",       label: "Blog" },
   { href: "/ebook",      label: "E-book" },
 ];
@@ -67,7 +68,7 @@ export default function Navbar() {
                   <Link
                     href={href}
                     aria-current={active ? "page" : undefined}
-                    className={`inline-flex min-h-[40px] items-center whitespace-nowrap rounded-full px-2.5 font-display text-[0.94rem] 2xl:px-3.5 2xl:text-[0.975rem]
+                    className={`inline-flex min-h-[40px] items-center whitespace-nowrap rounded-full px-2.5 font-display text-[0.94rem]
                                 font-medium tracking-[-0.01em] transition-colors duration-200
                                 ${active ? "bg-surface text-ink" : "text-muted hover:bg-surface hover:text-ink"}`}
                   >

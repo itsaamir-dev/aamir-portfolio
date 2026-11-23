@@ -7,6 +7,9 @@ import { getPool } from "@/lib/db";
 import { ebook, launchPrice, formatPrice } from "@/lib/ebook";
 import { GA_ID } from "@/lib/analytics";
 import { WHATSAPP_URL } from "@/lib/site";
+import { isRazorpayConfigured, isRazorpayWebhookConfigured, razorpayMode } from "@/lib/razorpay";
+import { cashfreeMode, isCashfreeConfigured } from "@/lib/cashfree";
+import { activeProvider, PROVIDER_LABEL } from "@/lib/payments";
 
 export const metadata: Metadata = { title: "Setup" };
 export const dynamic = "force-dynamic";
@@ -43,13 +46,29 @@ export default async function SettingsPage() {
   return (
     <Motion className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-2 [&>*]:min-w-0">
       <Card data-anim aria-labelledby="checks-h">
-        <CardTitle id="checks-h" sub="What the waiting list needs to run">Setup checklist</CardTitle>
+        <CardTitle id="checks-h" sub="What the waiting list and job referrals need to run">Setup checklist</CardTitle>
         <ul className="divide-y divide-md-outline-variant">
           <Row ok={db.ok} title="Database (Neon Postgres)" text={db.text} />
           <Row ok title="Admin sign-in" text="Protected by ADMIN_PASSWORD. Sessions last 7 days." />
           <Row ok={Boolean(GA_ID)} warn title="Google Analytics" text={GA_ID ? `Tracking with ${GA_ID}. E-book events: ebook_waitlist_success and others.` : "NEXT_PUBLIC_GA_ID isn’t set — sign-ups still save, but aren’t tracked."} />
           <Row ok={false} warn title="Confirmation emails" text="Not set up. Sign-ups are saved and see an on-page confirmation. Add an email provider (e.g. Resend) to send emails." />
           <Row ok title="WhatsApp community link" text={WHATSAPP_URL} />
+          <Row ok={Boolean(activeProvider())} title="Job referral payments"
+               text={activeProvider()
+                 ? `New applications pay through ${PROVIDER_LABEL[activeProvider()!]}.${isCashfreeConfigured && isRazorpayConfigured ? " Both gateways are set up — PAYMENT_PROVIDER picks one (Cashfree by default)." : ""}`
+                 : "No payment gateway is set up. Add Cashfree (CASHFREE_APP_ID, CASHFREE_SECRET_KEY) or Razorpay keys — applicants can’t pay or submit until you do."} />
+          <Row ok={isCashfreeConfigured} warn title="Cashfree"
+               text={isCashfreeConfigured
+                 ? `Connected in ${cashfreeMode} mode.${cashfreeMode === "sandbox" ? " Test payments only — use production keys (and CASHFREE_ENV=production) to take real money." : ""} Payment webhooks go to /api/cashfree/webhook automatically.`
+                 : "CASHFREE_APP_ID and CASHFREE_SECRET_KEY aren’t set."} />
+          <Row ok={isRazorpayConfigured} warn title="Razorpay"
+               text={isRazorpayConfigured
+                 ? `Connected in ${razorpayMode} mode.${razorpayMode === "test" ? " Test payments only — switch to rzp_live_ keys to take real money." : ""}`
+                 : "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET aren’t set."} />
+          {isRazorpayConfigured && <Row ok={isRazorpayWebhookConfigured} warn title="Razorpay webhook"
+               text={isRazorpayWebhookConfigured
+                 ? "RAZORPAY_WEBHOOK_SECRET is set. Payments are confirmed even if an applicant closes the tab."
+                 : "Optional but recommended: add a webhook to /api/razorpay/webhook (payment.captured, payment.failed, order.paid) and set RAZORPAY_WEBHOOK_SECRET."} />}
         </ul>
       </Card>
 

@@ -9,6 +9,8 @@ import Snackbar from "@/components/admin/Snackbar";
 const NAV = [
   { href: "/admin",          label: "Overview", icon: "space_dashboard" },
   { href: "/admin/leads",    label: "Leads",    icon: "group" },
+  { href: "/admin/jobs",     label: "Jobs",     icon: "work" },
+  { href: "/admin/applications", label: "Applications", icon: "description" },
   { href: "/admin/settings", label: "Setup",    icon: "settings" },
 ];
 
@@ -65,7 +67,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 flex h-16 items-center gap-2 bg-md-surface/95 px-4 backdrop-blur sm:px-6">
         <h1 className="text-[1.375rem] font-normal leading-7 text-md-on-surface">{current?.label ?? "Admin"}</h1>
         <span className="ml-1 hidden rounded-lg border border-md-outline-variant px-2 py-0.5 text-xs font-medium text-md-on-surface-variant sm:inline">
-          E-book waiting list
+          Build With Aamir
         </span>
         <div className="ml-auto flex items-center">
           <a href="/ebook" target="_blank" rel="noopener noreferrer" aria-label="Open the e-book page"

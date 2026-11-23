@@ -22,6 +22,7 @@ Aamir Bashir is a Top Rated Plus freelancer on Upwork with $80K+ earned (~18 com
 - Learn freelancing: ${SITE_URL}/learn
 - Free WhatsApp community: ${SITE_URL}/community
 - 30-day journey: ${SITE_URL}/challenge
+- Remote jobs & referrals: ${SITE_URL}/jobs
 - Sitemap: ${SITE_URL}/sitemap.xml
 - RSS: ${SITE_URL}/feed.xml
 

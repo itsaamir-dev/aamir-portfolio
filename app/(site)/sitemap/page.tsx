@@ -19,6 +19,7 @@ const pages = [
   { href: "/challenge",  label: "30-Day Challenge" },
   { href: "/ebook",      label: "The Freelancing Playbook (E-book Waiting List)" },
   { href: "/#faq",       label: "FAQ" },
+  { href: "/jobs",       label: "Jobs & Referrals" },
   { href: "/blog",       label: "Blog" },
   { href: "/resources/free-profile-websites", label: "Free Profile Websites" },
 ];

@@ -22,6 +22,18 @@ const nextConfig = {
       // Applies db/schema.sql on first request.
       "/api/waitlist":                ["./db/schema.sql"],
       "/ebook/unsubscribe":           ["./db/schema.sql"],
+      "/api/jobs/apply":              ["./db/schema.sql"],
+      "/api/jobs/verify":             ["./db/schema.sql"],
+      "/api/razorpay/webhook":        ["./db/schema.sql"],
+      "/api/cashfree/webhook":        ["./db/schema.sql"],
+      "/api/admin/applications/[id]/resume": ["./db/schema.sql"],
+      "/jobs":                        ["./db/schema.sql"],
+      "/jobs/[slug]":                 ["./db/schema.sql"],
+      "/sitemap.xml":                 ["./db/schema.sql"],
+      "/admin/jobs":                  ["./db/schema.sql"],
+      "/admin/jobs/new":              ["./db/schema.sql"],
+      "/admin/jobs/[id]":             ["./db/schema.sql"],
+      "/admin/applications":          ["./db/schema.sql"],
     },
   },
   async redirects() {

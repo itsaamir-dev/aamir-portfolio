@@ -11,6 +11,7 @@ const ICONS = [
   "light_mode", "lock", "logout", "mail", "menu_book", "more_vert", "north_east", "open_in_new",
   "person_remove", "refresh", "search", "settings", "south_east", "space_dashboard", "trending_flat",
   "visibility", "visibility_off",
+  "add", "description", "edit", "payments", "work",
 ];
 const SYMBOLS_URL =
   "https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0" +
@@ -38,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link rel="stylesheet" href={SYMBOLS_URL} />
-      <div id="admin-root" data-theme="dark" className={`admin-root min-h-dvh ${robotoFlex.variable}`}>
+      <div id="admin-root" data-theme="dark" suppressHydrationWarning className={`admin-root min-h-dvh ${robotoFlex.variable}`}>
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
         {children}
       </div>

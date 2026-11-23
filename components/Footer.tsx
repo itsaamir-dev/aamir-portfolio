@@ -9,6 +9,7 @@ const pageLinks = [
   { href: "/learn",       label: "Learn" },
   { href: "/community",   label: "Community" },
   { href: "/challenge",   label: "30-Day Challenge" },
+  { href: "/jobs",        label: "Jobs" },
   { href: "/blog",        label: "Blog" },
   { href: "/ebook",       label: "E-book Waiting List" },
   { href: "/resources/free-profile-websites", label: "Free Profile Sites" },
