@@ -114,3 +114,28 @@ CREATE TABLE IF NOT EXISTS job_application_attempts (
 );
 
 CREATE INDEX IF NOT EXISTS job_application_attempts_ip_time ON job_application_attempts (ip_hash, created_at);
+
+-- ─── Site analytics ─────────────────────────────────────────────────────────
+-- One row per public page view. Location comes from Vercel's IP geolocation
+-- (city level); the IP address itself is never stored. visitor_hash is a
+-- salted hash of IP + browser that changes every day, used only to count
+-- unique visitors.
+
+CREATE TABLE IF NOT EXISTS page_views (
+  id             BIGSERIAL PRIMARY KEY,
+  path           TEXT        NOT NULL,
+  country        TEXT,                    -- ISO 3166-1 alpha-2, e.g. IN
+  region         TEXT,                    -- region / state code
+  city           TEXT,
+  latitude       REAL,                    -- approximate (city), rounded
+  longitude      REAL,
+  referrer_host  TEXT,                    -- e.g. www.google.com; NULL for direct
+  device         TEXT,                    -- mobile | tablet | desktop
+  browser        TEXT,
+  visitor_hash   TEXT        NOT NULL,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS page_views_created ON page_views (created_at DESC);
+CREATE INDEX IF NOT EXISTS page_views_path_created ON page_views (path, created_at DESC);
+CREATE INDEX IF NOT EXISTS page_views_visitor_created ON page_views (visitor_hash, created_at DESC);

@@ -36,6 +36,8 @@ const nextConfig = {
       "/admin/jobs/new":              ["./db/schema.sql"],
       "/admin/jobs/[id]":             ["./db/schema.sql"],
       "/admin/applications":          ["./db/schema.sql"],
+      "/admin/analytics":             ["./db/schema.sql"],
+      "/api/track":                   ["./db/schema.sql"],
     },
   },
   async redirects() {

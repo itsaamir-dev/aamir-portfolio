@@ -7,7 +7,10 @@ const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayout
 type Point = { date: string; count: number };
 
 const PAD = { t: 16, r: 16, b: 28, l: 36 };
-const fmtDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+/** "2026-11-23" → "Nov 23"; hourly "2026-11-23T15:00" → "3 PM". */
+const fmtDay = (d: string) => d.includes("T")
+  ? new Date(`${d}:00Z`).toLocaleTimeString("en-US", { hour: "numeric", timeZone: "UTC" })
+  : new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 function niceMax(v: number) {
   if (v <= 4) return 4;
@@ -16,7 +19,8 @@ function niceMax(v: number) {
 }
 
 /** Single-series area chart with crosshair + tooltip (pointer and keyboard). */
-export default function AreaChart({ data, label }: { data: Point[]; label: string }) {
+export default function AreaChart({ data, label, unit = "sign-up" }: { data: Point[]; label: string; unit?: string }) {
+  const step = data[0]?.date.includes("T") ? "hour" : "day";
   const id = useId();
   const svgRef = useRef<SVGSVGElement>(null);
   const boxRef = useRef<HTMLElement>(null);
@@ -74,7 +78,7 @@ export default function AreaChart({ data, label }: { data: Point[]; label: strin
         className="block h-auto w-full touch-none select-none outline-none"
         role="img"
         tabIndex={0}
-        aria-label={`${label}: ${total} sign-ups over ${data.length} days, peak ${peak.count} on ${fmtDay(peak.date)}. Use left and right arrow keys to read each day.`}
+        aria-label={`${label}: ${total} ${unit}s over ${data.length} ${step}s, peak ${peak.count} at ${fmtDay(peak.date)}. Use left and right arrow keys to read each ${step}.`}
         onPointerMove={pick}
         onPointerDown={pick}
         onPointerLeave={() => setActive(null)}
@@ -119,7 +123,7 @@ export default function AreaChart({ data, label }: { data: Point[]; label: strin
              className="pointer-events-none absolute top-0 -translate-x-1/2 rounded-lg bg-md-inverse-surface px-3 py-2 text-xs text-md-inverse-on-surface shadow-lg"
              style={{ left: tipLeft }}>
           <span className="block font-medium">{fmtDay(a.date)}</span>
-          <span>{a.count} sign-up{a.count === 1 ? "" : "s"}</span>
+          <span>{a.count.toLocaleString("en-US")} {unit}{a.count === 1 ? "" : "s"}</span>
         </div>
       )}
     </figure>

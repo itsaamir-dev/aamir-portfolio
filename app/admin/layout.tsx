@@ -12,6 +12,7 @@ const ICONS = [
   "person_remove", "refresh", "search", "settings", "south_east", "space_dashboard", "trending_flat",
   "visibility", "visibility_off",
   "add", "description", "edit", "payments", "work",
+  "computer", "devices", "insights", "public", "smartphone", "tablet",
 ];
 const SYMBOLS_URL =
   "https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0" +

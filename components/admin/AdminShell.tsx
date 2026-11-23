@@ -8,6 +8,7 @@ import Snackbar from "@/components/admin/Snackbar";
 
 const NAV = [
   { href: "/admin",          label: "Overview", icon: "space_dashboard" },
+  { href: "/admin/analytics", label: "Analytics", icon: "insights" },
   { href: "/admin/leads",    label: "Leads",    icon: "group" },
   { href: "/admin/jobs",     label: "Jobs",     icon: "work" },
   { href: "/admin/applications", label: "Applications", icon: "description" },

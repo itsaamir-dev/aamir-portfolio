@@ -30,9 +30,11 @@ const sections: LegalSection[] = [
         the payment status. Card, UPI and bank details are entered on, and kept by, the payment provider — we never receive them.</p>
       <p><strong className="text-ink">When you join the e-book waiting list:</strong> your first name, email and, if you give it, your
         WhatsApp number.</p>
-      <p><strong className="text-ink">Automatically:</strong> anonymous usage statistics through Google Analytics (pages visited, device
-        and approximate location), and a one-way hash of your IP address used only to limit abuse of forms. Your light/dark theme choice is
-        stored in your own browser.</p>
+      <p><strong className="text-ink">Automatically, when you visit a page:</strong> the page address, the site that linked you here,
+        your device type and browser, and your approximate location (country, region and city) worked out from your IP address by our
+        hosting provider. We don’t store your IP address: visits are counted with a one-way code that changes every day, so we can tell how
+        many people visited without identifying anyone. We also use Google Analytics for similar anonymous statistics, and a one-way hash
+        of your IP address to limit abuse of forms. Your light/dark theme choice is stored in your own browser. No advertising cookies are used.</p>
     </>,
   },
   {
@@ -65,6 +67,7 @@ const sections: LegalSection[] = [
       <li>Paid applications are kept while the job and any referral are in progress, and afterwards so we can consider you for similar roles, until you ask us to delete them.</li>
       <li>Payment records are kept as long as accounting and tax law requires, even if the application itself is deleted.</li>
       <li>Waiting-list details are kept until the e-book launches or you ask to be removed.</li>
+      <li>Page-visit statistics are kept for about 13 months, then deleted.</li>
     </ul>,
   },
   {

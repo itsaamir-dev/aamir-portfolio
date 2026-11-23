@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import TrackPageView from "@/components/TrackPageView";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
 import { ArrowOverlay } from "@/components/ui/arrow-cta";
 import { GoogleAnalytics } from "@next/third-parties/google";
@@ -26,6 +27,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(siteSchema) }} />
+      <TrackPageView />
       <Navbar />
       <div id="main">{children}</div>
       {/* Keeps the sticky mobile CTA from covering the end of the page */}
