@@ -22,6 +22,10 @@ const pages = [
   { href: "/jobs",       label: "Jobs & Referrals" },
   { href: "/blog",       label: "Blog" },
   { href: "/resources/free-profile-websites", label: "Free Profile Websites" },
+  { href: "/contact",       label: "Contact Us" },
+  { href: "/terms",         label: "Terms & Conditions" },
+  { href: "/privacy",       label: "Privacy Policy" },
+  { href: "/refund-policy", label: "Refund & Cancellation Policy" },
 ];
 
 export default function SitemapPage() {

@@ -19,6 +19,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/ebook`,     lastModified: new Date("2026-10-27"), changeFrequency: "weekly",  priority: 0.9 },
     { url: `${SITE_URL}/resources/free-profile-websites`, lastModified: new Date("2026-10-26"), changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/jobs`,      lastModified: jobs[0]?.publishedAt ? new Date(jobs[0].publishedAt) : latest, changeFrequency: "daily", priority: 0.8 },
+    ...["/contact", "/terms", "/privacy", "/refund-policy"].map(path => (
+      { url: `${SITE_URL}${path}`, lastModified: new Date("2026-11-23"), changeFrequency: "yearly" as const, priority: 0.3 })),
     ...jobs.map(job => ({
       url:             `${SITE_URL}/jobs/${job.slug}`,
       lastModified:    job.publishedAt ? new Date(job.publishedAt) : latest,

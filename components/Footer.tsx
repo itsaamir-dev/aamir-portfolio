@@ -2,6 +2,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { PROMISE, EARNINGS } from "@/lib/site";
+import { legalPages } from "@/lib/legal";
 
 const pageLinks = [
   { href: "/",            label: "Home" },
@@ -71,9 +72,18 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-night-line">
-          <p className="container-x py-6 text-sm text-night-muted">
-            © {new Date().getFullYear()} Aamir Bashir · India · Working with clients worldwide
-          </p>
+          <div className="container-x flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-night-muted">
+              © {new Date().getFullYear()} Aamir Bashir · India · Working with clients worldwide
+            </p>
+            <nav aria-label="Policies">
+              <ul className="flex flex-wrap gap-x-5">
+                {legalPages.map(({ href, label }) => (
+                  <li key={href}><Link href={href} className="inline-flex min-h-[36px] items-center text-sm text-night-muted transition-colors hover:text-white">{label}</Link></li>
+                ))}
+              </ul>
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

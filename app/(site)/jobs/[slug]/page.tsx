@@ -166,7 +166,7 @@ export default async function JobPage({ params }: { params: { slug: string } }) 
               ) : (
                 <p className="mt-6 rounded-xl bg-surface px-4 py-3 text-sm text-muted">Applications are closed.</p>
               )}
-              <p className="mt-4 text-xs leading-relaxed text-muted">The fee doesn’t guarantee an interview or a job. Paid securely via {activeProviderLabel() ?? "our payment partner"}.</p>
+              <p className="mt-4 text-xs leading-relaxed text-muted">The fee is non-refundable and doesn’t guarantee an interview or a job. Paid securely via {activeProviderLabel() ?? "our payment partner"}.</p>
             </div>
           </div>
         </aside>

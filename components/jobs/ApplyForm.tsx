@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
+import Link from "next/link";
 import Icon from "@/components/Icon";
 import BtnArrow from "@/components/BtnArrow";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -414,7 +415,9 @@ export default function ApplyForm({ jobSlug, jobTitle, feePaise, gateway = "our 
                    className="mt-0.5 h-5 w-5 shrink-0 accent-ink" />
             <span>
               I understand the <strong className="font-semibold text-ink">{fee} referral fee</strong> is charged to submit this application,
-              and that it doesn’t guarantee an interview or a job.
+              is <strong className="font-semibold text-ink">non-refundable</strong>, and doesn’t guarantee an interview or a job. I agree to the{" "}
+              <Link href="/terms" target="_blank" className="text-ink underline underline-offset-4">Terms</Link> and{" "}
+              <Link href="/refund-policy" target="_blank" className="text-ink underline underline-offset-4">Refund Policy</Link>.
             </span>
           </label>
           {err("agree")}
@@ -448,7 +451,7 @@ export default function ApplyForm({ jobSlug, jobTitle, feePaise, gateway = "our 
         </button>
         <p className="mt-3 text-xs leading-relaxed text-muted">
           Payments are processed securely by {gateway} (UPI, cards, net banking and wallets). Your details are used only to review and refer
-          your application.
+          your application — see the <Link href="/privacy" target="_blank" className="underline underline-offset-4">Privacy Policy</Link>.
         </p>
       </div>
     </form>
