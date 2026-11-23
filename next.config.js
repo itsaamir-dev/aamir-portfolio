@@ -29,6 +29,8 @@ const nextConfig = {
       "/api/admin/applications/[id]/resume": ["./db/schema.sql"],
       "/jobs":                        ["./db/schema.sql"],
       "/jobs/[slug]":                 ["./db/schema.sql"],
+      "/jobs/[slug]/opengraph-image": [...OG, "./db/schema.sql"],
+      "/jobs/[slug]/twitter-image":   [...OG, "./db/schema.sql"],
       "/sitemap.xml":                 ["./db/schema.sql"],
       "/admin/jobs":                  ["./db/schema.sql"],
       "/admin/jobs/new":              ["./db/schema.sql"],
